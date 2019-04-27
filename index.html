@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<!-- charset -->
+	<meta charset="utf-8">
+
+	<!-- open graph metadata -->
+	<meta property="og:title" content="ngram-nlp"/> 
+	<meta property="og:site_name" content="ngram-nlp"/> 
+	<meta property="og:type" content="website"/>
+	<meta property="og:url" content="http://mathewmariani.com/ngram-nlp"/> 
+
+	<!-- metadata -->
+	<meta name="description" content="Automatic Language Identification using n-gram based models.">
+	<meta name="keywords" content="ngram n-gram nlp ali natural language processing automatic identification">
+	<meta name="author" content="Mathew Mariani"/>
+
+	<!-- viewport -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!-- title -->
+	<title>ngram nlp</title>
+
+	<!-- vuejs -->
+	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+	<!-- bootstrap -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+	<!-- font awesome -->
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+
+	<!-- components -->
+	<script src="assets/js/components/languagemodel.js"></script>
+	<script src="assets/js/components/inputsentence.js"></script>
+
+	<!-- filters -->
+	<script src="assets/js/filters/exponential.js"></script>
+</head>
+
+<body>
+	<div class="container-fluid" id="app">
+		<main class="py-md-3" role="main">
+			<!-- display -->
+			<h1 class="display-4">
+				Natural Language Processing
+			</h1>
+			<p class="lead">
+				Automatic Language Identification using <a href="https://en.wikipedia.org/wiki/N-gram">n-gram</a> based models.
+			</p>
+
+			<!-- alert -->
+			<div class="alert alert-warning" role="alert">
+				<h4 class="alert-heading">Under Development!</h4>
+				<p>
+					In its current version the n-gram models are based directly on <b>ASCII</b> characters; all invalid characters will be ignored.
+				</p>
+				<hr>
+				<p class="mb-0">
+					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was incredibly small. In this case I used 200 sentences or about 16 kilobytes of text for each language (English, French) which will not yield accurate results.
+				</p>
+			</div>
+
+			<input-sentence
+				v-bind:unigram_en="english.unigram"
+				v-bind:unigram_fr="french.unigram"
+			></input-sentence>
+
+			<div class="row">
+				<div class="col">	
+					<language-model
+						v-bind:language="english"
+					></language-model>
+				</div>
+				<div class="col">
+					<language-model
+						v-bind:language="french"
+					></language-model>
+				</div>
+			</div>
+
+		</main>
+	</div>
+
+	<!-- app -->
+	<script src="assets/js/index.js"></script>
+</body>
+
+</html>
