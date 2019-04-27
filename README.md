@@ -1,4 +1,4 @@
-# Natural Language Processing
+# Natural Language Processing [![Build Status](https://travis-ci.org/mathewmariani/ngram-nlp.svg?branch=master)](https://travis-ci.org/mathewmariani/ngram-nlp)
 
 Automatic Language Identification using n-gram based models.
 
