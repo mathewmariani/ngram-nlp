@@ -1,6 +1,6 @@
 {
 	"name": "ngram-nlp",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Automatic Language Identification using n-gram based models written in JavaScript using VueJS",
 	"author": "Mathew Mariani",
 	"license": "MIT",
