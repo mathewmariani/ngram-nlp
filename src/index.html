@@ -31,7 +31,15 @@
 	<!-- font awesome -->
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
 
+	<!-- mixins -->
+	<script src="assets/js/mixins/unigram_da.js"></script>
+	<script src="assets/js/mixins/unigram_en.js"></script>
+	<script src="assets/js/mixins/unigram_fr.js"></script>
+	<script src="assets/js/mixins/unigram_ge.js"></script>
+	<script src="assets/js/mixins/unigram_sw.js"></script>
+
 	<!-- components -->
+	<script src="assets/js/components/frequency.js"></script>
 	<script src="assets/js/components/languagemodel.js"></script>
 	<script src="assets/js/components/inputsentence.js"></script>
 
@@ -64,34 +72,28 @@
 			<div class="alert alert-warning" role="alert">
 				<h4 class="alert-heading">Under Development!</h4>
 				<p>
-					In its current version the n-gram models are unigrams based directly on <b>ASCII</b> characters; all invalid characters will be ignored.
+					In its current version the n-gram models are unigrams based directly on <a href="https://en.wikipedia.org/wiki/ASCII" class="alert-link">ASCII</a> characters; all invalid characters are ignored.				
+				</p>
+				<p>
+					n-gram models more than (n=1) are better as they carry more information about the context. I am using unigrams (n=1) which carry less context giving less accurate results.
 				</p>
 				<hr>
 				<p class="mb-0">
-					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was relatively small. In this case I used 30k sentences or about 12 megabytes of text for each language (English, French, German).
+					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was relatively small.
+					</br>
+					In this case I used 30k sentences or about 4 megabytes of text for each language (Danish, English, French, German, Swedish).
 				</p>
 			</div>
 
-			<input-sentence
-				v-bind:unigram_en="english.unigram"
-				v-bind:unigram_fr="french.unigram"
-				v-bind:unigram_ge="german.unigram"
-			></input-sentence>
-
+			<!-- language -->
 			<div class="row">
 				<div class="col">	
-					<language-model
-						v-bind:language="english"
-					></language-model>
+					<input-sentence
+					></input-sentence>
 				</div>
 				<div class="col">	
 					<language-model
-						v-bind:language="german"
-					></language-model>
-				</div>
-				<div class="col">
-					<language-model
-						v-bind:language="french"
+						v-bind:language="danish"
 					></language-model>
 				</div>
 			</div>
@@ -101,6 +103,20 @@
 
 	<!-- app -->
 	<script src="assets/js/index.js"></script>
+
+	<!-- jquery -->
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+	<!-- bootstrap -->
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+	<script type="text/javascript">
+		$('#pills-tab a').on('click', function (e) {
+			e.preventDefault()
+			$(this).tab('show')
+		});
+	</script>
 </body>
 
 </html>
