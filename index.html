@@ -64,23 +64,29 @@
 			<div class="alert alert-warning" role="alert">
 				<h4 class="alert-heading">Under Development!</h4>
 				<p>
-					In its current version the n-gram models are based directly on <b>ASCII</b> characters; all invalid characters will be ignored.
+					In its current version the n-gram models are unigrams based directly on <b>ASCII</b> characters; all invalid characters will be ignored.
 				</p>
 				<hr>
 				<p class="mb-0">
-					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was incredibly small. In this case I used 200 sentences or about 16 kilobytes of text for each language (English, French) which will not yield accurate results.
+					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was relatively small. In this case I used 30k sentences or about 12 megabytes of text for each language (English, French, German).
 				</p>
 			</div>
 
 			<input-sentence
 				v-bind:unigram_en="english.unigram"
 				v-bind:unigram_fr="french.unigram"
+				v-bind:unigram_ge="german.unigram"
 			></input-sentence>
 
 			<div class="row">
 				<div class="col">	
 					<language-model
 						v-bind:language="english"
+					></language-model>
+				</div>
+				<div class="col">	
+					<language-model
+						v-bind:language="german"
 					></language-model>
 				</div>
 				<div class="col">
