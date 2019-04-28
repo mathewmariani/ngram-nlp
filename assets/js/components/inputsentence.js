@@ -8,7 +8,14 @@ Vue.component('input-sentence', {
 			p_en: 1.0,
 			p_fr: 1.0,
 			p_ge: 1.0,
-			p_sw: 1.0
+			p_sw: 1.0,
+			languages: [
+				"Danish",
+				"English",
+				"French",
+				"German",
+				"Swedish"
+			]
 		}
 	},
 	methods: {
@@ -25,57 +32,99 @@ Vue.component('input-sentence', {
 		},
 		updateUnigram: function () {
 			{	// danish
-				this.p_da = 1.0
-				const d = 0.05
-				const s = d * (1.0 / 2669720.0)
+				if (this.languages.includes("Danish")) {
+					this.p_da = 1.0
+					const d = 0.05
+					const s = d * (1.0 / 2669720.0)
 				
-				const sentence = this.sanitize(this.sentence)
-				for (const char of sentence) {
-					this.p_da += Math.log(((1.0 - d) * this.danish.unigram[char] + s))
+					const sentence = this.sanitize(this.sentence)
+					for (const char of sentence) {
+						this.p_da += Math.log(((1.0 - d) * this.danish.unigram[char] + s))
+					}
 				}
 			}
 			{	// english
-				this.p_en = 1.0
-				const d = 0.05
-				const s = d * (1.0 / 938871.0)
-				
-				const sentence = this.sanitize(this.sentence)
-				for (const char of sentence) {
-					this.p_en += Math.log(((1.0 - d) * this.english.unigram[char] + s))
+				if (this.languages.includes("English")) {
+					this.p_en = 1.0
+					const d = 0.05
+					const s = d * (1.0 / 938871.0)
+					
+					const sentence = this.sanitize(this.sentence)
+					for (const char of sentence) {
+						this.p_en += Math.log(((1.0 - d) * this.english.unigram[char] + s))
+					}
 				}
 			}
 			{	// french
-				this.p_fr = 1.0
-				const d = 0.05
-				const s = d * (1.0 / 2834055.0)
-				
-				const sentence = this.sanitize(this.sentence)
-				for (const char of sentence) {
-					this.p_fr += Math.log(((1.0 - d) * this.french.unigram[char] + s))
+				if (this.languages.includes("French")) {
+					this.p_fr = 1.0
+					const d = 0.05
+					const s = d * (1.0 / 2834055.0)
+					
+					const sentence = this.sanitize(this.sentence)
+					for (const char of sentence) {
+						this.p_fr += Math.log(((1.0 - d) * this.french.unigram[char] + s))
+					}
 				}
 			}
 			{	// german
-				this.p_ge = 1.0
-				const d = 0.05
-				const s = d * (1.0 / 2759238.0)
-				
-				const sentence = this.sanitize(this.sentence)
-				for (const char of sentence) {
-					this.p_ge += Math.log(((1.0 - d) * this.german.unigram[char] + s))
+				if (this.languages.includes("German")) {
+					this.p_ge = 1.0
+					const d = 0.05
+					const s = d * (1.0 / 2759238.0)
+					
+					const sentence = this.sanitize(this.sentence)
+					for (const char of sentence) {
+						this.p_ge += Math.log(((1.0 - d) * this.german.unigram[char] + s))
+					}
 				}
 			}
 			{	// swedish
-				this.p_sw = 1.0
-				const d = 0.05
-				const s = d * (1.0 / 2102523.0)
-				
-				const sentence = this.sanitize(this.sentence)
-				for (const char of sentence) {
-					this.p_sw += Math.log(((1.0 - d) * this.swedish.unigram[char] + s))
+				if (this.languages.includes("Swedish")) {
+					this.p_sw = 1.0
+					const d = 0.05
+					const s = d * (1.0 / 2102523.0)
+					
+					const sentence = this.sanitize(this.sentence)
+					for (const char of sentence) {
+						this.p_sw += Math.log(((1.0 - d) * this.swedish.unigram[char] + s))
+					}
 				}
 			}
 		},
-
+		getLanguage: function () {
+			if ((this.p_da > this.p_en) &&
+				(this.p_da > this.p_fr) &&
+				(this.p_da > this.p_ge) &&
+				(this.p_da > this.p_sw)) {
+				return "Danish"
+			}
+			if ((this.p_en > this.p_da) &&
+				(this.p_en > this.p_fr) &&
+				(this.p_en > this.p_ge) &&
+				(this.p_en > this.p_sw)) {
+				return "English"
+			}
+			if ((this.p_fr > this.p_da) &&
+				(this.p_fr > this.p_en) &&
+				(this.p_fr > this.p_ge) &&
+				(this.p_fr > this.p_sw)) {
+				return "French"
+			}
+			if ((this.p_ge > this.p_da) &&
+				(this.p_ge > this.p_en) &&
+				(this.p_ge > this.p_fr) &&
+				(this.p_ge > this.p_sw)) {
+				return "German"
+			}
+			if ((this.p_sw > this.p_da) &&
+				(this.p_sw > this.p_en) &&
+				(this.p_sw > this.p_fr) &&
+				(this.p_sw > this.p_ge)) {
+				return "Swedish"
+			}
+			return "..."
+		}
 	},
 	template: `
 		<div class="card mb-3">
@@ -91,7 +140,7 @@ Vue.component('input-sentence', {
 					v-on:input="updateUnigram()"
 				>
 			</div>
-			<ul class="list-group list-group-flush" v-show="(p_en !== p_fr)">
+			<ul class="list-group list-group-flush">
 				<li class="list-group-item">
 					Log Probability Danish: {{ p_da }}
 				</li>
@@ -109,22 +158,9 @@ Vue.component('input-sentence', {
 				</li>
 			</ul>
 
-			<div class="card-body" v-show="((p_da > p_en) && (p_da > p_fr) && (p_da > p_ge) && (p_da > p_sw))">
-				<p class="lead">This sentence is <b>Danish</b></p>
+			<div class="card-body">
+				<p class="lead">This sentence is {{ getLanguage() }}</p>
 			</div>
-			<div class="card-body" v-show="((p_en > p_da) && (p_en > p_fr) && (p_en > p_ge) && (p_en > p_sw))">
-				<p class="lead">This sentence is <b>English</b></p>
-			</div>
-			<div class="card-body" v-show="((p_fr > p_da) && (p_fr > p_en) && (p_fr > p_ge) && (p_fr > p_sw))">
-				<p class="lead">This sentence is <b>French</b></p>
-			</div>
-			<div class="card-body" v-show="((p_ge > p_da) && (p_ge > p_en) && (p_ge > p_fr) && (p_ge > p_sw))">
-				<p class="lead">This sentence is <b>German</b></p>
-			</div>
-			<div class="card-body" v-show="((p_sw > p_da) && (p_sw > p_en) && (p_sw > p_fr) && (p_sw > p_ge))">
-				<p class="lead">This sentence is <b>German</b></p>
-			</div>
-
 		</div>
 	`
 });
