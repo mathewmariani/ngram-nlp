@@ -1,14 +1,20 @@
 Vue.component('input-sentence', {
-	mixins: [danish, english, french, german, swedish],
+	mixins: [
+		danish, english, french, german, swedish,
+		bigram_danish, bigram_english, bigram_french, bigram_german, bigram_swedish
+	],
 	data: function() {
 		return {
-			validchars: "abcdefghijklmnopqrstuvwxyz",
 			sentence: "",
+
+			// probabilities
 			p_da: 1.0,
 			p_en: 1.0,
 			p_fr: 1.0,
 			p_ge: 1.0,
 			p_sw: 1.0,
+
+			// languages
 			languages: [
 				"Danish",
 				"English",
@@ -28,18 +34,31 @@ Vue.component('input-sentence', {
 			p_sw = 1.0
 		},
 		sanitize: function (str) {
-			return str.toLowerCase().replace(/[^a-z]/ig, '')
+			return str.toLowerCase().replace(/[^a-z ]/ig, '')
 		},
-		updateUnigram: function () {
+		ngram: function(n, text) {
+			let ngrams = []
+			for (let i = 0; i < text.length - n; ++i) {
+				const gram = text.substring(i, i + n)
+				const next = text.charAt(i + n)
+				if (!ngrams.hasOwnProperty(gram)) {
+					ngrams[gram] = 0
+				}
+				ngrams[gram] += 1
+			}
+			return ngrams
+		},
+		predict: function () {
 			{	// danish
 				if (this.languages.includes("Danish")) {
 					this.p_da = 1.0
 					const d = 0.05
-					const s = d * (1.0 / 2669720.0)
+					const s = d * (1.0 / 3199010.0)
 				
-					const sentence = this.sanitize(this.sentence)
-					for (const char of sentence) {
-						this.p_da += Math.log(((1.0 - d) * this.danish.unigram[char] + s))
+					const ngrams = this.ngram(2, this.sanitize(this.sentence))
+					for (let k in ngrams) {
+						const f = this.bigram_danish.bigram[k]
+						this.p_da += Math.log(((1.0 - d) * f + s))
 					}
 				}
 			}
@@ -47,11 +66,12 @@ Vue.component('input-sentence', {
 				if (this.languages.includes("English")) {
 					this.p_en = 1.0
 					const d = 0.05
-					const s = d * (1.0 / 938871.0)
-					
-					const sentence = this.sanitize(this.sentence)
-					for (const char of sentence) {
-						this.p_en += Math.log(((1.0 - d) * this.english.unigram[char] + s))
+					const s = d * (1.0 / 3380488.0)
+
+					const ngrams = this.ngram(2, this.sanitize(this.sentence))
+					for (let k in ngrams) {
+						const f = this.bigram_english.bigram[k]
+						this.p_en += Math.log(((1.0 - d) * f + s))
 					}
 				}
 			}
@@ -59,23 +79,26 @@ Vue.component('input-sentence', {
 				if (this.languages.includes("French")) {
 					this.p_fr = 1.0
 					const d = 0.05
-					const s = d * (1.0 / 2834055.0)
+					const s = d * (1.0 / 3404521.0)
 					
-					const sentence = this.sanitize(this.sentence)
-					for (const char of sentence) {
-						this.p_fr += Math.log(((1.0 - d) * this.french.unigram[char] + s))
+					const ngrams = this.ngram(2, this.sanitize(this.sentence))
+					for (let k in ngrams) {
+						const f = this.bigram_french.bigram[k]
+						this.p_fr += Math.log(((1.0 - d) * f + s))
 					}
+
 				}
 			}
 			{	// german
 				if (this.languages.includes("German")) {
 					this.p_ge = 1.0
 					const d = 0.05
-					const s = d * (1.0 / 2759238.0)
+					const s = d * (1.0 / 3214994.0)
 					
-					const sentence = this.sanitize(this.sentence)
-					for (const char of sentence) {
-						this.p_ge += Math.log(((1.0 - d) * this.german.unigram[char] + s))
+					const ngrams = this.ngram(2, this.sanitize(this.sentence))
+					for (let k in ngrams) {
+						const f = this.bigram_german.bigram[k]
+						this.p_ge += Math.log(((1.0 - d) * f + s))
 					}
 				}
 			}
@@ -83,11 +106,12 @@ Vue.component('input-sentence', {
 				if (this.languages.includes("Swedish")) {
 					this.p_sw = 1.0
 					const d = 0.05
-					const s = d * (1.0 / 2102523.0)
+					const s = d * (1.0 / 2506282.0)
 					
-					const sentence = this.sanitize(this.sentence)
-					for (const char of sentence) {
-						this.p_sw += Math.log(((1.0 - d) * this.swedish.unigram[char] + s))
+					const ngrams = this.ngram(2, this.sanitize(this.sentence))
+					for (let k in ngrams) {
+						const f = this.bigram_swedish.bigram[k]
+						this.p_sw += Math.log(((1.0 - d) * f + s))
 					}
 				}
 			}
@@ -128,6 +152,7 @@ Vue.component('input-sentence', {
 	},
 	template: `
 		<div class="card mb-3">
+
 			<div class="card-body">
 				<h5 class="card-title">
 					Detect Language
@@ -137,30 +162,32 @@ Vue.component('input-sentence', {
 					class="form-control"
 					placeholder="Enter sentence to detect language"
 					v-model="sentence"
-					v-on:input="updateUnigram()"
+					v-on:input="predict()"
 				>
 			</div>
+
 			<ul class="list-group list-group-flush">
 				<li class="list-group-item">
-					Log Probability Danish: {{ p_da }}
+					Log Probability Danish: {{ p_da.toFixed(4) }}
 				</li>
 				<li class="list-group-item">
-					Log Probability English: {{ p_en }}
+					Log Probability English: {{ p_en.toFixed(4) }}
 				</li>
 				<li class="list-group-item">
-					Log Probability French: {{ p_fr }}
+					Log Probability French: {{ p_fr.toFixed(4) }}
 				</li>
 				<li class="list-group-item">
-					Log Probability German: {{ p_ge }}
+					Log Probability German: {{ p_ge.toFixed(4) }}
 				</li>
 				<li class="list-group-item">
-					Log Probability Swedish: {{ p_sw }}
+					Log Probability Swedish: {{ p_sw.toFixed(4) }}
 				</li>
 			</ul>
 
-			<div class="card-body">
-				<p class="lead">This sentence is {{ getLanguage() }}</p>
+			<div class="card-footer text-white bg-primary">
+				<p class="lead">This sentence is <b>{{ getLanguage() }}</b></p>
 			</div>
+
 		</div>
 	`
-});
+})
