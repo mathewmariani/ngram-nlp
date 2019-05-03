@@ -32,6 +32,12 @@
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
 
 	<!-- mixins -->
+	<script src="assets/js/mixins/bigram_da.js"></script>
+	<script src="assets/js/mixins/bigram_en.js"></script>
+	<script src="assets/js/mixins/bigram_fr.js"></script>
+	<script src="assets/js/mixins/bigram_ge.js"></script>
+	<script src="assets/js/mixins/bigram_sw.js"></script>
+
 	<script src="assets/js/mixins/unigram_da.js"></script>
 	<script src="assets/js/mixins/unigram_en.js"></script>
 	<script src="assets/js/mixins/unigram_fr.js"></script>
@@ -70,15 +76,15 @@
 			</p>
 
 			<!-- alert -->
-			<div class="alert alert-warning" role="alert">
+			<div class="alert alert-warning alert-dismissible fade show" role="alert">
 				<h5 class="alert-heading">
 					<i class="fas fa-exclamation-triangle"></i> Under Development!
 				</h5>
 				<p>
-					In its current version the n-gram models are unigrams based directly on <a href="https://en.wikipedia.org/wiki/ASCII" class="alert-link">ASCII</a> characters; all invalid characters are ignored.				
+					In its current version the n-gram models are bigrams based directly on <a href="https://en.wikipedia.org/wiki/ASCII" class="alert-link">ASCII</a> characters; all invalid characters are ignored.				
 				</p>
 				<p>
-					n-gram models more than (n=1) are better as they carry more information about the context. I am using unigrams (n=1) which carry less context giving less accurate results.
+					n-gram models more than (n=1) are better as they carry more information about the context. I am using bigrams (n=2) which carry less context giving less accurate results.
 				</p>
 				<hr>
 				<p class="mb-0">
@@ -86,6 +92,9 @@
 					</br>
 					In this case I used 30k sentences or about 4 megabytes of text for each language (Danish, English, French, German, Swedish).
 				</p>
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
 
 			<!-- language -->

@@ -1,6 +1,11 @@
 # Changelog
 
 
+### 0.0.4
+
+- Switched to using bigram models.
+
+
 ### 0.0.3
 
 - Added Danish as a detectable language.
