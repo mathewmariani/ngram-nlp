@@ -1,4 +1,4 @@
-# Natural Language Processing [![Build Status](https://travis-ci.org/mathewmariani/ngram-nlp.svg?branch=master)](https://travis-ci.org/mathewmariani/ngram-nlp)
+# Natural Language Processing
 
 Automatic Language Identification using n-gram based models.
 
@@ -6,6 +6,7 @@ Automatic Language Identification using n-gram based models.
 ### n-gram
 
 In its current version the n-gram models are based directly on ASCII characters; all invalid characters will be ignored.
+
 
 ### Training Corpus
 
