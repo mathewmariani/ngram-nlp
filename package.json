@@ -1,10 +1,11 @@
 {
+	"type": "module",
 	"scripts": {
-		"build": "ts-node scripts/build.ts",
-		"corpus": "python scripts/corpus.py"
+		"build": "ts-node resources/build.ts",
+		"corpus": "ts-node resources/corpus.ts"
 	},
-	"dependencies": {
+	"devDependencies": {
 		"ts-node": "^10.9.2",
-		"typescript": "^5.3.3"
+		"typescript": "^5.7.2"
 	}
 }
