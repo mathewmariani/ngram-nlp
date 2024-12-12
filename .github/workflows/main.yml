@@ -1,35 +1,29 @@
-name: Deploy to GitHub pages
+name: Build and Deploy
+
 on:
   push:
-    branches: [ master ]
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-and-deploy:
+
     runs-on: ubuntu-latest
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v2
+    
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
 
-    - name: setup npm
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-    - run: npm install
-    - run: npm run build
+      - name: Install Packages 📦
+        run: npm ci
 
-    - name: init and commit
-      run: |
-        cd build
-        git init
-        git add -A
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -m 'deploy'
+      - name: Building Website 🔧
+        run: npm run build
 
-    - name: push to gh-pages
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages
-        force: true
-        directory: ./build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: website

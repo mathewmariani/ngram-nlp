@@ -49,104 +49,71 @@ Vue.component('input-sentence', {
 			return ngrams
 		},
 		predict: function () {
-			{	// danish
-				if (this.languages.includes("Danish")) {
-					this.p_da = 1.0
-					const d = 0.05
-					const s = d * (1.0 / 3199010.0)
-				
-					const ngrams = this.ngram(2, this.sanitize(this.sentence))
-					for (let k in ngrams) {
-						const f = this.bigram_danish.bigram[k]
-						this.p_da += Math.log(((1.0 - d) * f + s))
-					}
+			const str = this.sanitize(this.sentence)
+			const ngrams = this.ngram(2, str)
+			// danish
+			if (this.languages.includes("Danish")) {
+				this.p_da = 1.0
+				const d = 0.05
+				const s = d * (1.0 / 3199010.0)
+				for (let k in ngrams) {
+					const f = this.bigram_danish.bigram[k]
+					this.p_da += Math.log(((1.0 - d) * f + s))
 				}
 			}
-			{	// english
-				if (this.languages.includes("English")) {
-					this.p_en = 1.0
-					const d = 0.05
-					const s = d * (1.0 / 3380488.0)
-
-					const ngrams = this.ngram(2, this.sanitize(this.sentence))
-					for (let k in ngrams) {
-						const f = this.bigram_english.bigram[k]
-						this.p_en += Math.log(((1.0 - d) * f + s))
-					}
+			// english
+			if (this.languages.includes("English")) {
+				this.p_en = 1.0
+				const d = 0.05
+				const s = d * (1.0 / 3380488.0)
+				for (let k in ngrams) {
+					const f = this.bigram_english.bigram[k]
+					this.p_en += Math.log(((1.0 - d) * f + s))
 				}
 			}
-			{	// french
-				if (this.languages.includes("French")) {
-					this.p_fr = 1.0
-					const d = 0.05
-					const s = d * (1.0 / 3404521.0)
-					
-					const ngrams = this.ngram(2, this.sanitize(this.sentence))
-					for (let k in ngrams) {
-						const f = this.bigram_french.bigram[k]
-						this.p_fr += Math.log(((1.0 - d) * f + s))
-					}
-
+			// french
+			if (this.languages.includes("French")) {
+				this.p_fr = 1.0
+				const d = 0.05
+				const s = d * (1.0 / 3404521.0)
+				for (let k in ngrams) {
+					const f = this.bigram_french.bigram[k]
+					this.p_fr += Math.log(((1.0 - d) * f + s))
 				}
 			}
-			{	// german
-				if (this.languages.includes("German")) {
-					this.p_ge = 1.0
-					const d = 0.05
-					const s = d * (1.0 / 3214994.0)
-					
-					const ngrams = this.ngram(2, this.sanitize(this.sentence))
-					for (let k in ngrams) {
-						const f = this.bigram_german.bigram[k]
-						this.p_ge += Math.log(((1.0 - d) * f + s))
-					}
+			// german
+			if (this.languages.includes("German")) {
+				this.p_ge = 1.0
+				const d = 0.05
+				const s = d * (1.0 / 3214994.0)
+				const ngrams = this.ngram(2, str)
+				for (let k in ngrams) {
+					const f = this.bigram_german.bigram[k]
+					this.p_ge += Math.log(((1.0 - d) * f + s))
 				}
 			}
-			{	// swedish
-				if (this.languages.includes("Swedish")) {
-					this.p_sw = 1.0
-					const d = 0.05
-					const s = d * (1.0 / 2506282.0)
-					
-					const ngrams = this.ngram(2, this.sanitize(this.sentence))
-					for (let k in ngrams) {
-						const f = this.bigram_swedish.bigram[k]
-						this.p_sw += Math.log(((1.0 - d) * f + s))
-					}
+			// swedish
+			if (this.languages.includes("Swedish")) {
+				this.p_sw = 1.0
+				const d = 0.05
+				const s = d * (1.0 / 2506282.0)
+				for (let k in ngrams) {
+					const f = this.bigram_swedish.bigram[k]
+					this.p_sw += Math.log(((1.0 - d) * f + s))
 				}
 			}
 		},
+		isDanish: function() { return ((this.p_da > this.p_en) && (this.p_da > this.p_fr) && (this.p_da > this.p_ge) && (this.p_da > this.p_sw)) },
+		isEnglish: function() { return ((this.p_en > this.p_da) && (this.p_en > this.p_fr) && (this.p_en > this.p_ge) && (this.p_en > this.p_sw)) },
+		isFrench: function() { return ((this.p_fr > this.p_da) && (this.p_fr > this.p_en) && (this.p_fr > this.p_ge) && (this.p_fr > this.p_sw)) },
+		isGerman: function() { return ((this.p_ge > this.p_da) && (this.p_ge > this.p_en) && (this.p_ge > this.p_fr) && (this.p_ge > this.p_sw)) },
+		isSwedish: function() { return ((this.p_sw > this.p_da) && (this.p_sw > this.p_en) && (this.p_sw > this.p_fr) && (this.p_sw > this.p_ge)) },
 		getLanguage: function () {
-			if ((this.p_da > this.p_en) &&
-				(this.p_da > this.p_fr) &&
-				(this.p_da > this.p_ge) &&
-				(this.p_da > this.p_sw)) {
-				return "Danish"
-			}
-			if ((this.p_en > this.p_da) &&
-				(this.p_en > this.p_fr) &&
-				(this.p_en > this.p_ge) &&
-				(this.p_en > this.p_sw)) {
-				return "English"
-			}
-			if ((this.p_fr > this.p_da) &&
-				(this.p_fr > this.p_en) &&
-				(this.p_fr > this.p_ge) &&
-				(this.p_fr > this.p_sw)) {
-				return "French"
-			}
-			if ((this.p_ge > this.p_da) &&
-				(this.p_ge > this.p_en) &&
-				(this.p_ge > this.p_fr) &&
-				(this.p_ge > this.p_sw)) {
-				return "German"
-			}
-			if ((this.p_sw > this.p_da) &&
-				(this.p_sw > this.p_en) &&
-				(this.p_sw > this.p_fr) &&
-				(this.p_sw > this.p_ge)) {
-				return "Swedish"
-			}
+			if (isDanish()) { return "Danish" }
+			if (isEnglish()) { return "English" }
+			if (isFrench()) { return "French" }
+			if (isGerman()) { return "German" }
+			if (isSwedish()) { return "Swedish" }
 			return "..."
 		}
 	},

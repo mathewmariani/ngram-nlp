@@ -1,4 +1,4 @@
-const french = {
+const unigram_french = {
 	data: function () {
 		return {
 			french: {
