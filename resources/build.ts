@@ -13,7 +13,8 @@ function _buildWebsite() {
     fs.mkdirSync("website");
   }
 
-  _copyDirectory("src", "website");
+  _copyDirectory("resources/content", "website");
+  _copyDirectory("resources/assets", "website/assets");
 }
 
 // main.js

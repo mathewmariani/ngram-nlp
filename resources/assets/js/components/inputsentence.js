@@ -1,6 +1,6 @@
 Vue.component('input-sentence', {
 	mixins: [
-		danish, english, french, german, swedish,
+		unigram_danish, unigram_english, unigram_french, unigram_german, unigram_swedish,
 		bigram_danish, bigram_english, bigram_french, bigram_german, bigram_swedish
 	],
 	data: function() {
@@ -109,11 +109,11 @@ Vue.component('input-sentence', {
 		isGerman: function() { return ((this.p_ge > this.p_da) && (this.p_ge > this.p_en) && (this.p_ge > this.p_fr) && (this.p_ge > this.p_sw)) },
 		isSwedish: function() { return ((this.p_sw > this.p_da) && (this.p_sw > this.p_en) && (this.p_sw > this.p_fr) && (this.p_sw > this.p_ge)) },
 		getLanguage: function () {
-			if (isDanish()) { return "Danish" }
-			if (isEnglish()) { return "English" }
-			if (isFrench()) { return "French" }
-			if (isGerman()) { return "German" }
-			if (isSwedish()) { return "Swedish" }
+			if (this.isDanish()) { return "Danish" }
+			if (this.isEnglish()) { return "English" }
+			if (this.isFrench()) { return "French" }
+			if (this.isGerman()) { return "German" }
+			if (this.isSwedish()) { return "Swedish" }
 			return "..."
 		}
 	},
