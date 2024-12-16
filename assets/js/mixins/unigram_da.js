@@ -1,4 +1,4 @@
-const danish = {
+const unigram_danish = {
 	data: function () {
 		return {
 			danish: {

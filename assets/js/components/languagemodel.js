@@ -1,5 +1,5 @@
 Vue.component('language-model', {
-	mixins: [danish, english, french, german, swedish],
+	mixins: [unigram_danish, unigram_english, unigram_french, unigram_german, unigram_swedish],
 	template: `
 		<div class="card">
 			<div class="card-body">
