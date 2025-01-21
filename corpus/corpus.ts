@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 
 // Define valid characters as a string
 const validChars = "abcdefghijklmnopqrstuvwxyz ".split('');
@@ -21,30 +20,29 @@ function findNgrams(str: string, n: number): [string, string][] {
 }
 
 // Function to calculate unigrams
-function unigram(language: string, file: string) {
+function unigram(language: string, file: string): Record<string, number> {
     const text = fs.readFileSync(file, 'utf-8').toLowerCase();
     const occurrence = new Map<string, number>();
     const filteredText = intersection(text.split(''), validChars);
 
-    filteredText.forEach(char => {
+    filteredText.forEach((char) => {
         occurrence.set(char, (occurrence.get(char) || 0) + 1);
     });
 
     const count = filteredText.length;
-    const filename = `unigram_${language}.txt`;
+    const probabilities: Record<string, number> = {};
 
-    const dump = fs.createWriteStream(filename);
-    validChars.forEach(char => {
+    validChars.forEach((char) => {
         const prob = (occurrence.get(char) || 0) / count;
-        dump.write(`'${char}': ${prob.toExponential(6)},\n`);
+        probabilities[char] = parseFloat(prob.toExponential(6));
     });
 
-    dump.end();
     console.log("unigram", language, file, count);
+    return probabilities;
 }
 
-// Function to calculate bigrams
-function bigram(language: string, file: string) {
+
+function bigram(language: string, file: string): Record<string, number> {
     const text = fs.readFileSync(file, 'utf-8').toLowerCase();
     const occurrence = new Map<string, number>();
     const bigrams = findNgrams(text, 2);
@@ -55,32 +53,35 @@ function bigram(language: string, file: string) {
     });
 
     const count = bigrams.length;
-    const filename = `bigram_${language}.txt`;
+    const probabilities: Record<string, number> = {};
 
-    const dump = fs.createWriteStream(filename);
     validChars.forEach(char1 => {
         validChars.forEach(char2 => {
             const key = char1 + char2;
             const prob = (occurrence.get(key) || 0) / count;
-            dump.write(`'${key}': ${prob.toExponential(6)},\n`);
+            probabilities[key] = parseFloat(prob.toExponential(6));
         });
     });
 
-    dump.end();
     console.log("bigram", language, file, count);
+    return probabilities; // Return the JSON object
 }
 
 // Corpus of languages and corresponding files
 const corpus: { [key: string]: string } = {
-    "danish": "../data/dan_news_2008_30K-sentences.txt",
-    "english": "../data/eng_news_2016_30K-sentences.txt",
-    "french": "../data/fra_news_2010_30K-sentences.txt",
-    "german": "../data/deu_news_2015_30K-sentences.txt",
-    "swedish": "../data/swe_news_2007_30K-sentences.txt"
+    "danish": "corpus/dan_news_2008_30K-sentences.txt",
+    "english": "corpus/eng_news_2016_30K-sentences.txt",
+    "french": "corpus/fra_news_2010_30K-sentences.txt",
+    "german": "corpus/deu_news_2015_30K-sentences.txt",
+    "swedish": "corpus/swe_news_2007_30K-sentences.txt",
 };
+
+function saveJsonToFile(filename: string, jsonData: Record<string, number>) {
+    fs.writeFileSync(filename, JSON.stringify(jsonData, null, 2), 'utf-8');
+}
 
 // Loop over each language and process bigrams (unigram can be called similarly)
 for (const language in corpus) {
-    unigram(language, corpus[language]);
-    bigram(language, corpus[language]);
+    saveJsonToFile(`website/assets/unigram_${language}.json`, unigram(language, corpus[language]));
+    saveJsonToFile(`website/assets/bigram_${language}.json`, bigram(language, corpus[language]));
 }
