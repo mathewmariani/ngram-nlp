@@ -36,23 +36,19 @@
 </template>
 
 <script>
-import { bigram_danish } from '../mixins/bigram_da.js'
-import { unigram_danish } from '../mixins/unigram_da.js'
-import { bigram_english } from '../mixins/bigram_en.js'
-import { unigram_english } from '../mixins/unigram_en.js'
-import { bigram_french } from '../mixins/bigram_fr.js'
-import { unigram_french } from '../mixins/unigram_fr.js'
-import { bigram_german } from '../mixins/bigram_ge.js'
-import { unigram_german } from '../mixins/unigram_ge.js'
-import { bigram_swedish } from '../mixins/bigram_sw.js'
-import { unigram_swedish } from '../mixins/unigram_sw.js'
+import bigram_danish from '../data/bigram_da.json'
+import unigram_danish from '../data/unigram_da.json'
+import bigram_english from '../data/bigram_en.json'
+import unigram_english from '../data/unigram_en.json'
+import bigram_french from '../data/bigram_fr.json'
+import unigram_french from '../data/unigram_fr.json'
+import bigram_german from '../data/bigram_ge.json'
+import unigram_german from '../data/unigram_ge.json'
+import bigram_swedish from '../data/bigram_sw.json'
+import unigram_swedish from '../data/unigram_sw.json'
 
 export default {
   name: 'InputSentence',
-  mixins: [
-    unigram_danish, unigram_english, unigram_french, unigram_german, unigram_swedish,
-    bigram_danish, bigram_english, bigram_french, bigram_german, bigram_swedish
-  ],
   data() {
     return {
       sentence: "",
@@ -73,11 +69,11 @@ export default {
       this.p_sw = 0.0
     },
     predict() {
-      this.p_da = nlp.probability(this.sentence, 3199010.0, this.bigram_danish.bigram)
-      this.p_en = nlp.probability(this.sentence, 3380488.0, this.bigram_english.bigram)
-      this.p_fr = nlp.probability(this.sentence, 3404521.0, this.bigram_french.bigram)
-      this.p_ge = nlp.probability(this.sentence, 3214994.0, this.bigram_german.bigram)
-      this.p_sw = nlp.probability(this.sentence, 2506282.0, this.bigram_swedish.bigram)
+      this.p_da = nlp.probability(this.sentence, 3199010.0, bigram_danish)
+      this.p_en = nlp.probability(this.sentence, 3380488.0, bigram_english)
+      this.p_fr = nlp.probability(this.sentence, 3404521.0, bigram_french)
+      this.p_ge = nlp.probability(this.sentence, 3214994.0, bigram_german)
+      this.p_sw = nlp.probability(this.sentence, 2506282.0, bigram_swedish)
     },
     isDanish() {
       return this.p_da > this.p_en && this.p_da > this.p_fr && this.p_da > this.p_ge && this.p_da > this.p_sw

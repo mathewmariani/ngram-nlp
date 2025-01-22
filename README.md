@@ -20,6 +20,5 @@ The training corpus used is 30k sentences, or about 4 megabytes of text, for eac
 
 ## License
 
-This project is free software; you can redistribute it and/or modify it under
-the terms of the MIT license.
+This project is free software; you can redistribute it and/or modify it under the terms of the MIT license.
 See [LICENSE](LICENSE) for details.
