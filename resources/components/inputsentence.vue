@@ -47,6 +47,8 @@ import unigram_german from '../data/unigram_german.json'
 import bigram_swedish from '../data/bigram_swedish.json'
 import unigram_swedish from '../data/unigram_swedish.json'
 
+import nlp from '../nlp.js'
+
 export default {
   name: 'InputSentence',
   data() {
