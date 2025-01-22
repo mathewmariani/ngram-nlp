@@ -36,16 +36,16 @@
 </template>
 
 <script>
-import bigram_danish from '../data/bigram_da.json'
-import unigram_danish from '../data/unigram_da.json'
-import bigram_english from '../data/bigram_en.json'
-import unigram_english from '../data/unigram_en.json'
-import bigram_french from '../data/bigram_fr.json'
-import unigram_french from '../data/unigram_fr.json'
-import bigram_german from '../data/bigram_ge.json'
-import unigram_german from '../data/unigram_ge.json'
-import bigram_swedish from '../data/bigram_sw.json'
-import unigram_swedish from '../data/unigram_sw.json'
+import bigram_danish from '../data/bigram_danish.json'
+import unigram_danish from '../data/unigram_danish.json'
+import bigram_english from '../data/bigram_english.json'
+import unigram_english from '../data/unigram_english.json'
+import bigram_french from '../data/bigram_french.json'
+import unigram_french from '../data/unigram_french.json'
+import bigram_german from '../data/bigram_german.json'
+import unigram_german from '../data/unigram_german.json'
+import bigram_swedish from '../data/bigram_swedish.json'
+import unigram_swedish from '../data/unigram_swedish.json'
 
 export default {
   name: 'InputSentence',
