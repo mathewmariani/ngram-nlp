@@ -30,108 +30,12 @@
 
 	<!-- font awesome -->
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-
-	<!-- mixins -->
-	<script src="assets/js/mixins/bigram_da.js"></script>
-	<script src="assets/js/mixins/bigram_en.js"></script>
-	<script src="assets/js/mixins/bigram_fr.js"></script>
-	<script src="assets/js/mixins/bigram_ge.js"></script>
-	<script src="assets/js/mixins/bigram_sw.js"></script>
-
-	<script src="assets/js/mixins/unigram_da.js"></script>
-	<script src="assets/js/mixins/unigram_en.js"></script>
-	<script src="assets/js/mixins/unigram_fr.js"></script>
-	<script src="assets/js/mixins/unigram_ge.js"></script>
-	<script src="assets/js/mixins/unigram_sw.js"></script>
-
-	<!-- components -->
-	<script src="assets/js/components/frequency.js"></script>
-	<script src="assets/js/components/languagemodel.js"></script>
-	<script src="assets/js/components/inputsentence.js"></script>
-
-	<!-- filters -->
-	<script src="assets/js/filters/exponential.js"></script>
-
-	<!-- implements MathJax -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
-
-	<!-- analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-58519049-4"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'UA-58519049-4');
-	</script>
+  <script type="module" crossorigin src="/index.js"></script>
 </head>
 
 <body>
-	<div class="container-fluid" id="app">
-		<main class="py-md-3" role="main">
-
-			<!-- header -->
-			<h1 class="display-4">
-				Natural Language Processing
-			</h1>
-			<p class="lead">
-				Automatic Language Identification using <a href="https://en.wikipedia.org/wiki/N-gram">n-gram</a> based models.
-			</p>
-
-			<!-- alert -->
-			<div class="alert alert-warning alert-dismissible fade show" role="alert">
-				<h5 class="alert-heading">
-					<i class="fas fa-exclamation-triangle"></i> Under Development!
-				</h5>
-				<p>
-					In its current version the n-gram models are bigrams based directly on <a href="https://en.wikipedia.org/wiki/ASCII" class="alert-link">ASCII</a> characters; all invalid characters are ignored.				
-				</p>
-				<p>
-					n-gram models more than (n=1) are better as they carry more information about the context. I am using bigrams (n=2) which carry less context giving less accurate results.
-				</p>
-				<hr>
-				<p class="mb-0">
-					The training <a href="https://en.wikipedia.org/wiki/Text_corpus" class="alert-link">corpus</a> used was relatively small.
-					</br>
-					In this case I used 30k sentences or about 4 megabytes of text for each language (Danish, English, French, German, Swedish).
-				</p>
-				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-			</div>
-
-			<!-- language -->
-			<div class="row">
-				<div class="col">	
-					<input-sentence
-					></input-sentence>
-				</div>
-				<div class="col">	
-					<language-model
-						v-bind:language="danish"
-					></language-model>
-				</div>
-			</div>
-
-		</main>
-	</div>
-
-	<!-- app -->
-	<script src="assets/js/nlp.js"></script>
-	<script src="assets/js/index.js"></script>
-
-	<!-- jquery -->
-	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-
-	<!-- bootstrap -->
-	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
-
-	<script type="text/javascript">
-		$('#pills-tab a').on('click', function (e) {
-			e.preventDefault()
-			$(this).tab('show')
-		});
-	</script>
+	<div class="container-fluid" id="app"></div>
+	<script src="/resources/nlp.js"></script>
 </body>
 
 </html>
