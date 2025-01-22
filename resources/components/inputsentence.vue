@@ -12,7 +12,6 @@
         v-on:input="predict()"
       />
     </div>
-
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
         Log Probability Danish: {{ p_da.toFixed(4) }}
@@ -30,7 +29,6 @@
         Log Probability Swedish: {{ p_sw.toFixed(4) }}
       </li>
     </ul>
-
     <div class="card-footer text-white bg-primary">
       <p class="lead">This sentence is <b>{{ getLanguage() }}</b></p>
     </div>
