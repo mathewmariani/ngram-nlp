@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<!-- charset -->
+	<meta charset="utf-8">
+
+	<!-- open graph metadata -->
+	<meta property="og:title" content="ngram-nlp"/> 
+	<meta property="og:site_name" content="ngram-nlp"/> 
+	<meta property="og:type" content="website"/>
+	<meta property="og:url" content="http://mathewmariani.com/ngram-nlp"/> 
+
+	<!-- metadata -->
+	<meta name="description" content="Automatic Language Identification using n-gram based models.">
+	<meta name="keywords" content="ngram n-gram nlp ali natural language processing automatic identification">
+	<meta name="author" content="Mathew Mariani"/>
+
+	<!-- viewport -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!-- title -->
+	<title>ngram nlp</title>
+
+	<!-- vuejs -->
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+
+	<!-- bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+	<!-- font awesome -->
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+</head>
+
+<body>
+	<div class="container-fluid" id="app"></div>
+
+	<!-- app -->
+	<script src="/resources/nlp.js"></script>
+	<script type="module" src="/resources/main.js"></script>
+
+	<!-- jquery -->
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+	<!-- bootstrap -->
+	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+
+	<script type="text/javascript">
+		$('#pills-tab a').on('click', function (e) {
+			e.preventDefault()
+			$(this).tab('show')
+		});
+	</script>
+</body>
+
+</html>

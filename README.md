@@ -11,7 +11,7 @@ Automatic language identification using n-gram based models.
 *   `resources/` – Scripts and resources used for building the website.
 
 
-### Training Corpus
+## Training Corpus
 
 In its current version the n-gram models are based directly on ASCII characters; all invalid characters will be ignored.
 

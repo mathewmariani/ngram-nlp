@@ -1,10 +1,16 @@
 {
+  "type": "module",
   "scripts": {
-    "build": "ts-node resources/build.ts",
-    "corpus": "ts-node resources/corpus.ts"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "corpus": "python resources/corpus.py"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.5"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
   }
 }
