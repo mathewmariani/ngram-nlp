@@ -24,4 +24,4 @@ const nlp = {
     },
 }
 
-module.exports = nlp
+export default nlp
