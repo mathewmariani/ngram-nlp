@@ -46,8 +46,6 @@ import bigram_hu from "../data/bigram_hu.json";
 import bigram_tr from "../data/bigram_tr.json";
 import bigram_id from "../data/bigram_id.json";
 
-import nlp from '../nlp.js'
-
 export default {
   name: "InputSentence",
   data() {
