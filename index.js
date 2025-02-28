@@ -56,8 +56,8 @@ const isOn = (key) => key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && 
 (key.charCodeAt(2) > 122 || key.charCodeAt(2) < 97);
 const isModelListener = (key) => key.startsWith("onUpdate:");
 const extend = Object.assign;
-const remove = (arr, el2) => {
-  const i = arr.indexOf(el2);
+const remove = (arr, el) => {
+  const i = arr.indexOf(el);
   if (i > -1) {
     arr.splice(i, 1);
   }
@@ -85,11 +85,11 @@ const isReservedProp = /* @__PURE__ */ makeMap(
   // the leading comma is intentional so empty string "" is also included
   ",key,ref,ref_for,ref_key,onVnodeBeforeMount,onVnodeMounted,onVnodeBeforeUpdate,onVnodeUpdated,onVnodeBeforeUnmount,onVnodeUnmounted"
 );
-const cacheStringFunction = (fn2) => {
+const cacheStringFunction = (fn) => {
   const cache = /* @__PURE__ */ Object.create(null);
   return (str) => {
     const hit = cache[str];
-    return hit || (cache[str] = fn2(str));
+    return hit || (cache[str] = fn(str));
   };
 };
 const camelizeRE = /-(\w)/g;
@@ -282,12 +282,12 @@ class EffectScope {
       }
     }
   }
-  run(fn2) {
+  run(fn) {
     if (this._active) {
       const currentEffectScope = activeEffectScope;
       try {
         activeEffectScope = this;
-        return fn2();
+        return fn();
       } finally {
         activeEffectScope = currentEffectScope;
       }
@@ -342,8 +342,8 @@ function getCurrentScope() {
 let activeSub;
 const pausedQueueEffects = /* @__PURE__ */ new WeakSet();
 class ReactiveEffect {
-  constructor(fn2) {
-    this.fn = fn2;
+  constructor(fn) {
+    this.fn = fn;
     this.deps = void 0;
     this.depsTail = void 0;
     this.flags = 1 | 4;
@@ -817,27 +817,27 @@ const arrayInstrumentations = {
       return value;
     });
   },
-  every(fn2, thisArg) {
-    return apply(this, "every", fn2, thisArg, void 0, arguments);
+  every(fn, thisArg) {
+    return apply(this, "every", fn, thisArg, void 0, arguments);
   },
-  filter(fn2, thisArg) {
-    return apply(this, "filter", fn2, thisArg, (v) => v.map(toReactive), arguments);
+  filter(fn, thisArg) {
+    return apply(this, "filter", fn, thisArg, (v) => v.map(toReactive), arguments);
   },
-  find(fn2, thisArg) {
-    return apply(this, "find", fn2, thisArg, toReactive, arguments);
+  find(fn, thisArg) {
+    return apply(this, "find", fn, thisArg, toReactive, arguments);
   },
-  findIndex(fn2, thisArg) {
-    return apply(this, "findIndex", fn2, thisArg, void 0, arguments);
+  findIndex(fn, thisArg) {
+    return apply(this, "findIndex", fn, thisArg, void 0, arguments);
   },
-  findLast(fn2, thisArg) {
-    return apply(this, "findLast", fn2, thisArg, toReactive, arguments);
+  findLast(fn, thisArg) {
+    return apply(this, "findLast", fn, thisArg, toReactive, arguments);
   },
-  findLastIndex(fn2, thisArg) {
-    return apply(this, "findLastIndex", fn2, thisArg, void 0, arguments);
+  findLastIndex(fn, thisArg) {
+    return apply(this, "findLastIndex", fn, thisArg, void 0, arguments);
   },
   // flat, flatMap could benefit from ARRAY_ITERATE but are not straight-forward to implement
-  forEach(fn2, thisArg) {
-    return apply(this, "forEach", fn2, thisArg, void 0, arguments);
+  forEach(fn, thisArg) {
+    return apply(this, "forEach", fn, thisArg, void 0, arguments);
   },
   includes(...args) {
     return searchProxy(this, "includes", args);
@@ -852,8 +852,8 @@ const arrayInstrumentations = {
   lastIndexOf(...args) {
     return searchProxy(this, "lastIndexOf", args);
   },
-  map(fn2, thisArg) {
-    return apply(this, "map", fn2, thisArg, void 0, arguments);
+  map(fn, thisArg) {
+    return apply(this, "map", fn, thisArg, void 0, arguments);
   },
   pop() {
     return noTracking(this, "pop");
@@ -861,18 +861,18 @@ const arrayInstrumentations = {
   push(...args) {
     return noTracking(this, "push", args);
   },
-  reduce(fn2, ...args) {
-    return reduce(this, "reduce", fn2, args);
+  reduce(fn, ...args) {
+    return reduce(this, "reduce", fn, args);
   },
-  reduceRight(fn2, ...args) {
-    return reduce(this, "reduceRight", fn2, args);
+  reduceRight(fn, ...args) {
+    return reduce(this, "reduceRight", fn, args);
   },
   shift() {
     return noTracking(this, "shift");
   },
   // slice could use ARRAY_ITERATE but also seems to beg for range tracking
-  some(fn2, thisArg) {
-    return apply(this, "some", fn2, thisArg, void 0, arguments);
+  some(fn, thisArg) {
+    return apply(this, "some", fn, thisArg, void 0, arguments);
   },
   splice(...args) {
     return noTracking(this, "splice", args);
@@ -909,7 +909,7 @@ function iterator(self2, method, wrapValue) {
   return iter;
 }
 const arrayProto = Array.prototype;
-function apply(self2, method, fn2, thisArg, wrappedRetFn, args) {
+function apply(self2, method, fn, thisArg, wrappedRetFn, args) {
   const arr = shallowReadArray(self2);
   const needsWrap = arr !== self2 && !isShallow(self2);
   const methodFn = arr[method];
@@ -917,32 +917,32 @@ function apply(self2, method, fn2, thisArg, wrappedRetFn, args) {
     const result2 = methodFn.apply(self2, args);
     return needsWrap ? toReactive(result2) : result2;
   }
-  let wrappedFn = fn2;
+  let wrappedFn = fn;
   if (arr !== self2) {
     if (needsWrap) {
       wrappedFn = function(item, index) {
-        return fn2.call(this, toReactive(item), index, self2);
+        return fn.call(this, toReactive(item), index, self2);
       };
-    } else if (fn2.length > 2) {
+    } else if (fn.length > 2) {
       wrappedFn = function(item, index) {
-        return fn2.call(this, item, index, self2);
+        return fn.call(this, item, index, self2);
       };
     }
   }
   const result = methodFn.call(arr, wrappedFn, thisArg);
   return needsWrap && wrappedRetFn ? wrappedRetFn(result) : result;
 }
-function reduce(self2, method, fn2, args) {
+function reduce(self2, method, fn, args) {
   const arr = shallowReadArray(self2);
-  let wrappedFn = fn2;
+  let wrappedFn = fn;
   if (arr !== self2) {
     if (!isShallow(self2)) {
       wrappedFn = function(acc, item, index) {
-        return fn2.call(this, acc, toReactive(item), index, self2);
+        return fn.call(this, acc, toReactive(item), index, self2);
       };
-    } else if (fn2.length > 3) {
+    } else if (fn.length > 3) {
       wrappedFn = function(acc, item, index) {
-        return fn2.call(this, acc, item, index, self2);
+        return fn.call(this, acc, item, index, self2);
       };
     }
   }
@@ -1000,9 +1000,9 @@ class BaseReactiveHandler {
     }
     const targetIsArray = isArray(target);
     if (!isReadonly2) {
-      let fn2;
-      if (targetIsArray && (fn2 = arrayInstrumentations[key])) {
-        return fn2;
+      let fn;
+      if (targetIsArray && (fn = arrayInstrumentations[key])) {
+        return fn;
       }
       if (key === "hasOwnProperty") {
         return hasOwnProperty;
@@ -1441,8 +1441,8 @@ function proxyRefs(objectWithRefs) {
   return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
 }
 class ComputedRefImpl {
-  constructor(fn2, setter, isSSR) {
-    this.fn = fn2;
+  constructor(fn, setter, isSSR) {
+    this.fn = fn;
     this.setter = setter;
     this._value = void 0;
     this.dep = new Dep(this);
@@ -1503,7 +1503,7 @@ function onWatcherCleanup(cleanupFn, failSilently = false, owner = activeWatcher
     cleanups.push(cleanupFn);
   }
 }
-function watch$1(source, cb2, options = EMPTY_OBJ) {
+function watch$1(source, cb, options = EMPTY_OBJ) {
   const { immediate, deep, once, scheduler, augmentJob, call } = options;
   const reactiveGetter = (source2) => {
     if (deep) return source2;
@@ -1536,7 +1536,7 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
       } else ;
     });
   } else if (isFunction(source)) {
-    if (cb2) {
+    if (cb) {
       getter = call ? () => call(source, 2) : source;
     } else {
       getter = () => {
@@ -1560,7 +1560,7 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
   } else {
     getter = NOOP;
   }
-  if (cb2 && deep) {
+  if (cb && deep) {
     const baseGetter = getter;
     const depth = deep === true ? Infinity : deep;
     getter = () => traverse(baseGetter(), depth);
@@ -1572,9 +1572,9 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
       remove(scope.effects, effect2);
     }
   };
-  if (once && cb2) {
-    const _cb = cb2;
-    cb2 = (...args) => {
+  if (once && cb) {
+    const _cb = cb;
+    cb = (...args) => {
       _cb(...args);
       watchHandle();
     };
@@ -1584,7 +1584,7 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
     if (!(effect2.flags & 1) || !effect2.dirty && !immediateFirstRun) {
       return;
     }
-    if (cb2) {
+    if (cb) {
       const newValue = effect2.run();
       if (deep || forceTrigger || (isMultiSource ? newValue.some((v, i) => hasChanged(v, oldValue[i])) : hasChanged(newValue, oldValue))) {
         if (cleanup) {
@@ -1599,9 +1599,9 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
             oldValue === INITIAL_WATCHER_VALUE ? void 0 : isMultiSource && oldValue[0] === INITIAL_WATCHER_VALUE ? [] : oldValue,
             boundCleanup
           ];
-          call ? call(cb2, 3, args) : (
+          call ? call(cb, 3, args) : (
             // @ts-expect-error
-            cb2(...args)
+            cb(...args)
           );
           oldValue = newValue;
         } finally {
@@ -1617,7 +1617,7 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
   }
   effect2 = new ReactiveEffect(getter);
   effect2.scheduler = scheduler ? () => scheduler(job, false) : job;
-  boundCleanup = (fn2) => onWatcherCleanup(fn2, false, effect2);
+  boundCleanup = (fn) => onWatcherCleanup(fn, false, effect2);
   cleanup = effect2.onStop = () => {
     const cleanups = cleanupMap.get(effect2);
     if (cleanups) {
@@ -1629,7 +1629,7 @@ function watch$1(source, cb2, options = EMPTY_OBJ) {
       cleanupMap.delete(effect2);
     }
   };
-  if (cb2) {
+  if (cb) {
     if (immediate) {
       job(true);
     } else {
@@ -1788,16 +1788,16 @@ function formatProp(key, value, raw) {
     return raw ? value : [`${key}=`, value];
   }
 }
-function callWithErrorHandling(fn2, instance, type, args) {
+function callWithErrorHandling(fn, instance, type, args) {
   try {
-    return args ? fn2(...args) : fn2();
+    return args ? fn(...args) : fn();
   } catch (err) {
     handleError(err, instance, type);
   }
 }
-function callWithAsyncErrorHandling(fn2, instance, type, args) {
-  if (isFunction(fn2)) {
-    const res = callWithErrorHandling(fn2, instance, type, args);
+function callWithAsyncErrorHandling(fn, instance, type, args) {
+  if (isFunction(fn)) {
+    const res = callWithErrorHandling(fn, instance, type, args);
     if (res && isPromise(res)) {
       res.catch((err) => {
         handleError(err, instance, type);
@@ -1805,10 +1805,10 @@ function callWithAsyncErrorHandling(fn2, instance, type, args) {
     }
     return res;
   }
-  if (isArray(fn2)) {
+  if (isArray(fn)) {
     const values = [];
-    for (let i = 0; i < fn2.length; i++) {
-      values.push(callWithAsyncErrorHandling(fn2[i], instance, type, args));
+    for (let i = 0; i < fn.length; i++) {
+      values.push(callWithAsyncErrorHandling(fn[i], instance, type, args));
     }
     return values;
   }
@@ -1858,18 +1858,18 @@ let activePostFlushCbs = null;
 let postFlushIndex = 0;
 const resolvedPromise = /* @__PURE__ */ Promise.resolve();
 let currentFlushPromise = null;
-function nextTick(fn2) {
+function nextTick(fn) {
   const p2 = currentFlushPromise || resolvedPromise;
-  return fn2 ? p2.then(this ? fn2.bind(this) : fn2) : p2;
+  return fn ? p2.then(this ? fn.bind(this) : fn) : p2;
 }
-function findInsertionIndex(id2) {
+function findInsertionIndex(id) {
   let start = flushIndex + 1;
   let end = queue.length;
   while (start < end) {
     const middle = start + end >>> 1;
     const middleJob = queue[middle];
     const middleJobId = getId(middleJob);
-    if (middleJobId < id2 || middleJobId === id2 && middleJob.flags & 2) {
+    if (middleJobId < id || middleJobId === id && middleJob.flags & 2) {
       start = middle + 1;
     } else {
       end = middle;
@@ -1896,34 +1896,34 @@ function queueFlush() {
     currentFlushPromise = resolvedPromise.then(flushJobs);
   }
 }
-function queuePostFlushCb(cb2) {
-  if (!isArray(cb2)) {
-    if (activePostFlushCbs && cb2.id === -1) {
-      activePostFlushCbs.splice(postFlushIndex + 1, 0, cb2);
-    } else if (!(cb2.flags & 1)) {
-      pendingPostFlushCbs.push(cb2);
-      cb2.flags |= 1;
+function queuePostFlushCb(cb) {
+  if (!isArray(cb)) {
+    if (activePostFlushCbs && cb.id === -1) {
+      activePostFlushCbs.splice(postFlushIndex + 1, 0, cb);
+    } else if (!(cb.flags & 1)) {
+      pendingPostFlushCbs.push(cb);
+      cb.flags |= 1;
     }
   } else {
-    pendingPostFlushCbs.push(...cb2);
+    pendingPostFlushCbs.push(...cb);
   }
   queueFlush();
 }
 function flushPreFlushCbs(instance, seen, i = flushIndex + 1) {
   for (; i < queue.length; i++) {
-    const cb2 = queue[i];
-    if (cb2 && cb2.flags & 2) {
-      if (instance && cb2.id !== instance.uid) {
+    const cb = queue[i];
+    if (cb && cb.flags & 2) {
+      if (instance && cb.id !== instance.uid) {
         continue;
       }
       queue.splice(i, 1);
       i--;
-      if (cb2.flags & 4) {
-        cb2.flags &= -2;
+      if (cb.flags & 4) {
+        cb.flags &= -2;
       }
-      cb2();
-      if (!(cb2.flags & 4)) {
-        cb2.flags &= -2;
+      cb();
+      if (!(cb.flags & 4)) {
+        cb.flags &= -2;
       }
     }
   }
@@ -1940,12 +1940,12 @@ function flushPostFlushCbs(seen) {
     }
     activePostFlushCbs = deduped;
     for (postFlushIndex = 0; postFlushIndex < activePostFlushCbs.length; postFlushIndex++) {
-      const cb2 = activePostFlushCbs[postFlushIndex];
-      if (cb2.flags & 4) {
-        cb2.flags &= -2;
+      const cb = activePostFlushCbs[postFlushIndex];
+      if (cb.flags & 4) {
+        cb.flags &= -2;
       }
-      if (!(cb2.flags & 8)) cb2();
-      cb2.flags &= -2;
+      if (!(cb.flags & 8)) cb();
+      cb.flags &= -2;
     }
     activePostFlushCbs = null;
     postFlushIndex = 0;
@@ -1995,10 +1995,10 @@ function setCurrentRenderingInstance(instance) {
   currentScopeId = instance && instance.type.__scopeId || null;
   return prev;
 }
-function withCtx(fn2, ctx = currentRenderingInstance, isNonScopedSlot) {
-  if (!ctx) return fn2;
-  if (fn2._n) {
-    return fn2;
+function withCtx(fn, ctx = currentRenderingInstance, isNonScopedSlot) {
+  if (!ctx) return fn;
+  if (fn._n) {
+    return fn;
   }
   const renderFnWithContext = (...args) => {
     if (renderFnWithContext._d) {
@@ -2007,7 +2007,7 @@ function withCtx(fn2, ctx = currentRenderingInstance, isNonScopedSlot) {
     const prevInstance = setCurrentRenderingInstance(ctx);
     let res;
     try {
-      res = fn2(...args);
+      res = fn(...args);
     } finally {
       setCurrentRenderingInstance(prevInstance);
       if (renderFnWithContext._d) {
@@ -2172,8 +2172,8 @@ function setRef(rawRef, oldRawRef, parentSuspense, vnode, isUnmount = false) {
     }
   }
 }
-getGlobalThis().requestIdleCallback || ((cb2) => setTimeout(cb2, 1));
-getGlobalThis().cancelIdleCallback || ((id2) => clearTimeout(id2));
+getGlobalThis().requestIdleCallback || ((cb) => setTimeout(cb, 1));
+getGlobalThis().cancelIdleCallback || ((id) => clearTimeout(id));
 const isAsyncWrapper = (i) => !!i.type.__asyncLoader;
 const isKeepAlive = (vnode) => vnode.type.__isKeepAlive;
 function onActivated(hook, target) {
@@ -2259,6 +2259,50 @@ function onErrorCaptured(hook, target = currentInstance) {
   injectHook("ec", hook, target);
 }
 const NULL_DYNAMIC_COMPONENT = Symbol.for("v-ndc");
+function renderList(source, renderItem, cache, index) {
+  let ret;
+  const cached = cache;
+  const sourceIsArray = isArray(source);
+  if (sourceIsArray || isString(source)) {
+    const sourceIsReactiveArray = sourceIsArray && isReactive(source);
+    let needsWrap = false;
+    if (sourceIsReactiveArray) {
+      needsWrap = !isShallow(source);
+      source = shallowReadArray(source);
+    }
+    ret = new Array(source.length);
+    for (let i = 0, l = source.length; i < l; i++) {
+      ret[i] = renderItem(
+        needsWrap ? toReactive(source[i]) : source[i],
+        i,
+        void 0,
+        cached
+      );
+    }
+  } else if (typeof source === "number") {
+    ret = new Array(source);
+    for (let i = 0; i < source; i++) {
+      ret[i] = renderItem(i + 1, i, void 0, cached);
+    }
+  } else if (isObject(source)) {
+    if (source[Symbol.iterator]) {
+      ret = Array.from(
+        source,
+        (item, i) => renderItem(item, i, void 0, cached)
+      );
+    } else {
+      const keys = Object.keys(source);
+      ret = new Array(keys.length);
+      for (let i = 0, l = keys.length; i < l; i++) {
+        const key = keys[i];
+        ret[i] = renderItem(source[key], key, i, cached);
+      }
+    }
+  } else {
+    ret = [];
+  }
+  return ret;
+}
 const getPublicInstance = (i) => {
   if (!i) return null;
   if (isStatefulComponent(i)) return getComponentPublicInstance(i);
@@ -2625,24 +2669,24 @@ function resolveMergedOptions(instance) {
   }
   return resolved;
 }
-function mergeOptions(to2, from, strats, asMixin = false) {
+function mergeOptions(to, from, strats, asMixin = false) {
   const { mixins, extends: extendsOptions } = from;
   if (extendsOptions) {
-    mergeOptions(to2, extendsOptions, strats, true);
+    mergeOptions(to, extendsOptions, strats, true);
   }
   if (mixins) {
     mixins.forEach(
-      (m) => mergeOptions(to2, m, strats, true)
+      (m) => mergeOptions(to, m, strats, true)
     );
   }
   for (const key in from) {
     if (asMixin && key === "expose") ;
     else {
       const strat = internalOptionMergeStrats[key] || strats && strats[key];
-      to2[key] = strat ? strat(to2[key], from[key]) : from[key];
+      to[key] = strat ? strat(to[key], from[key]) : from[key];
     }
   }
-  return to2;
+  return to;
 }
 const internalOptionMergeStrats = {
   data: mergeDataFn,
@@ -2675,22 +2719,22 @@ const internalOptionMergeStrats = {
   provide: mergeDataFn,
   inject: mergeInject
 };
-function mergeDataFn(to2, from) {
+function mergeDataFn(to, from) {
   if (!from) {
-    return to2;
+    return to;
   }
-  if (!to2) {
+  if (!to) {
     return from;
   }
   return function mergedDataFn() {
     return extend(
-      isFunction(to2) ? to2.call(this, this) : to2,
+      isFunction(to) ? to.call(this, this) : to,
       isFunction(from) ? from.call(this, this) : from
     );
   };
 }
-function mergeInject(to2, from) {
-  return mergeObjectOptions(normalizeInject(to2), normalizeInject(from));
+function mergeInject(to, from) {
+  return mergeObjectOptions(normalizeInject(to), normalizeInject(from));
 }
 function normalizeInject(raw) {
   if (isArray(raw)) {
@@ -2702,32 +2746,32 @@ function normalizeInject(raw) {
   }
   return raw;
 }
-function mergeAsArray(to2, from) {
-  return to2 ? [...new Set([].concat(to2, from))] : from;
+function mergeAsArray(to, from) {
+  return to ? [...new Set([].concat(to, from))] : from;
 }
-function mergeObjectOptions(to2, from) {
-  return to2 ? extend(/* @__PURE__ */ Object.create(null), to2, from) : from;
+function mergeObjectOptions(to, from) {
+  return to ? extend(/* @__PURE__ */ Object.create(null), to, from) : from;
 }
-function mergeEmitsOrPropsOptions(to2, from) {
-  if (to2) {
-    if (isArray(to2) && isArray(from)) {
-      return [.../* @__PURE__ */ new Set([...to2, ...from])];
+function mergeEmitsOrPropsOptions(to, from) {
+  if (to) {
+    if (isArray(to) && isArray(from)) {
+      return [.../* @__PURE__ */ new Set([...to, ...from])];
     }
     return extend(
       /* @__PURE__ */ Object.create(null),
-      normalizePropsOrEmits(to2),
+      normalizePropsOrEmits(to),
       normalizePropsOrEmits(from != null ? from : {})
     );
   } else {
     return from;
   }
 }
-function mergeWatchOptions(to2, from) {
-  if (!to2) return from;
-  if (!from) return to2;
-  const merged = extend(/* @__PURE__ */ Object.create(null), to2);
+function mergeWatchOptions(to, from) {
+  if (!to) return from;
+  if (!from) return to;
+  const merged = extend(/* @__PURE__ */ Object.create(null), to);
   for (const key in from) {
-    merged[key] = mergeAsArray(to2[key], from[key]);
+    merged[key] = mergeAsArray(to[key], from[key]);
   }
   return merged;
 }
@@ -2847,11 +2891,11 @@ function createAppAPI(render, hydrate) {
         context.provides[key] = value;
         return app;
       },
-      runWithContext(fn2) {
+      runWithContext(fn) {
         const lastApp = currentApp;
         currentApp = app;
         try {
-          return fn2();
+          return fn();
         } finally {
           currentApp = lastApp;
         }
@@ -3376,9 +3420,9 @@ function baseCreateRenderer(options, createHydrationFns) {
         anchor
       );
     } else {
-      const el2 = n2.el = n1.el;
+      const el = n2.el = n1.el;
       if (n2.children !== n1.children) {
-        hostSetText(el2, n2.children);
+        hostSetText(el, n2.children);
       }
     }
   };
@@ -3403,21 +3447,21 @@ function baseCreateRenderer(options, createHydrationFns) {
       n2.anchor
     );
   };
-  const moveStaticNode = ({ el: el2, anchor }, container, nextSibling) => {
+  const moveStaticNode = ({ el, anchor }, container, nextSibling) => {
     let next;
-    while (el2 && el2 !== anchor) {
-      next = hostNextSibling(el2);
-      hostInsert(el2, container, nextSibling);
-      el2 = next;
+    while (el && el !== anchor) {
+      next = hostNextSibling(el);
+      hostInsert(el, container, nextSibling);
+      el = next;
     }
     hostInsert(anchor, container, nextSibling);
   };
-  const removeStaticNode = ({ el: el2, anchor }) => {
+  const removeStaticNode = ({ el, anchor }) => {
     let next;
-    while (el2 && el2 !== anchor) {
-      next = hostNextSibling(el2);
-      hostRemove(el2);
-      el2 = next;
+    while (el && el !== anchor) {
+      next = hostNextSibling(el);
+      hostRemove(el);
+      el = next;
     }
     hostRemove(anchor);
   };
@@ -3451,21 +3495,21 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
   };
   const mountElement = (vnode, container, anchor, parentComponent, parentSuspense, namespace, slotScopeIds, optimized) => {
-    let el2;
+    let el;
     let vnodeHook;
     const { props, shapeFlag, transition, dirs } = vnode;
-    el2 = vnode.el = hostCreateElement(
+    el = vnode.el = hostCreateElement(
       vnode.type,
       namespace,
       props && props.is,
       props
     );
     if (shapeFlag & 8) {
-      hostSetElementText(el2, vnode.children);
+      hostSetElementText(el, vnode.children);
     } else if (shapeFlag & 16) {
       mountChildren(
         vnode.children,
-        el2,
+        el,
         null,
         parentComponent,
         parentSuspense,
@@ -3477,15 +3521,15 @@ function baseCreateRenderer(options, createHydrationFns) {
     if (dirs) {
       invokeDirectiveHook(vnode, null, parentComponent, "created");
     }
-    setScopeId(el2, vnode, vnode.scopeId, slotScopeIds, parentComponent);
+    setScopeId(el, vnode, vnode.scopeId, slotScopeIds, parentComponent);
     if (props) {
       for (const key in props) {
         if (key !== "value" && !isReservedProp(key)) {
-          hostPatchProp(el2, key, null, props[key], namespace, parentComponent);
+          hostPatchProp(el, key, null, props[key], namespace, parentComponent);
         }
       }
       if ("value" in props) {
-        hostPatchProp(el2, "value", null, props.value, namespace);
+        hostPatchProp(el, "value", null, props.value, namespace);
       }
       if (vnodeHook = props.onVnodeBeforeMount) {
         invokeVNodeHook(vnodeHook, parentComponent, vnode);
@@ -3496,24 +3540,24 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
     const needCallTransitionHooks = needTransition(parentSuspense, transition);
     if (needCallTransitionHooks) {
-      transition.beforeEnter(el2);
+      transition.beforeEnter(el);
     }
-    hostInsert(el2, container, anchor);
+    hostInsert(el, container, anchor);
     if ((vnodeHook = props && props.onVnodeMounted) || needCallTransitionHooks || dirs) {
       queuePostRenderEffect(() => {
         vnodeHook && invokeVNodeHook(vnodeHook, parentComponent, vnode);
-        needCallTransitionHooks && transition.enter(el2);
+        needCallTransitionHooks && transition.enter(el);
         dirs && invokeDirectiveHook(vnode, null, parentComponent, "mounted");
       }, parentSuspense);
     }
   };
-  const setScopeId = (el2, vnode, scopeId, slotScopeIds, parentComponent) => {
+  const setScopeId = (el, vnode, scopeId, slotScopeIds, parentComponent) => {
     if (scopeId) {
-      hostSetScopeId(el2, scopeId);
+      hostSetScopeId(el, scopeId);
     }
     if (slotScopeIds) {
       for (let i = 0; i < slotScopeIds.length; i++) {
-        hostSetScopeId(el2, slotScopeIds[i]);
+        hostSetScopeId(el, slotScopeIds[i]);
       }
     }
     if (parentComponent) {
@@ -3521,7 +3565,7 @@ function baseCreateRenderer(options, createHydrationFns) {
       if (vnode === subTree || isSuspense(subTree.type) && (subTree.ssContent === vnode || subTree.ssFallback === vnode)) {
         const parentVNode = parentComponent.vnode;
         setScopeId(
-          el2,
+          el,
           parentVNode,
           parentVNode.scopeId,
           parentVNode.slotScopeIds,
@@ -3547,7 +3591,7 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
   };
   const patchElement = (n1, n2, parentComponent, parentSuspense, namespace, slotScopeIds, optimized) => {
-    const el2 = n2.el = n1.el;
+    const el = n2.el = n1.el;
     let { patchFlag, dynamicChildren, dirs } = n2;
     patchFlag |= n1.patchFlag & 16;
     const oldProps = n1.props || EMPTY_OBJ;
@@ -3562,13 +3606,13 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
     parentComponent && toggleRecurse(parentComponent, true);
     if (oldProps.innerHTML && newProps.innerHTML == null || oldProps.textContent && newProps.textContent == null) {
-      hostSetElementText(el2, "");
+      hostSetElementText(el, "");
     }
     if (dynamicChildren) {
       patchBlockChildren(
         n1.dynamicChildren,
         dynamicChildren,
-        el2,
+        el,
         parentComponent,
         parentSuspense,
         resolveChildrenNamespace(n2, namespace),
@@ -3578,7 +3622,7 @@ function baseCreateRenderer(options, createHydrationFns) {
       patchChildren(
         n1,
         n2,
-        el2,
+        el,
         null,
         parentComponent,
         parentSuspense,
@@ -3589,15 +3633,15 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
     if (patchFlag > 0) {
       if (patchFlag & 16) {
-        patchProps(el2, oldProps, newProps, parentComponent, namespace);
+        patchProps(el, oldProps, newProps, parentComponent, namespace);
       } else {
         if (patchFlag & 2) {
           if (oldProps.class !== newProps.class) {
-            hostPatchProp(el2, "class", null, newProps.class, namespace);
+            hostPatchProp(el, "class", null, newProps.class, namespace);
           }
         }
         if (patchFlag & 4) {
-          hostPatchProp(el2, "style", oldProps.style, newProps.style, namespace);
+          hostPatchProp(el, "style", oldProps.style, newProps.style, namespace);
         }
         if (patchFlag & 8) {
           const propsToUpdate = n2.dynamicProps;
@@ -3606,18 +3650,18 @@ function baseCreateRenderer(options, createHydrationFns) {
             const prev = oldProps[key];
             const next = newProps[key];
             if (next !== prev || key === "value") {
-              hostPatchProp(el2, key, prev, next, namespace, parentComponent);
+              hostPatchProp(el, key, prev, next, namespace, parentComponent);
             }
           }
         }
       }
       if (patchFlag & 1) {
         if (n1.children !== n2.children) {
-          hostSetElementText(el2, n2.children);
+          hostSetElementText(el, n2.children);
         }
       }
     } else if (!optimized && dynamicChildren == null) {
-      patchProps(el2, oldProps, newProps, parentComponent, namespace);
+      patchProps(el, oldProps, newProps, parentComponent, namespace);
     }
     if ((vnodeHook = newProps.onVnodeUpdated) || dirs) {
       queuePostRenderEffect(() => {
@@ -3657,13 +3701,13 @@ function baseCreateRenderer(options, createHydrationFns) {
       );
     }
   };
-  const patchProps = (el2, oldProps, newProps, parentComponent, namespace) => {
+  const patchProps = (el, oldProps, newProps, parentComponent, namespace) => {
     if (oldProps !== newProps) {
       if (oldProps !== EMPTY_OBJ) {
         for (const key in oldProps) {
           if (!isReservedProp(key) && !(key in newProps)) {
             hostPatchProp(
-              el2,
+              el,
               key,
               oldProps[key],
               null,
@@ -3678,11 +3722,11 @@ function baseCreateRenderer(options, createHydrationFns) {
         const next = newProps[key];
         const prev = oldProps[key];
         if (next !== prev && key !== "value") {
-          hostPatchProp(el2, key, prev, next, namespace, parentComponent);
+          hostPatchProp(el, key, prev, next, namespace, parentComponent);
         }
       }
       if ("value" in newProps) {
-        hostPatchProp(el2, "value", oldProps.value, newProps.value, namespace);
+        hostPatchProp(el, "value", oldProps.value, newProps.value, namespace);
       }
     }
   };
@@ -3827,12 +3871,12 @@ function baseCreateRenderer(options, createHydrationFns) {
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
         let vnodeHook;
-        const { el: el2, props } = initialVNode;
-        const { bm: bm2, m, parent, root, type } = instance;
+        const { el, props } = initialVNode;
+        const { bm, m, parent, root, type } = instance;
         const isAsyncWrapperVNode = isAsyncWrapper(initialVNode);
         toggleRecurse(instance, false);
-        if (bm2) {
-          invokeArrayFns(bm2);
+        if (bm) {
+          invokeArrayFns(bm);
         }
         if (!isAsyncWrapperVNode && (vnodeHook = props && props.onVnodeBeforeMount)) {
           invokeVNodeHook(vnodeHook, parent, initialVNode);
@@ -3870,7 +3914,7 @@ function baseCreateRenderer(options, createHydrationFns) {
         instance.isMounted = true;
         initialVNode = container = anchor = null;
       } else {
-        let { next, bu: bu2, u, parent, vnode } = instance;
+        let { next, bu, u, parent, vnode } = instance;
         {
           const nonHydratedAsyncRoot = locateNonHydratedAsyncRoot(instance);
           if (nonHydratedAsyncRoot) {
@@ -3895,8 +3939,8 @@ function baseCreateRenderer(options, createHydrationFns) {
         } else {
           next = vnode;
         }
-        if (bu2) {
-          invokeArrayFns(bu2);
+        if (bu) {
+          invokeArrayFns(bu);
         }
         if (vnodeHook = next.props && next.props.onVnodeBeforeUpdate) {
           invokeVNodeHook(vnodeHook, parent, next, vnode);
@@ -4230,7 +4274,7 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
   };
   const move = (vnode, container, anchor, moveType, parentSuspense = null) => {
-    const { el: el2, type, transition, children, shapeFlag } = vnode;
+    const { el, type, transition, children, shapeFlag } = vnode;
     if (shapeFlag & 6) {
       move(vnode.component.subTree, container, anchor, moveType);
       return;
@@ -4244,7 +4288,7 @@ function baseCreateRenderer(options, createHydrationFns) {
       return;
     }
     if (type === Fragment) {
-      hostInsert(el2, container, anchor);
+      hostInsert(el, container, anchor);
       for (let i = 0; i < children.length; i++) {
         move(children[i], container, anchor, moveType);
       }
@@ -4258,26 +4302,26 @@ function baseCreateRenderer(options, createHydrationFns) {
     const needTransition2 = moveType !== 2 && shapeFlag & 1 && transition;
     if (needTransition2) {
       if (moveType === 0) {
-        transition.beforeEnter(el2);
-        hostInsert(el2, container, anchor);
-        queuePostRenderEffect(() => transition.enter(el2), parentSuspense);
+        transition.beforeEnter(el);
+        hostInsert(el, container, anchor);
+        queuePostRenderEffect(() => transition.enter(el), parentSuspense);
       } else {
         const { leave, delayLeave, afterLeave } = transition;
-        const remove22 = () => hostInsert(el2, container, anchor);
+        const remove22 = () => hostInsert(el, container, anchor);
         const performLeave = () => {
-          leave(el2, () => {
+          leave(el, () => {
             remove22();
             afterLeave && afterLeave();
           });
         };
         if (delayLeave) {
-          delayLeave(el2, remove22, performLeave);
+          delayLeave(el, remove22, performLeave);
         } else {
           performLeave();
         }
       }
     } else {
-      hostInsert(el2, container, anchor);
+      hostInsert(el, container, anchor);
     }
   };
   const unmount = (vnode, parentComponent, parentSuspense, doRemove = false, optimized = false) => {
@@ -4358,10 +4402,10 @@ function baseCreateRenderer(options, createHydrationFns) {
     }
   };
   const remove2 = (vnode) => {
-    const { type, el: el2, anchor, transition } = vnode;
+    const { type, el, anchor, transition } = vnode;
     if (type === Fragment) {
       {
-        removeFragment(el2, anchor);
+        removeFragment(el, anchor);
       }
       return;
     }
@@ -4370,14 +4414,14 @@ function baseCreateRenderer(options, createHydrationFns) {
       return;
     }
     const performRemove = () => {
-      hostRemove(el2);
+      hostRemove(el);
       if (transition && !transition.persisted && transition.afterLeave) {
         transition.afterLeave();
       }
     };
     if (vnode.shapeFlag & 1 && transition && !transition.persisted) {
       const { leave, delayLeave } = transition;
-      const performLeave = () => leave(el2, performRemove);
+      const performLeave = () => leave(el, performRemove);
       if (delayLeave) {
         delayLeave(vnode.el, performRemove, performLeave);
       } else {
@@ -4397,7 +4441,7 @@ function baseCreateRenderer(options, createHydrationFns) {
     hostRemove(end);
   };
   const unmountComponent = (instance, parentSuspense, doRemove) => {
-    const { bum, scope, job, subTree, um: um2, m, a } = instance;
+    const { bum, scope, job, subTree, um, m, a } = instance;
     invalidateMount(m);
     invalidateMount(a);
     if (bum) {
@@ -4408,8 +4452,8 @@ function baseCreateRenderer(options, createHydrationFns) {
       job.flags |= 8;
       unmount(subTree, instance, parentSuspense, doRemove);
     }
-    if (um2) {
-      queuePostRenderEffect(um2, parentSuspense);
+    if (um) {
+      queuePostRenderEffect(um, parentSuspense);
     }
     queuePostRenderEffect(() => {
       instance.isUnmounted = true;
@@ -4433,9 +4477,9 @@ function baseCreateRenderer(options, createHydrationFns) {
     if (vnode.shapeFlag & 128) {
       return vnode.suspense.next();
     }
-    const el2 = hostNextSibling(vnode.anchor || vnode.el);
-    const teleportEnd = el2 && el2[TeleportEndKey];
-    return teleportEnd ? hostNextSibling(teleportEnd) : el2;
+    const el = hostNextSibling(vnode.anchor || vnode.el);
+    const teleportEnd = el && el[TeleportEndKey];
+    return teleportEnd ? hostNextSibling(teleportEnd) : el;
   };
   let isFlushing = false;
   const render = (vnode, container, namespace) => {
@@ -4580,13 +4624,13 @@ const useSSRContext = () => {
     return ctx;
   }
 };
-function watch(source, cb2, options) {
-  return doWatch(source, cb2, options);
+function watch(source, cb, options) {
+  return doWatch(source, cb, options);
 }
-function doWatch(source, cb2, options = EMPTY_OBJ) {
+function doWatch(source, cb, options = EMPTY_OBJ) {
   const { immediate, deep, flush, once } = options;
   const baseWatchOptions = extend({}, options);
-  const runsImmediately = cb2 && immediate || !cb2 && flush !== "post";
+  const runsImmediately = cb && immediate || !cb && flush !== "post";
   let ssrCleanup;
   if (isInSSRComponentSetup) {
     if (flush === "sync") {
@@ -4602,7 +4646,7 @@ function doWatch(source, cb2, options = EMPTY_OBJ) {
     }
   }
   const instance = currentInstance;
-  baseWatchOptions.call = (fn2, type, args) => callWithAsyncErrorHandling(fn2, instance, type, args);
+  baseWatchOptions.call = (fn, type, args) => callWithAsyncErrorHandling(fn, instance, type, args);
   let isPre = false;
   if (flush === "post") {
     baseWatchOptions.scheduler = (job) => {
@@ -4619,7 +4663,7 @@ function doWatch(source, cb2, options = EMPTY_OBJ) {
     };
   }
   baseWatchOptions.augmentJob = (job) => {
-    if (cb2) {
+    if (cb) {
       job.flags |= 4;
     }
     if (isPre) {
@@ -4630,7 +4674,7 @@ function doWatch(source, cb2, options = EMPTY_OBJ) {
       }
     }
   };
-  const watchHandle = watch$1(source, cb2, baseWatchOptions);
+  const watchHandle = watch$1(source, cb, baseWatchOptions);
   if (isInSSRComponentSetup) {
     if (ssrCleanup) {
       ssrCleanup.push(watchHandle);
@@ -4643,15 +4687,15 @@ function doWatch(source, cb2, options = EMPTY_OBJ) {
 function instanceWatch(source, value, options) {
   const publicThis = this.proxy;
   const getter = isString(source) ? source.includes(".") ? createPathGetter(publicThis, source) : () => publicThis[source] : source.bind(publicThis, publicThis);
-  let cb2;
+  let cb;
   if (isFunction(value)) {
-    cb2 = value;
+    cb = value;
   } else {
-    cb2 = value.handler;
+    cb = value.handler;
     options = value;
   }
   const reset = setCurrentInstance(this);
-  const res = doWatch(getter, cb2.bind(publicThis), options);
+  const res = doWatch(getter, cb.bind(publicThis), options);
   reset();
   return res;
 }
@@ -4940,14 +4984,14 @@ function hasPropsChanged(prevProps, nextProps, emitsOptions) {
   }
   return false;
 }
-function updateHOCHostEl({ vnode, parent }, el2) {
+function updateHOCHostEl({ vnode, parent }, el) {
   while (parent) {
     const root = parent.subTree;
     if (root.suspense && root.suspense.activeBranch === vnode) {
       root.el = vnode.el;
     }
     if (root === vnode) {
-      (vnode = parent.vnode).el = el2;
+      (vnode = parent.vnode).el = el;
       parent = parent.parent;
     } else {
       break;
@@ -4955,15 +4999,15 @@ function updateHOCHostEl({ vnode, parent }, el2) {
   }
 }
 const isSuspense = (type) => type.__isSuspense;
-function queueEffectWithSuspense(fn2, suspense) {
+function queueEffectWithSuspense(fn, suspense) {
   if (suspense && suspense.pendingBranch) {
-    if (isArray(fn2)) {
-      suspense.effects.push(...fn2);
+    if (isArray(fn)) {
+      suspense.effects.push(...fn);
     } else {
-      suspense.effects.push(fn2);
+      suspense.effects.push(fn);
     }
   } else {
-    queuePostFlushCb(fn2);
+    queuePostFlushCb(fn);
   }
 }
 const Fragment = Symbol.for("v-fgt");
@@ -5572,10 +5616,10 @@ const version = "3.5.13";
 * @license MIT
 **/
 let policy = void 0;
-const tt$5 = typeof window !== "undefined" && window.trustedTypes;
-if (tt$5) {
+const tt = typeof window !== "undefined" && window.trustedTypes;
+if (tt) {
   try {
-    policy = /* @__PURE__ */ tt$5.createPolicy("vue", {
+    policy = /* @__PURE__ */ tt.createPolicy("vue", {
       createHTML: (val) => val
     });
   } catch (e) {
@@ -5596,26 +5640,26 @@ const nodeOps = {
       parent.removeChild(child);
     }
   },
-  createElement: (tag, namespace, is2, props) => {
-    const el2 = namespace === "svg" ? doc.createElementNS(svgNS, tag) : namespace === "mathml" ? doc.createElementNS(mathmlNS, tag) : is2 ? doc.createElement(tag, { is: is2 }) : doc.createElement(tag);
+  createElement: (tag, namespace, is, props) => {
+    const el = namespace === "svg" ? doc.createElementNS(svgNS, tag) : namespace === "mathml" ? doc.createElementNS(mathmlNS, tag) : is ? doc.createElement(tag, { is }) : doc.createElement(tag);
     if (tag === "select" && props && props.multiple != null) {
-      el2.setAttribute("multiple", props.multiple);
+      el.setAttribute("multiple", props.multiple);
     }
-    return el2;
+    return el;
   },
   createText: (text) => doc.createTextNode(text),
   createComment: (text) => doc.createComment(text),
   setText: (node, text) => {
     node.nodeValue = text;
   },
-  setElementText: (el2, text) => {
-    el2.textContent = text;
+  setElementText: (el, text) => {
+    el.textContent = text;
   },
   parentNode: (node) => node.parentNode,
   nextSibling: (node) => node.nextSibling,
   querySelector: (selector) => doc.querySelector(selector),
-  setScopeId(el2, id2) {
-    el2.setAttribute(id2, "");
+  setScopeId(el, id) {
+    el.setAttribute(id, "");
   },
   // __UNSAFE__
   // Reason: innerHTML.
@@ -5651,25 +5695,25 @@ const nodeOps = {
   }
 };
 const vtcKey = Symbol("_vtc");
-function patchClass(el2, value, isSVG) {
-  const transitionClasses = el2[vtcKey];
+function patchClass(el, value, isSVG) {
+  const transitionClasses = el[vtcKey];
   if (transitionClasses) {
     value = (value ? [value, ...transitionClasses] : [...transitionClasses]).join(" ");
   }
   if (value == null) {
-    el2.removeAttribute("class");
+    el.removeAttribute("class");
   } else if (isSVG) {
-    el2.setAttribute("class", value);
+    el.setAttribute("class", value);
   } else {
-    el2.className = value;
+    el.className = value;
   }
 }
 const vShowOriginalDisplay = Symbol("_vod");
 const vShowHidden = Symbol("_vsh");
 const CSS_VAR_TEXT = Symbol("");
 const displayRE = /(^|;)\s*display\s*:/;
-function patchStyle(el2, prev, next) {
-  const style = el2.style;
+function patchStyle(el, prev, next) {
+  const style = el.style;
   const isCssString = isString(next);
   let hasControlledDisplay = false;
   if (next && !isCssString) {
@@ -5706,12 +5750,12 @@ function patchStyle(el2, prev, next) {
         hasControlledDisplay = displayRE.test(next);
       }
     } else if (prev) {
-      el2.removeAttribute("style");
+      el.removeAttribute("style");
     }
   }
-  if (vShowOriginalDisplay in el2) {
-    el2[vShowOriginalDisplay] = hasControlledDisplay ? style.display : "";
-    if (el2[vShowHidden]) {
+  if (vShowOriginalDisplay in el) {
+    el[vShowOriginalDisplay] = hasControlledDisplay ? style.display : "";
+    if (el[vShowHidden]) {
       style.display = "none";
     }
   }
@@ -5759,52 +5803,52 @@ function autoPrefix(style, rawName) {
   return rawName;
 }
 const xlinkNS = "http://www.w3.org/1999/xlink";
-function patchAttr(el2, key, value, isSVG, instance, isBoolean = isSpecialBooleanAttr(key)) {
+function patchAttr(el, key, value, isSVG, instance, isBoolean = isSpecialBooleanAttr(key)) {
   if (isSVG && key.startsWith("xlink:")) {
     if (value == null) {
-      el2.removeAttributeNS(xlinkNS, key.slice(6, key.length));
+      el.removeAttributeNS(xlinkNS, key.slice(6, key.length));
     } else {
-      el2.setAttributeNS(xlinkNS, key, value);
+      el.setAttributeNS(xlinkNS, key, value);
     }
   } else {
     if (value == null || isBoolean && !includeBooleanAttr(value)) {
-      el2.removeAttribute(key);
+      el.removeAttribute(key);
     } else {
-      el2.setAttribute(
+      el.setAttribute(
         key,
         isBoolean ? "" : isSymbol(value) ? String(value) : value
       );
     }
   }
 }
-function patchDOMProp(el2, key, value, parentComponent, attrName) {
+function patchDOMProp(el, key, value, parentComponent, attrName) {
   if (key === "innerHTML" || key === "textContent") {
     if (value != null) {
-      el2[key] = key === "innerHTML" ? unsafeToTrustedHTML(value) : value;
+      el[key] = key === "innerHTML" ? unsafeToTrustedHTML(value) : value;
     }
     return;
   }
-  const tag = el2.tagName;
+  const tag = el.tagName;
   if (key === "value" && tag !== "PROGRESS" && // custom elements may use _value internally
   !tag.includes("-")) {
-    const oldValue = tag === "OPTION" ? el2.getAttribute("value") || "" : el2.value;
+    const oldValue = tag === "OPTION" ? el.getAttribute("value") || "" : el.value;
     const newValue = value == null ? (
       // #11647: value should be set as empty string for null and undefined,
       // but <input type="checkbox"> should be set as 'on'.
-      el2.type === "checkbox" ? "on" : ""
+      el.type === "checkbox" ? "on" : ""
     ) : String(value);
-    if (oldValue !== newValue || !("_value" in el2)) {
-      el2.value = newValue;
+    if (oldValue !== newValue || !("_value" in el)) {
+      el.value = newValue;
     }
     if (value == null) {
-      el2.removeAttribute(key);
+      el.removeAttribute(key);
     }
-    el2._value = value;
+    el._value = value;
     return;
   }
   let needRemove = false;
   if (value === "" || value == null) {
-    const type = typeof el2[key];
+    const type = typeof el[key];
     if (type === "boolean") {
       value = includeBooleanAttr(value);
     } else if (value == null && type === "string") {
@@ -5816,20 +5860,20 @@ function patchDOMProp(el2, key, value, parentComponent, attrName) {
     }
   }
   try {
-    el2[key] = value;
+    el[key] = value;
   } catch (e) {
   }
-  needRemove && el2.removeAttribute(attrName || key);
+  needRemove && el.removeAttribute(attrName || key);
 }
-function addEventListener(el2, event, handler, options) {
-  el2.addEventListener(event, handler, options);
+function addEventListener(el, event, handler, options) {
+  el.addEventListener(event, handler, options);
 }
-function removeEventListener(el2, event, handler, options) {
-  el2.removeEventListener(event, handler, options);
+function removeEventListener(el, event, handler, options) {
+  el.removeEventListener(event, handler, options);
 }
 const veiKey = Symbol("_vei");
-function patchEvent(el2, rawName, prevValue, nextValue, instance = null) {
-  const invokers = el2[veiKey] || (el2[veiKey] = {});
+function patchEvent(el, rawName, prevValue, nextValue, instance = null) {
+  const invokers = el[veiKey] || (el[veiKey] = {});
   const existingInvoker = invokers[rawName];
   if (nextValue && existingInvoker) {
     existingInvoker.value = nextValue;
@@ -5840,9 +5884,9 @@ function patchEvent(el2, rawName, prevValue, nextValue, instance = null) {
         nextValue,
         instance
       );
-      addEventListener(el2, name, invoker, options);
+      addEventListener(el, name, invoker, options);
     } else if (existingInvoker) {
-      removeEventListener(el2, name, existingInvoker, options);
+      removeEventListener(el, name, existingInvoker, options);
       invokers[rawName] = void 0;
     }
   }
@@ -5890,7 +5934,7 @@ function patchStopImmediatePropagation(e, value) {
       e._stopped = true;
     };
     return value.map(
-      (fn2) => (e2) => !e2._stopped && fn2 && fn2(e2)
+      (fn) => (e2) => !e2._stopped && fn && fn(e2)
     );
   } else {
     return value;
@@ -5898,41 +5942,41 @@ function patchStopImmediatePropagation(e, value) {
 }
 const isNativeOn = (key) => key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && // lowercase letter
 key.charCodeAt(2) > 96 && key.charCodeAt(2) < 123;
-const patchProp = (el2, key, prevValue, nextValue, namespace, parentComponent) => {
+const patchProp = (el, key, prevValue, nextValue, namespace, parentComponent) => {
   const isSVG = namespace === "svg";
   if (key === "class") {
-    patchClass(el2, nextValue, isSVG);
+    patchClass(el, nextValue, isSVG);
   } else if (key === "style") {
-    patchStyle(el2, prevValue, nextValue);
+    patchStyle(el, prevValue, nextValue);
   } else if (isOn(key)) {
     if (!isModelListener(key)) {
-      patchEvent(el2, key, prevValue, nextValue, parentComponent);
+      patchEvent(el, key, prevValue, nextValue, parentComponent);
     }
-  } else if (key[0] === "." ? (key = key.slice(1), true) : key[0] === "^" ? (key = key.slice(1), false) : shouldSetAsProp(el2, key, nextValue, isSVG)) {
-    patchDOMProp(el2, key, nextValue);
-    if (!el2.tagName.includes("-") && (key === "value" || key === "checked" || key === "selected")) {
-      patchAttr(el2, key, nextValue, isSVG, parentComponent, key !== "value");
+  } else if (key[0] === "." ? (key = key.slice(1), true) : key[0] === "^" ? (key = key.slice(1), false) : shouldSetAsProp(el, key, nextValue, isSVG)) {
+    patchDOMProp(el, key, nextValue);
+    if (!el.tagName.includes("-") && (key === "value" || key === "checked" || key === "selected")) {
+      patchAttr(el, key, nextValue, isSVG, parentComponent, key !== "value");
     }
   } else if (
     // #11081 force set props for possible async custom element
-    el2._isVueCE && (/[A-Z]/.test(key) || !isString(nextValue))
+    el._isVueCE && (/[A-Z]/.test(key) || !isString(nextValue))
   ) {
-    patchDOMProp(el2, camelize(key), nextValue, parentComponent, key);
+    patchDOMProp(el, camelize(key), nextValue, parentComponent, key);
   } else {
     if (key === "true-value") {
-      el2._trueValue = nextValue;
+      el._trueValue = nextValue;
     } else if (key === "false-value") {
-      el2._falseValue = nextValue;
+      el._falseValue = nextValue;
     }
-    patchAttr(el2, key, nextValue, isSVG);
+    patchAttr(el, key, nextValue, isSVG);
   }
 };
-function shouldSetAsProp(el2, key, value, isSVG) {
+function shouldSetAsProp(el, key, value, isSVG) {
   if (isSVG) {
     if (key === "innerHTML" || key === "textContent") {
       return true;
     }
-    if (key in el2 && isNativeOn(key) && isFunction(value)) {
+    if (key in el && isNativeOn(key) && isFunction(value)) {
       return true;
     }
     return false;
@@ -5943,14 +5987,14 @@ function shouldSetAsProp(el2, key, value, isSVG) {
   if (key === "form") {
     return false;
   }
-  if (key === "list" && el2.tagName === "INPUT") {
+  if (key === "list" && el.tagName === "INPUT") {
     return false;
   }
-  if (key === "type" && el2.tagName === "TEXTAREA") {
+  if (key === "type" && el.tagName === "TEXTAREA") {
     return false;
   }
   if (key === "width" || key === "height") {
-    const tag = el2.tagName;
+    const tag = el.tagName;
     if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "SOURCE") {
       return false;
     }
@@ -5958,11 +6002,11 @@ function shouldSetAsProp(el2, key, value, isSVG) {
   if (isNativeOn(key) && isString(value)) {
     return false;
   }
-  return key in el2;
+  return key in el;
 }
 const getModelAssigner = (vnode) => {
-  const fn2 = vnode.props["onUpdate:modelValue"] || false;
-  return isArray(fn2) ? (value) => invokeArrayFns(fn2, value) : fn2;
+  const fn = vnode.props["onUpdate:modelValue"] || false;
+  return isArray(fn) ? (value) => invokeArrayFns(fn, value) : fn;
 };
 function onCompositionStart(e) {
   e.target.composing = true;
@@ -5976,52 +6020,52 @@ function onCompositionEnd(e) {
 }
 const assignKey = Symbol("_assign");
 const vModelText = {
-  created(el2, { modifiers: { lazy, trim, number } }, vnode) {
-    el2[assignKey] = getModelAssigner(vnode);
+  created(el, { modifiers: { lazy, trim, number } }, vnode) {
+    el[assignKey] = getModelAssigner(vnode);
     const castToNumber = number || vnode.props && vnode.props.type === "number";
-    addEventListener(el2, lazy ? "change" : "input", (e) => {
+    addEventListener(el, lazy ? "change" : "input", (e) => {
       if (e.target.composing) return;
-      let domValue = el2.value;
+      let domValue = el.value;
       if (trim) {
         domValue = domValue.trim();
       }
       if (castToNumber) {
         domValue = looseToNumber(domValue);
       }
-      el2[assignKey](domValue);
+      el[assignKey](domValue);
     });
     if (trim) {
-      addEventListener(el2, "change", () => {
-        el2.value = el2.value.trim();
+      addEventListener(el, "change", () => {
+        el.value = el.value.trim();
       });
     }
     if (!lazy) {
-      addEventListener(el2, "compositionstart", onCompositionStart);
-      addEventListener(el2, "compositionend", onCompositionEnd);
-      addEventListener(el2, "change", onCompositionEnd);
+      addEventListener(el, "compositionstart", onCompositionStart);
+      addEventListener(el, "compositionend", onCompositionEnd);
+      addEventListener(el, "change", onCompositionEnd);
     }
   },
   // set value on mounted so it's after min/max for type="range"
-  mounted(el2, { value }) {
-    el2.value = value == null ? "" : value;
+  mounted(el, { value }) {
+    el.value = value == null ? "" : value;
   },
-  beforeUpdate(el2, { value, oldValue, modifiers: { lazy, trim, number } }, vnode) {
-    el2[assignKey] = getModelAssigner(vnode);
-    if (el2.composing) return;
-    const elValue = (number || el2.type === "number") && !/^0\d/.test(el2.value) ? looseToNumber(el2.value) : el2.value;
+  beforeUpdate(el, { value, oldValue, modifiers: { lazy, trim, number } }, vnode) {
+    el[assignKey] = getModelAssigner(vnode);
+    if (el.composing) return;
+    const elValue = (number || el.type === "number") && !/^0\d/.test(el.value) ? looseToNumber(el.value) : el.value;
     const newValue = value == null ? "" : value;
     if (elValue === newValue) {
       return;
     }
-    if (document.activeElement === el2 && el2.type !== "range") {
+    if (document.activeElement === el && el.type !== "range") {
       if (lazy && value === oldValue) {
         return;
       }
-      if (trim && el2.value.trim() === newValue) {
+      if (trim && el.value.trim() === newValue) {
         return;
       }
     }
-    el2.value = newValue;
+    el.value = newValue;
   }
 };
 const rendererOptions = /* @__PURE__ */ extend({ patchProp }, nodeOps);
@@ -6066,7026 +6110,6 @@ function normalizeContainer(container) {
   }
   return container;
 }
-const aa$4 = 3376044e-10;
-const ab$4 = 969675e-9;
-const ac$4 = 3698019e-10;
-const ad$4 = 188152e-8;
-const ae$4 = 2669576e-10;
-const af$4 = 3766165e-9;
-const ag$4 = 3650192e-9;
-const ah$4 = 129415e-9;
-const ai$4 = 2478892e-10;
-const aj$4 = 1719282e-10;
-const ak$4 = 972801e-9;
-const al$4 = 52113e-7;
-const am$4 = 2404181e-9;
-const an$4 = 0.0121969;
-const ao$4 = 4032498e-11;
-const ap$4 = 5417301e-10;
-const aq$4 = 8752708e-12;
-const ar$4 = 7488254e-9;
-const as$4 = 1573924e-9;
-const at$4 = 6836177e-9;
-const au$4 = 4529526e-10;
-const av$4 = 1623627e-9;
-const aw$4 = 2750851e-11;
-const ax$4 = 4813989e-11;
-const ay$4 = 1003435e-10;
-const az$4 = 4470133e-11;
-const ba$4 = 158299e-8;
-const bb$4 = 1994367e-10;
-const bc$4 = 2000619e-11;
-const bd$4 = 2075642e-10;
-const be$4 = 4167227e-9;
-const bf$4 = 1250387e-11;
-const bg$4 = 2313216e-11;
-const bh$4 = 1813061e-11;
-const bi$4 = 8268183e-10;
-const bj$4 = 1272269e-10;
-const bk$4 = 4313835e-11;
-const bl$4 = 2214435e-9;
-const bm$4 = 475147e-10;
-const bn$4 = 1528598e-10;
-const bo$4 = 1163798e-9;
-const bp$4 = 1625503e-11;
-const bq$4 = 3125967e-13;
-const br$4 = 1683646e-9;
-const bs$4 = 2006871e-10;
-const bt$4 = 1719282e-10;
-const bu$4 = 5873692e-10;
-const bv$4 = 5939337e-12;
-const bw$4 = 9065305e-12;
-const bx$4 = 9377901e-13;
-const by$4 = 5089074e-10;
-const bz$4 = 3125967e-13;
-const ca$4 = 3785546e-10;
-const cb$4 = 1750542e-11;
-const cc$4 = 1053451e-10;
-const cd$4 = 2188177e-11;
-const ce$4 = 1215063e-9;
-const cf$4 = 5939337e-12;
-const cg$4 = 3125967e-12;
-const ch$4 = 9596719e-10;
-const ci$4 = 455766e-9;
-const cj$4 = 1250387e-12;
-const ck$4 = 2782111e-10;
-const cl$4 = 9159084e-11;
-const cm$4 = 2500774e-11;
-const cn$4 = 1000309e-11;
-const co$4 = 4507645e-10;
-const cp$4 = 6877128e-12;
-const cq$4 = 1562984e-12;
-const cr$4 = 8877747e-11;
-const cs$4 = 6095636e-11;
-const ct$4 = 2019375e-10;
-const cu$4 = 6502012e-11;
-const cv$4 = 6251934e-12;
-const cw$4 = 9377901e-13;
-const cx$4 = 0;
-const cy$4 = 7908697e-11;
-const cz$4 = 2500774e-12;
-const da$4 = 3464509e-9;
-const db$4 = 47671e-8;
-const dc$4 = 5376663e-11;
-const dd$4 = 6880254e-10;
-const de$4 = 0.02444069;
-const df$4 = 2669576e-10;
-const dg$4 = 3204116e-10;
-const dh$4 = 2106902e-10;
-const di$4 = 198749e-8;
-const dj$4 = 1428567e-10;
-const dk$4 = 3169731e-10;
-const dl$4 = 9018415e-10;
-const dm$4 = 2803992e-10;
-const dn$4 = 4426369e-10;
-const dp$4 = 9377901e-11;
-const dq$4 = 1250387e-12;
-const dr$4 = 1729285e-9;
-const ds$4 = 2819935e-9;
-const dt$4 = 2041257e-9;
-const du$4 = 5235995e-10;
-const dv$4 = 5204735e-10;
-const dw$4 = 1688022e-11;
-const dx$4 = 0;
-const dy$4 = 1853698e-10;
-const dz$4 = 4063757e-12;
-const ea$4 = 6064376e-10;
-const eb$4 = 6892757e-10;
-const ec$4 = 3047818e-10;
-const ed$4 = 8612977e-9;
-const ee$4 = 3657382e-10;
-const ef$4 = 1346667e-9;
-const eg$4 = 2402306e-9;
-const eh$4 = 5232869e-10;
-const ei$4 = 2822748e-10;
-const ej$4 = 1651448e-9;
-const ek$4 = 151922e-8;
-const el$4 = 658485e-8;
-const em$4 = 3064386e-9;
-const en$4 = 0.02472296;
-const eo$4 = 2422624e-10;
-const ep$4 = 5223491e-10;
-const eq$4 = 6877128e-12;
-const er$4 = 0.03208962;
-const es$4 = 5162222e-9;
-const et$4 = 0.01185648;
-const eu$4 = 3466698e-10;
-const ev$4 = 1736475e-9;
-const ew$4 = 8408851e-11;
-const ex$4 = 9565459e-11;
-const ey$4 = 8502631e-11;
-const ez$4 = 284463e-10;
-const fa$4 = 117974e-8;
-const fb$4 = 381368e-10;
-const fc$4 = 9346642e-11;
-const fd$4 = 1572361e-10;
-const fe$4 = 1041885e-9;
-const ff$4 = 3938719e-10;
-const fg$4 = 1437945e-10;
-const fh$4 = 5376663e-11;
-const fi$4 = 1273206e-9;
-const fj$4 = 1190993e-10;
-const fk$4 = 4032498e-11;
-const fl$4 = 1426691e-9;
-const fm$4 = 2719591e-11;
-const fn$4 = 8721448e-11;
-const fo$4 = 651389e-8;
-const fp$4 = 2625812e-11;
-const fq$4 = 3125967e-13;
-const fr$4 = 3212556e-9;
-const fs$4 = 2106902e-10;
-const ft$4 = 1520158e-9;
-const fu$4 = 3272888e-10;
-const fv$4 = 7346023e-11;
-const fw$4 = 3125967e-13;
-const fx$4 = 6251934e-12;
-const fy$4 = 2169421e-10;
-const fz$4 = 3125967e-13;
-const ga$4 = 1463265e-9;
-const gb$4 = 8940266e-11;
-const gc$4 = 1312906e-11;
-const gd$4 = 3004054e-10;
-const ge$4 = 0.0113185;
-const gf$4 = 8940266e-11;
-const gg$4 = 6392603e-10;
-const gh$4 = 6089384e-10;
-const gi$4 = 1020941e-9;
-const gj$4 = 1334788e-10;
-const gk$4 = 5751779e-11;
-const gl$4 = 7721139e-10;
-const gm$4 = 1497338e-10;
-const gn$4 = 7589848e-10;
-const go$4 = 6183163e-10;
-const gp$4 = 4970288e-11;
-const gq$4 = 3125967e-13;
-const gr$4 = 1724909e-9;
-const gs$4 = 1725221e-9;
-const gt$4 = 1822126e-9;
-const gu$4 = 2453884e-10;
-const gv$4 = 1169112e-10;
-const gw$4 = 7189724e-12;
-const gx$4 = 3125967e-13;
-const gy$4 = 155048e-9;
-const gz$4 = 3125967e-13;
-const ha$4 = 5436682e-9;
-const hb$4 = 7346023e-11;
-const hc$4 = 1281647e-11;
-const hd$4 = 1969359e-11;
-const he$4 = 2906212e-9;
-const hf$4 = 1719282e-11;
-const hg$4 = 6251934e-12;
-const hh$4 = 4688951e-12;
-const hi$4 = 3663633e-10;
-const hj$4 = 7086567e-10;
-const hk$4 = 2657072e-11;
-const hl$4 = 7002166e-11;
-const hm$4 = 4251315e-11;
-const hn$4 = 303844e-9;
-const ho$4 = 1651136e-9;
-const hp$4 = 1500464e-11;
-const hq$4 = 9377901e-13;
-const hr$4 = 3663633e-10;
-const hs$4 = 3719901e-11;
-const ht$4 = 4532652e-11;
-const hu$4 = 8655803e-10;
-const hv$4 = 1621439e-9;
-const hw$4 = 2438254e-11;
-const hx$4 = 9377901e-13;
-const hy$4 = 7189724e-11;
-const hz$4 = 9377901e-13;
-const ia$4 = 7818044e-10;
-const ib$4 = 3122841e-10;
-const ic$4 = 5501702e-10;
-const id$4 = 2856196e-9;
-const ie$4 = 1653949e-9;
-const ig$4 = 6762405e-9;
-const ih$4 = 4657691e-11;
-const ii$4 = 5751779e-11;
-const ij$4 = 2063138e-11;
-const ik$4 = 3576419e-9;
-const il$4 = 7261309e-9;
-const im$4 = 6580161e-10;
-const io$4 = 1619876e-9;
-const ip$4 = 19381e-8;
-const iq$4 = 9065305e-12;
-const ir$4 = 1184742e-9;
-const is$4 = 4017493e-9;
-const it$4 = 1847134e-9;
-const iu$4 = 5220365e-11;
-const iv$4 = 2006871e-9;
-const iw$4 = 5314144e-12;
-const ix$4 = 3094707e-11;
-const iy$4 = 5939337e-12;
-const iz$4 = 4438873e-11;
-const ja$4 = 4135654e-10;
-const jb$4 = 2000619e-11;
-const jc$4 = 3438564e-12;
-const jd$4 = 5064067e-10;
-const je$4 = 2410433e-9;
-const jf$4 = 9690498e-12;
-const jg$4 = 1156608e-11;
-const jh$4 = 8127514e-12;
-const ji$4 = 3469823e-11;
-const jj$4 = 187558e-11;
-const jk$4 = 5439183e-11;
-const jl$4 = 4057505e-10;
-const jm$4 = 1187867e-11;
-const jn$4 = 384494e-10;
-const jo$4 = 5751779e-10;
-const jp$4 = 1437945e-11;
-const jq$4 = 0;
-const jr$4 = 3554225e-10;
-const js$4 = 1459827e-10;
-const jt$4 = 4939028e-11;
-const ju$4 = 2904023e-10;
-const jv$4 = 2969669e-11;
-const jw$4 = 0;
-const jx$4 = 0;
-const jy$4 = 1237883e-10;
-const jz$4 = 6251934e-13;
-const ka$4 = 3964039e-9;
-const kb$4 = 3310399e-10;
-const kc$4 = 8440111e-12;
-const kd$4 = 9034045e-11;
-const ke$4 = 6978722e-9;
-const kf$4 = 5126586e-11;
-const kg$4 = 2469514e-11;
-const kh$4 = 572052e-10;
-const ki$4 = 7333519e-10;
-const kj$4 = 8096255e-11;
-const kk$4 = 2842754e-9;
-const kl$4 = 1311968e-9;
-const km$4 = 1209749e-10;
-const kn$4 = 418567e-9;
-const ko$4 = 2855258e-9;
-const kp$4 = 2500774e-11;
-const kq$4 = 0;
-const kr$4 = 2059075e-9;
-const ks$4 = 1096277e-9;
-const kt$4 = 1315094e-9;
-const ku$4 = 1473581e-9;
-const kv$4 = 3785546e-10;
-const kw$4 = 5626741e-12;
-const kx$4 = 0;
-const ky$4 = 2210059e-10;
-const kz$4 = 0;
-const la$4 = 3979669e-9;
-const lb$4 = 7292881e-10;
-const lc$4 = 3719901e-11;
-const ld$4 = 267364e-8;
-const le$4 = 8898065e-9;
-const lf$4 = 3075952e-10;
-const lg$4 = 1203185e-9;
-const lh$4 = 8971526e-11;
-const li$4 = 6272566e-9;
-const lj$4 = 1781801e-10;
-const lk$4 = 5157846e-10;
-const ll$4 = 4026558e-9;
-const lm$4 = 3938719e-10;
-const ln$4 = 341043e-9;
-const lo$4 = 115442e-8;
-const lp$4 = 2013123e-10;
-const lq$4 = 5626741e-12;
-const lr$4 = 3344785e-10;
-const ls$4 = 2533909e-9;
-const lt$4 = 1315407e-9;
-const lu$4 = 8808975e-10;
-const lv$4 = 7583596e-10;
-const lw$4 = 6564531e-12;
-const lx$4 = 3125967e-13;
-const ly$4 = 7074064e-10;
-const lz$4 = 6251934e-12;
-const ma$4 = 3701458e-9;
-const mb$4 = 3025936e-10;
-const mc$4 = 4438873e-11;
-const md$4 = 3313525e-10;
-const me$4 = 8464494e-9;
-const mf$4 = 1556732e-10;
-const mg$4 = 1300402e-10;
-const mh$4 = 2347601e-10;
-const mi$4 = 2276954e-9;
-const mj$4 = 1250387e-11;
-const mk$4 = 192247e-9;
-const ml$4 = 7108449e-10;
-const mm$4 = 2274454e-9;
-const mn$4 = 3704271e-10;
-const mo$4 = 1260077e-9;
-const mp$4 = 8383844e-10;
-const mq$4 = 6251934e-13;
-const mr$4 = 3823058e-10;
-const ms$4 = 5895574e-10;
-const mt$4 = 5617363e-10;
-const mu$4 = 8987155e-10;
-const mv$4 = 4032498e-11;
-const mw$4 = 2281956e-11;
-const mx$4 = 4688951e-12;
-const my$4 = 9409161e-11;
-const mz$4 = 0;
-const na$4 = 1489836e-9;
-const nb$4 = 2385113e-10;
-const nc$4 = 5145342e-10;
-const nd$4 = 0.01047699;
-const ne$4 = 8541392e-9;
-const nf$4 = 3019684e-10;
-const ng$4 = 6293197e-9;
-const nh$4 = 5226617e-10;
-const ni$4 = 2884017e-9;
-const nj$4 = 1241009e-10;
-const nk$4 = 1048762e-9;
-const nl$4 = 3679263e-10;
-const nm$4 = 510783e-9;
-const nn$4 = 128571e-8;
-const no$4 = 1440133e-9;
-const np$4 = 1194119e-10;
-const nq$4 = 1250387e-12;
-const nr$4 = 6205045e-10;
-const ns$4 = 4723649e-9;
-const nt$4 = 2864324e-9;
-const nu$4 = 1087524e-9;
-const nv$4 = 357298e-9;
-const nw$4 = 1031569e-11;
-const nx$4 = 9377901e-13;
-const ny$4 = 7592974e-10;
-const nz$4 = 4126277e-11;
-const oa$4 = 1078459e-10;
-const ob$4 = 5804921e-10;
-const oc$4 = 4013742e-10;
-const od$4 = 1650511e-9;
-const oe$4 = 2272578e-10;
-const of$4 = 4629557e-10;
-const og$4 = 6451058e-9;
-const oh$4 = 1190993e-10;
-const oi$4 = 1262891e-10;
-const oj$4 = 8283813e-11;
-const ok$4 = 6667688e-10;
-const ol$4 = 3065636e-9;
-const om$4 = 5347905e-9;
-const on$4 = 3707397e-9;
-const oo$4 = 2019375e-10;
-const op$4 = 1825565e-9;
-const oq$4 = 1562984e-12;
-const or$4 = 9941513e-9;
-const os$4 = 9618601e-10;
-const ot$4 = 5342278e-10;
-const ou$4 = 2847756e-10;
-const ov$4 = 1736787e-9;
-const ow$4 = 1081585e-10;
-const ox$4 = 3469823e-11;
-const oy$4 = 475147e-10;
-const oz$4 = 381368e-10;
-const pa$4 = 1059078e-9;
-const pb$4 = 5658e-8;
-const pc$4 = 1950603e-10;
-const pd$4 = 110034e-9;
-const pe$4 = 2096274e-9;
-const pf$4 = 110034e-9;
-const pg$4 = 1228505e-10;
-const ph$4 = 1269143e-10;
-const pi$4 = 1039071e-9;
-const pj$4 = 1594243e-11;
-const pk$4 = 7127205e-11;
-const pl$4 = 1025317e-9;
-const pm$4 = 6720829e-11;
-const pn$4 = 8158774e-11;
-const po$4 = 1166298e-9;
-const pp$4 = 5745528e-10;
-const pq$4 = 0;
-const pr$4 = 2080644e-9;
-const ps$4 = 2578923e-10;
-const pt$4 = 2335097e-10;
-const pu$4 = 2847756e-10;
-const pv$4 = 4282575e-11;
-const pw$4 = 4688951e-12;
-const px$4 = 6251934e-13;
-const py$4 = 1375426e-11;
-const pz$4 = 1250387e-12;
-const qa$4 = 1187867e-11;
-const qb$4 = 0;
-const qc$4 = 3125967e-13;
-const qd$4 = 3125967e-13;
-const qe$4 = 3125967e-13;
-const qf$4 = 6251934e-13;
-const qg$4 = 0;
-const qh$4 = 6251934e-13;
-const qi$4 = 2188177e-12;
-const qj$4 = 0;
-const qk$4 = 0;
-const ql$4 = 3125967e-12;
-const qm$4 = 3125967e-13;
-const qn$4 = 0;
-const qo$4 = 3125967e-13;
-const qp$4 = 0;
-const qq$4 = 0;
-const qr$4 = 6251934e-13;
-const qs$4 = 6251934e-13;
-const qt$4 = 9377901e-13;
-const qu$4 = 4188796e-11;
-const qv$4 = 187558e-11;
-const qw$4 = 0;
-const qx$4 = 1250387e-12;
-const qy$4 = 0;
-const qz$4 = 0;
-const ra$4 = 3940594e-9;
-const rb$4 = 1104404e-9;
-const rc$4 = 1828691e-10;
-const rd$4 = 264113e-8;
-const re$4 = 0.01383428;
-const rf$4 = 7117827e-10;
-const rg$4 = 1249762e-9;
-const rh$4 = 7174094e-10;
-const ri$4 = 4801485e-9;
-const rj$4 = 9002785e-11;
-const rk$4 = 2037818e-9;
-const rl$4 = 9037171e-10;
-const rm$4 = 1233819e-9;
-const rn$4 = 3245692e-9;
-const ro$4 = 2306651e-9;
-const rp$4 = 16974e-8;
-const rq$4 = 1250387e-12;
-const rr$4 = 8271309e-10;
-const rs$4 = 3404803e-9;
-const rt$4 = 2418873e-9;
-const ru$4 = 1802745e-9;
-const rv$4 = 8590158e-10;
-const rw$4 = 2344475e-11;
-const rx$4 = 2500774e-12;
-const ry$4 = 4560786e-10;
-const rz$4 = 6564531e-12;
-const sa$4 = 2411371e-9;
-const sb$4 = 3566728e-10;
-const sc$4 = 3876199e-10;
-const sd$4 = 5895574e-10;
-const se$4 = 7019359e-9;
-const sf$4 = 3363541e-10;
-const sg$4 = 4698329e-10;
-const sh$4 = 4019994e-10;
-const si$4 = 4274135e-9;
-const sj$4 = 1322284e-10;
-const sk$4 = 630445e-8;
-const sl$4 = 1234444e-9;
-const sm$4 = 7918075e-10;
-const sn$4 = 5836181e-10;
-const so$4 = 277117e-8;
-const sp$4 = 1790241e-9;
-const sq$4 = 5939337e-12;
-const sr$4 = 4438873e-10;
-const ss$4 = 1584865e-9;
-const st$4 = 8589532e-9;
-const su$4 = 6054998e-10;
-const sv$4 = 7467935e-10;
-const sw$4 = 1781801e-11;
-const sx$4 = 6251934e-13;
-const sy$4 = 5983101e-10;
-const sz$4 = 9377901e-12;
-const ta$4 = 3008118e-9;
-const tb$4 = 1353544e-10;
-const tc$4 = 5970597e-11;
-const td$4 = 2829e-7;
-const te$4 = 0.01013407;
-const tf$4 = 206939e-9;
-const tg$4 = 8346332e-11;
-const th$4 = 4788982e-10;
-const ti$4 = 852545e-8;
-const tj$4 = 3119715e-10;
-const tk$4 = 1190993e-10;
-const tl$4 = 472021e-9;
-const tm$4 = 206939e-9;
-const tn$4 = 6258186e-10;
-const to$4 = 2230065e-9;
-const tp$4 = 1053451e-10;
-const tq$4 = 3125967e-13;
-const tr$4 = 3010932e-9;
-const ts$4 = 1215063e-9;
-const tt$4 = 1873079e-9;
-const tu$4 = 7036552e-10;
-const tv$4 = 3538595e-10;
-const tw$4 = 3313525e-11;
-const tx$4 = 281337e-11;
-const ty$4 = 6305076e-10;
-const tz$4 = 5470442e-11;
-const ua$4 = 2963417e-10;
-const ub$4 = 3369793e-10;
-const uc$4 = 1600495e-10;
-const ud$4 = 2421999e-9;
-const ue$4 = 3891829e-10;
-const uf$4 = 1641133e-10;
-const ug$4 = 737103e-9;
-const uh$4 = 6158155e-11;
-const ui$4 = 6783349e-11;
-const uj$4 = 8127514e-12;
-const uk$4 = 3744909e-10;
-const ul$4 = 1194432e-9;
-const um$4 = 4476385e-10;
-const un$4 = 3334157e-9;
-const uo$4 = 2156917e-11;
-const up$4 = 4357598e-10;
-const uq$4 = 3125967e-13;
-const ur$4 = 13326e-7;
-const us$4 = 1371049e-9;
-const ut$4 = 7155339e-10;
-const uu$4 = 1844321e-11;
-const uv$4 = 8127514e-11;
-const uw$4 = 4376354e-12;
-const ux$4 = 2094398e-11;
-const uy$4 = 6251934e-12;
-const uz$4 = 1062829e-11;
-const va$4 = 2408558e-9;
-const vb$4 = 472021e-10;
-const vc$4 = 3125967e-12;
-const vd$4 = 3691767e-10;
-const ve$4 = 6955589e-9;
-const vf$4 = 8252553e-11;
-const vg$4 = 1181616e-10;
-const vh$4 = 1688022e-11;
-const vi$4 = 4604862e-9;
-const vj$4 = 5001547e-12;
-const vk$4 = 1359796e-10;
-const vl$4 = 2269452e-10;
-const vm$4 = 7846177e-11;
-const vn$4 = 4338842e-10;
-const vo$4 = 1138477e-9;
-const vp$4 = 1344166e-11;
-const vq$4 = 3125967e-13;
-const vr$4 = 1193182e-9;
-const vs$4 = 2150665e-10;
-const vt$4 = 1031569e-10;
-const vu$4 = 1391055e-10;
-const vv$4 = 190684e-10;
-const vw$4 = 4376354e-12;
-const vx$4 = 6251934e-13;
-const vy$4 = 6877128e-12;
-const vz$4 = 0;
-const wa$4 = 1441071e-10;
-const wb$4 = 6877128e-12;
-const wc$4 = 4376354e-12;
-const wd$4 = 3751161e-12;
-const we$4 = 1831817e-10;
-const wf$4 = 3438564e-12;
-const wg$4 = 9377901e-13;
-const wh$4 = 8752708e-12;
-const wi$4 = 1362922e-10;
-const wj$4 = 1250387e-12;
-const wk$4 = 281337e-11;
-const wl$4 = 9690498e-12;
-const wm$4 = 281337e-11;
-const wn$4 = 2625812e-11;
-const wo$4 = 8096255e-11;
-const wp$4 = 3438564e-12;
-const wq$4 = 0;
-const wr$4 = 8440111e-12;
-const ws$4 = 4532652e-11;
-const wt$4 = 4063757e-12;
-const wu$4 = 3438564e-12;
-const wv$4 = 6251934e-13;
-const ww$4 = 2688332e-11;
-const wx$4 = 3125967e-13;
-const wy$4 = 2188177e-12;
-const wz$4 = 6251934e-13;
-const xa$4 = 2094398e-11;
-const xb$4 = 1187867e-11;
-const xc$4 = 6251934e-12;
-const xd$4 = 3125967e-12;
-const xe$4 = 3344785e-11;
-const xf$4 = 6564531e-12;
-const xg$4 = 0;
-const xh$4 = 2500774e-12;
-const xi$4 = 2532033e-11;
-const xj$4 = 9377901e-13;
-const xk$4 = 1562984e-12;
-const xl$4 = 5626741e-12;
-const xm$4 = 9065305e-12;
-const xn$4 = 9377901e-13;
-const xo$4 = 9690498e-12;
-const xp$4 = 1750542e-11;
-const xq$4 = 0;
-const xr$4 = 3125967e-13;
-const xs$4 = 5314144e-12;
-const xt$4 = 8752708e-12;
-const xu$4 = 3751161e-12;
-const xv$4 = 187558e-11;
-const xw$4 = 9377901e-13;
-const xx$4 = 1250387e-12;
-const xy$4 = 2188177e-12;
-const xz$4 = 3125967e-13;
-const ya$4 = 7877437e-11;
-const yb$4 = 7783658e-11;
-const yc$4 = 8440111e-12;
-const yd$4 = 6386351e-10;
-const ye$4 = 397623e-9;
-const yf$4 = 1312906e-11;
-const yg$4 = 4623305e-10;
-const yh$4 = 8346332e-11;
-const yi$4 = 1281647e-11;
-const yj$4 = 2188177e-12;
-const yk$4 = 3576106e-10;
-const yl$4 = 30697e-8;
-const ym$4 = 9971835e-11;
-const yn$4 = 5298514e-10;
-const yo$4 = 6001857e-11;
-const yp$4 = 7158465e-11;
-const yq$4 = 0;
-const yr$4 = 4538904e-10;
-const ys$4 = 6089384e-10;
-const yt$4 = 2988425e-10;
-const yu$4 = 9690498e-12;
-const yv$4 = 1203497e-10;
-const yw$4 = 6877128e-12;
-const yx$4 = 0;
-const yy$4 = 0;
-const yz$4 = 187558e-11;
-const za$4 = 8064995e-11;
-const zb$4 = 7814918e-12;
-const zc$4 = 6251934e-13;
-const zd$4 = 5314144e-12;
-const ze$4 = 5001547e-11;
-const zf$4 = 1562984e-12;
-const zg$4 = 9377901e-13;
-const zh$4 = 5314144e-12;
-const zi$4 = 572052e-10;
-const zj$4 = 0;
-const zk$4 = 4063757e-12;
-const zl$4 = 5626741e-12;
-const zm$4 = 3125967e-12;
-const zn$4 = 1750542e-11;
-const zo$4 = 3407304e-11;
-const zp$4 = 187558e-11;
-const zq$4 = 0;
-const zr$4 = 2500774e-12;
-const zs$4 = 187558e-11;
-const zt$4 = 3125967e-13;
-const zu$4 = 1156608e-11;
-const zv$4 = 1250387e-12;
-const zw$4 = 1562984e-12;
-const zx$4 = 0;
-const zy$4 = 1250387e-11;
-const zz$4 = 1594243e-11;
-const bigram_danish = {
-  aa: aa$4,
-  ab: ab$4,
-  ac: ac$4,
-  ad: ad$4,
-  ae: ae$4,
-  af: af$4,
-  ag: ag$4,
-  ah: ah$4,
-  ai: ai$4,
-  aj: aj$4,
-  ak: ak$4,
-  al: al$4,
-  am: am$4,
-  an: an$4,
-  ao: ao$4,
-  ap: ap$4,
-  aq: aq$4,
-  ar: ar$4,
-  as: as$4,
-  at: at$4,
-  au: au$4,
-  av: av$4,
-  aw: aw$4,
-  ax: ax$4,
-  ay: ay$4,
-  az: az$4,
-  "a ": 2624249e-9,
-  ba: ba$4,
-  bb: bb$4,
-  bc: bc$4,
-  bd: bd$4,
-  be: be$4,
-  bf: bf$4,
-  bg: bg$4,
-  bh: bh$4,
-  bi: bi$4,
-  bj: bj$4,
-  bk: bk$4,
-  bl: bl$4,
-  bm: bm$4,
-  bn: bn$4,
-  bo: bo$4,
-  bp: bp$4,
-  bq: bq$4,
-  br: br$4,
-  bs: bs$4,
-  bt: bt$4,
-  bu: bu$4,
-  bv: bv$4,
-  bw: bw$4,
-  bx: bx$4,
-  by: by$4,
-  bz: bz$4,
-  "b ": 5014051e-10,
-  ca: ca$4,
-  cb: cb$4,
-  cc: cc$4,
-  cd: cd$4,
-  ce: ce$4,
-  cf: cf$4,
-  cg: cg$4,
-  ch: ch$4,
-  ci: ci$4,
-  cj: cj$4,
-  ck: ck$4,
-  cl: cl$4,
-  cm: cm$4,
-  cn: cn$4,
-  co: co$4,
-  cp: cp$4,
-  cq: cq$4,
-  cr: cr$4,
-  cs: cs$4,
-  ct: ct$4,
-  cu: cu$4,
-  cv: cv$4,
-  cw: cw$4,
-  cx: cx$4,
-  cy: cy$4,
-  cz: cz$4,
-  "c ": 2291334e-10,
-  da: da$4,
-  db: db$4,
-  dc: dc$4,
-  dd: dd$4,
-  de: de$4,
-  df: df$4,
-  dg: dg$4,
-  dh: dh$4,
-  di: di$4,
-  dj: dj$4,
-  dk: dk$4,
-  dl: dl$4,
-  dm: dm$4,
-  dn: dn$4,
-  "do": 8590158e-10,
-  dp: dp$4,
-  dq: dq$4,
-  dr: dr$4,
-  ds: ds$4,
-  dt: dt$4,
-  du: du$4,
-  dv: dv$4,
-  dw: dw$4,
-  dx: dx$4,
-  dy: dy$4,
-  dz: dz$4,
-  "d ": 7755524e-9,
-  ea: ea$4,
-  eb: eb$4,
-  ec: ec$4,
-  ed: ed$4,
-  ee: ee$4,
-  ef: ef$4,
-  eg: eg$4,
-  eh: eh$4,
-  ei: ei$4,
-  ej: ej$4,
-  ek: ek$4,
-  el: el$4,
-  em: em$4,
-  en: en$4,
-  eo: eo$4,
-  ep: ep$4,
-  eq: eq$4,
-  er: er$4,
-  es: es$4,
-  et: et$4,
-  eu: eu$4,
-  ev: ev$4,
-  ew: ew$4,
-  ex: ex$4,
-  ey: ey$4,
-  ez: ez$4,
-  "e ": 0.02984298,
-  fa: fa$4,
-  fb: fb$4,
-  fc: fc$4,
-  fd: fd$4,
-  fe: fe$4,
-  ff: ff$4,
-  fg: fg$4,
-  fh: fh$4,
-  fi: fi$4,
-  fj: fj$4,
-  fk: fk$4,
-  fl: fl$4,
-  fm: fm$4,
-  fn: fn$4,
-  fo: fo$4,
-  fp: fp$4,
-  fq: fq$4,
-  fr: fr$4,
-  fs: fs$4,
-  ft: ft$4,
-  fu: fu$4,
-  fv: fv$4,
-  fw: fw$4,
-  fx: fx$4,
-  fy: fy$4,
-  fz: fz$4,
-  "f ": 304688e-8,
-  ga: ga$4,
-  gb: gb$4,
-  gc: gc$4,
-  gd: gd$4,
-  ge: ge$4,
-  gf: gf$4,
-  gg: gg$4,
-  gh: gh$4,
-  gi: gi$4,
-  gj: gj$4,
-  gk: gk$4,
-  gl: gl$4,
-  gm: gm$4,
-  gn: gn$4,
-  go: go$4,
-  gp: gp$4,
-  gq: gq$4,
-  gr: gr$4,
-  gs: gs$4,
-  gt: gt$4,
-  gu: gu$4,
-  gv: gv$4,
-  gw: gw$4,
-  gx: gx$4,
-  gy: gy$4,
-  gz: gz$4,
-  "g ": 0.01103842,
-  ha: ha$4,
-  hb: hb$4,
-  hc: hc$4,
-  hd: hd$4,
-  he: he$4,
-  hf: hf$4,
-  hg: hg$4,
-  hh: hh$4,
-  hi: hi$4,
-  hj: hj$4,
-  hk: hk$4,
-  hl: hl$4,
-  hm: hm$4,
-  hn: hn$4,
-  ho: ho$4,
-  hp: hp$4,
-  hq: hq$4,
-  hr: hr$4,
-  hs: hs$4,
-  ht: ht$4,
-  hu: hu$4,
-  hv: hv$4,
-  hw: hw$4,
-  hx: hx$4,
-  hy: hy$4,
-  hz: hz$4,
-  "h ": 2588301e-10,
-  ia: ia$4,
-  ib: ib$4,
-  ic: ic$4,
-  id: id$4,
-  ie: ie$4,
-  "if": 6436366e-10,
-  ig: ig$4,
-  ih: ih$4,
-  ii: ii$4,
-  ij: ij$4,
-  ik: ik$4,
-  il: il$4,
-  im: im$4,
-  "in": 8518886e-9,
-  io: io$4,
-  ip: ip$4,
-  iq: iq$4,
-  ir: ir$4,
-  is: is$4,
-  it: it$4,
-  iu: iu$4,
-  iv: iv$4,
-  iw: iw$4,
-  ix: ix$4,
-  iy: iy$4,
-  iz: iz$4,
-  "i ": 7697694e-9,
-  ja: ja$4,
-  jb: jb$4,
-  jc: jc$4,
-  jd: jd$4,
-  je: je$4,
-  jf: jf$4,
-  jg: jg$4,
-  jh: jh$4,
-  ji: ji$4,
-  jj: jj$4,
-  jk: jk$4,
-  jl: jl$4,
-  jm: jm$4,
-  jn: jn$4,
-  jo: jo$4,
-  jp: jp$4,
-  jq: jq$4,
-  jr: jr$4,
-  js: js$4,
-  jt: jt$4,
-  ju: ju$4,
-  jv: jv$4,
-  jw: jw$4,
-  jx: jx$4,
-  jy: jy$4,
-  jz: jz$4,
-  "j ": 3326029e-10,
-  ka: ka$4,
-  kb: kb$4,
-  kc: kc$4,
-  kd: kd$4,
-  ke: ke$4,
-  kf: kf$4,
-  kg: kg$4,
-  kh: kh$4,
-  ki: ki$4,
-  kj: kj$4,
-  kk: kk$4,
-  kl: kl$4,
-  km: km$4,
-  kn: kn$4,
-  ko: ko$4,
-  kp: kp$4,
-  kq: kq$4,
-  kr: kr$4,
-  ks: ks$4,
-  kt: kt$4,
-  ku: ku$4,
-  kv: kv$4,
-  kw: kw$4,
-  kx: kx$4,
-  ky: ky$4,
-  kz: kz$4,
-  "k ": 231259e-8,
-  la: la$4,
-  lb: lb$4,
-  lc: lc$4,
-  ld: ld$4,
-  le: le$4,
-  lf: lf$4,
-  lg: lg$4,
-  lh: lh$4,
-  li: li$4,
-  lj: lj$4,
-  lk: lk$4,
-  ll: ll$4,
-  lm: lm$4,
-  ln: ln$4,
-  lo: lo$4,
-  lp: lp$4,
-  lq: lq$4,
-  lr: lr$4,
-  ls: ls$4,
-  lt: lt$4,
-  lu: lu$4,
-  lv: lv$4,
-  lw: lw$4,
-  lx: lx$4,
-  ly: ly$4,
-  lz: lz$4,
-  "l ": 6516391e-9,
-  ma: ma$4,
-  mb: mb$4,
-  mc: mc$4,
-  md: md$4,
-  me: me$4,
-  mf: mf$4,
-  mg: mg$4,
-  mh: mh$4,
-  mi: mi$4,
-  mj: mj$4,
-  mk: mk$4,
-  ml: ml$4,
-  mm: mm$4,
-  mn: mn$4,
-  mo: mo$4,
-  mp: mp$4,
-  mq: mq$4,
-  mr: mr$4,
-  ms: ms$4,
-  mt: mt$4,
-  mu: mu$4,
-  mv: mv$4,
-  mw: mw$4,
-  mx: mx$4,
-  my: my$4,
-  mz: mz$4,
-  "m ": 4496078e-9,
-  na: na$4,
-  nb: nb$4,
-  nc: nc$4,
-  nd: nd$4,
-  ne: ne$4,
-  nf: nf$4,
-  ng: ng$4,
-  nh: nh$4,
-  ni: ni$4,
-  nj: nj$4,
-  nk: nk$4,
-  nl: nl$4,
-  nm: nm$4,
-  nn: nn$4,
-  no: no$4,
-  np: np$4,
-  nq: nq$4,
-  nr: nr$4,
-  ns: ns$4,
-  nt: nt$4,
-  nu: nu$4,
-  nv: nv$4,
-  nw: nw$4,
-  nx: nx$4,
-  ny: ny$4,
-  nz: nz$4,
-  "n ": 0.01975049,
-  oa: oa$4,
-  ob: ob$4,
-  oc: oc$4,
-  od: od$4,
-  oe: oe$4,
-  of: of$4,
-  og: og$4,
-  oh: oh$4,
-  oi: oi$4,
-  oj: oj$4,
-  ok: ok$4,
-  ol: ol$4,
-  om: om$4,
-  on: on$4,
-  oo: oo$4,
-  op: op$4,
-  oq: oq$4,
-  or: or$4,
-  os: os$4,
-  ot: ot$4,
-  ou: ou$4,
-  ov: ov$4,
-  ow: ow$4,
-  ox: ox$4,
-  oy: oy$4,
-  oz: oz$4,
-  "o ": 1145354e-9,
-  pa: pa$4,
-  pb: pb$4,
-  pc: pc$4,
-  pd: pd$4,
-  pe: pe$4,
-  pf: pf$4,
-  pg: pg$4,
-  ph: ph$4,
-  pi: pi$4,
-  pj: pj$4,
-  pk: pk$4,
-  pl: pl$4,
-  pm: pm$4,
-  pn: pn$4,
-  po: po$4,
-  pp: pp$4,
-  pq: pq$4,
-  pr: pr$4,
-  ps: ps$4,
-  pt: pt$4,
-  pu: pu$4,
-  pv: pv$4,
-  pw: pw$4,
-  px: px$4,
-  py: py$4,
-  pz: pz$4,
-  "p ": 3910585e-9,
-  qa: qa$4,
-  qb: qb$4,
-  qc: qc$4,
-  qd: qd$4,
-  qe: qe$4,
-  qf: qf$4,
-  qg: qg$4,
-  qh: qh$4,
-  qi: qi$4,
-  qj: qj$4,
-  qk: qk$4,
-  ql: ql$4,
-  qm: qm$4,
-  qn: qn$4,
-  qo: qo$4,
-  qp: qp$4,
-  qq: qq$4,
-  qr: qr$4,
-  qs: qs$4,
-  qt: qt$4,
-  qu: qu$4,
-  qv: qv$4,
-  qw: qw$4,
-  qx: qx$4,
-  qy: qy$4,
-  qz: qz$4,
-  "q ": 5939337e-12,
-  ra: ra$4,
-  rb: rb$4,
-  rc: rc$4,
-  rd: rd$4,
-  re: re$4,
-  rf: rf$4,
-  rg: rg$4,
-  rh: rh$4,
-  ri: ri$4,
-  rj: rj$4,
-  rk: rk$4,
-  rl: rl$4,
-  rm: rm$4,
-  rn: rn$4,
-  ro: ro$4,
-  rp: rp$4,
-  rq: rq$4,
-  rr: rr$4,
-  rs: rs$4,
-  rt: rt$4,
-  ru: ru$4,
-  rv: rv$4,
-  rw: rw$4,
-  rx: rx$4,
-  ry: ry$4,
-  rz: rz$4,
-  "r ": 0.02761135,
-  sa: sa$4,
-  sb: sb$4,
-  sc: sc$4,
-  sd: sd$4,
-  se: se$4,
-  sf: sf$4,
-  sg: sg$4,
-  sh: sh$4,
-  si: si$4,
-  sj: sj$4,
-  sk: sk$4,
-  sl: sl$4,
-  sm: sm$4,
-  sn: sn$4,
-  so: so$4,
-  sp: sp$4,
-  sq: sq$4,
-  sr: sr$4,
-  ss: ss$4,
-  st: st$4,
-  su: su$4,
-  sv: sv$4,
-  sw: sw$4,
-  sx: sx$4,
-  sy: sy$4,
-  sz: sz$4,
-  "s ": 8789907e-9,
-  ta: ta$4,
-  tb: tb$4,
-  tc: tc$4,
-  td: td$4,
-  te: te$4,
-  tf: tf$4,
-  tg: tg$4,
-  th: th$4,
-  ti: ti$4,
-  tj: tj$4,
-  tk: tk$4,
-  tl: tl$4,
-  tm: tm$4,
-  tn: tn$4,
-  to: to$4,
-  tp: tp$4,
-  tq: tq$4,
-  tr: tr$4,
-  ts: ts$4,
-  tt: tt$4,
-  tu: tu$4,
-  tv: tv$4,
-  tw: tw$4,
-  tx: tx$4,
-  ty: ty$4,
-  tz: tz$4,
-  "t ": 0.0202075,
-  ua: ua$4,
-  ub: ub$4,
-  uc: uc$4,
-  ud: ud$4,
-  ue: ue$4,
-  uf: uf$4,
-  ug: ug$4,
-  uh: uh$4,
-  ui: ui$4,
-  uj: uj$4,
-  uk: uk$4,
-  ul: ul$4,
-  um: um$4,
-  un: un$4,
-  uo: uo$4,
-  up: up$4,
-  uq: uq$4,
-  ur: ur$4,
-  us: us$4,
-  ut: ut$4,
-  uu: uu$4,
-  uv: uv$4,
-  uw: uw$4,
-  ux: ux$4,
-  uy: uy$4,
-  uz: uz$4,
-  "u ": 9753017e-10,
-  va: va$4,
-  vb: vb$4,
-  vc: vc$4,
-  vd: vd$4,
-  ve: ve$4,
-  vf: vf$4,
-  vg: vg$4,
-  vh: vh$4,
-  vi: vi$4,
-  vj: vj$4,
-  vk: vk$4,
-  vl: vl$4,
-  vm: vm$4,
-  vn: vn$4,
-  vo: vo$4,
-  vp: vp$4,
-  vq: vq$4,
-  vr: vr$4,
-  vs: vs$4,
-  vt: vt$4,
-  vu: vu$4,
-  vv: vv$4,
-  vw: vw$4,
-  vx: vx$4,
-  vy: vy$4,
-  vz: vz$4,
-  "v ": 1411687e-9,
-  wa: wa$4,
-  wb: wb$4,
-  wc: wc$4,
-  wd: wd$4,
-  we: we$4,
-  wf: wf$4,
-  wg: wg$4,
-  wh: wh$4,
-  wi: wi$4,
-  wj: wj$4,
-  wk: wk$4,
-  wl: wl$4,
-  wm: wm$4,
-  wn: wn$4,
-  wo: wo$4,
-  wp: wp$4,
-  wq: wq$4,
-  wr: wr$4,
-  ws: ws$4,
-  wt: wt$4,
-  wu: wu$4,
-  wv: wv$4,
-  ww: ww$4,
-  wx: wx$4,
-  wy: wy$4,
-  wz: wz$4,
-  "w ": 8221293e-11,
-  xa: xa$4,
-  xb: xb$4,
-  xc: xc$4,
-  xd: xd$4,
-  xe: xe$4,
-  xf: xf$4,
-  xg: xg$4,
-  xh: xh$4,
-  xi: xi$4,
-  xj: xj$4,
-  xk: xk$4,
-  xl: xl$4,
-  xm: xm$4,
-  xn: xn$4,
-  xo: xo$4,
-  xp: xp$4,
-  xq: xq$4,
-  xr: xr$4,
-  xs: xs$4,
-  xt: xt$4,
-  xu: xu$4,
-  xv: xv$4,
-  xw: xw$4,
-  xx: xx$4,
-  xy: xy$4,
-  xz: xz$4,
-  "x ": 114723e-9,
-  ya: ya$4,
-  yb: yb$4,
-  yc: yc$4,
-  yd: yd$4,
-  ye: ye$4,
-  yf: yf$4,
-  yg: yg$4,
-  yh: yh$4,
-  yi: yi$4,
-  yj: yj$4,
-  yk: yk$4,
-  yl: yl$4,
-  ym: ym$4,
-  yn: yn$4,
-  yo: yo$4,
-  yp: yp$4,
-  yq: yq$4,
-  yr: yr$4,
-  ys: ys$4,
-  yt: yt$4,
-  yu: yu$4,
-  yv: yv$4,
-  yw: yw$4,
-  yx: yx$4,
-  yy: yy$4,
-  yz: yz$4,
-  "y ": 5501702e-10,
-  za: za$4,
-  zb: zb$4,
-  zc: zc$4,
-  zd: zd$4,
-  ze: ze$4,
-  zf: zf$4,
-  zg: zg$4,
-  zh: zh$4,
-  zi: zi$4,
-  zj: zj$4,
-  zk: zk$4,
-  zl: zl$4,
-  zm: zm$4,
-  zn: zn$4,
-  zo: zo$4,
-  zp: zp$4,
-  zq: zq$4,
-  zr: zr$4,
-  zs: zs$4,
-  zt: zt$4,
-  zu: zu$4,
-  zv: zv$4,
-  zw: zw$4,
-  zx: zx$4,
-  zy: zy$4,
-  zz: zz$4,
-  "z ": 5345404e-11,
-  " a": 0.0116386,
-  " b": 7284129e-9,
-  " c": 1221628e-9,
-  " d": 0.0130034,
-  " e": 0.01078584,
-  " f": 0.01176239,
-  " g": 3609242e-9,
-  " h": 9463865e-9,
-  " i": 0.01002248,
-  " j": 1723033e-9,
-  " k": 7195351e-9,
-  " l": 4256942e-9,
-  " m": 0.01009187,
-  " n": 4141594e-9,
-  " o": 9393844e-9,
-  " p": 7075314e-9,
-  " q": 2657072e-11,
-  " r": 3969353e-9,
-  " s": 0.01667703,
-  " t": 7842739e-9,
-  " u": 2981547e-9,
-  " v": 6490445e-9,
-  " w": 3397926e-10,
-  " x": 4001238e-11,
-  " y": 1612999e-10,
-  " z": 6314454e-11,
-  "  ": 4193172e-9
-};
-const aa$3 = 6330445e-11;
-const ab$3 = 1298629e-9;
-const ac$3 = 2891593e-9;
-const ad$3 = 2481298e-9;
-const ae$3 = 1076767e-10;
-const af$3 = 6998987e-10;
-const ag$3 = 1394177e-9;
-const ah$3 = 182518e-9;
-const ai$3 = 2804032e-9;
-const aj$3 = 1109307e-10;
-const ak$3 = 977965e-9;
-const al$3 = 673867e-8;
-const am$3 = 2366817e-9;
-const an$3 = 0.01259729;
-const ao$3 = 3727271e-11;
-const ap$3 = 107588e-8;
-const aq$3 = 3520201e-11;
-const ar$3 = 7703915e-9;
-const as$3 = 5843533e-9;
-const at$3 = 9152522e-9;
-const au$3 = 8942493e-10;
-const av$3 = 1575512e-9;
-const aw$3 = 5150142e-10;
-const ax$3 = 1351875e-10;
-const ay$3 = 243308e-8;
-const az$3 = 1419913e-10;
-const ba$3 = 1507474e-9;
-const bb$3 = 1171428e-10;
-const bc$3 = 3904761e-11;
-const bd$3 = 136075e-10;
-const be$3 = 3808029e-9;
-const bf$3 = 4733043e-12;
-const bg$3 = 3549782e-12;
-const bh$3 = 1597402e-11;
-const bi$3 = 7930805e-10;
-const bj$3 = 4023087e-11;
-const bk$3 = 1183261e-12;
-const bl$3 = 1287092e-9;
-const bm$3 = 2958152e-11;
-const bn$3 = 9761901e-12;
-const bo$3 = 1470793e-9;
-const bp$3 = 5028858e-12;
-const bq$3 = 2366522e-12;
-const br$3 = 8137876e-10;
-const bs$3 = 241681e-9;
-const bt$3 = 6567097e-11;
-const bu$3 = 1519898e-9;
-const bv$3 = 174531e-10;
-const bw$3 = 1183261e-11;
-const bx$3 = 5916304e-13;
-const by$3 = 9054903e-10;
-const bz$3 = 1183261e-12;
-const ca$3 = 3595634e-9;
-const cb$3 = 1686147e-11;
-const cc$3 = 5132394e-10;
-const cd$3 = 2544011e-11;
-const ce$3 = 3884349e-9;
-const cf$3 = 9761901e-12;
-const cg$3 = 1094516e-11;
-const ch$3 = 3695323e-9;
-const ci$3 = 172194e-8;
-const cj$3 = 3253967e-12;
-const ck$3 = 131549e-8;
-const cl$3 = 1112265e-9;
-const cm$3 = 2011543e-11;
-const cn$3 = 1597402e-11;
-const co$3 = 5328223e-9;
-const cp$3 = 1508657e-11;
-const cq$3 = 174531e-10;
-const cr$3 = 9903893e-10;
-const cs$3 = 1523448e-10;
-const ct$3 = 2301738e-9;
-const cu$3 = 8596389e-10;
-const cv$3 = 2958152e-12;
-const cw$3 = 7099565e-12;
-const cx$3 = 2958152e-13;
-const cy$3 = 241681e-9;
-const cz$3 = 7099565e-12;
-const da$3 = 1839675e-9;
-const db$3 = 7750358e-11;
-const dc$3 = 8460314e-11;
-const dd$3 = 3916593e-10;
-const de$3 = 4759962e-9;
-const df$3 = 6774168e-11;
-const dg$3 = 23044e-8;
-const dh$3 = 8519478e-11;
-const di$3 = 3030331e-9;
-const dj$3 = 3520201e-11;
-const dk$3 = 5324673e-12;
-const dl$3 = 2481889e-10;
-const dm$3 = 1561904e-10;
-const dn$3 = 2354689e-10;
-const dp$3 = 4880951e-11;
-const dq$3 = 739538e-11;
-const dr$3 = 7445668e-10;
-const ds$3 = 9714571e-10;
-const dt$3 = 228961e-9;
-const du$3 = 8501729e-10;
-const dv$3 = 1251298e-10;
-const dw$3 = 1700937e-10;
-const dx$3 = 5916304e-13;
-const dy$3 = 3526117e-10;
-const dz$3 = 798701e-11;
-const ea$3 = 5465777e-9;
-const eb$3 = 4117747e-10;
-const ec$3 = 2896031e-9;
-const ed$3 = 7336808e-9;
-const ee$3 = 2889523e-9;
-const ef$3 = 9081526e-10;
-const eg$3 = 8593431e-10;
-const eh$3 = 2810244e-10;
-const ei$3 = 1359271e-9;
-const ej$3 = 428932e-10;
-const ek$3 = 3035064e-10;
-const el$3 = 3353065e-9;
-const em$3 = 2185778e-9;
-const en$3 = 8896346e-9;
-const eo$3 = 6229868e-10;
-const ep$3 = 1126464e-9;
-const eq$3 = 1739393e-10;
-const er$3 = 0.01294458;
-const es$3 = 842245e-8;
-const et$3 = 306435e-8;
-const eu$3 = 1686147e-10;
-const ev$3 = 1691175e-9;
-const ew$3 = 1074697e-9;
-const ex$3 = 1083571e-9;
-const ey$3 = 127733e-8;
-const ez$3 = 739538e-10;
-const fa$3 = 1098066e-9;
-const fb$3 = 9761901e-12;
-const fc$3 = 2011543e-11;
-const fd$3 = 1094516e-11;
-const fe$3 = 1463398e-9;
-const ff$3 = 1103391e-9;
-const fg$3 = 1893217e-11;
-const fh$3 = 6212119e-12;
-const fi$3 = 2056803e-9;
-const fj$3 = 1183261e-12;
-const fk$3 = 2070706e-12;
-const fl$3 = 3739104e-10;
-const fm$3 = 1331168e-11;
-const fn$3 = 3549782e-12;
-const fo$3 = 350541e-8;
-const fp$3 = 5028858e-12;
-const fq$3 = 0;
-const fr$3 = 1470793e-9;
-const fs$3 = 7424961e-11;
-const ft$3 = 6155914e-10;
-const fu$3 = 6623302e-10;
-const fv$3 = 1774891e-12;
-const fw$3 = 8578641e-12;
-const fx$3 = 1183261e-12;
-const fy$3 = 4200576e-11;
-const fz$3 = 2958152e-13;
-const ga$3 = 1313124e-9;
-const gb$3 = 4614717e-11;
-const gc$3 = 1390331e-11;
-const gd$3 = 2455266e-11;
-const ge$3 = 2591933e-9;
-const gf$3 = 2100288e-11;
-const gg$3 = 1813347e-10;
-const gh$3 = 1614559e-9;
-const gi$3 = 9596245e-10;
-const gj$3 = 4141413e-12;
-const gk$3 = 6212119e-12;
-const gl$3 = 3517243e-10;
-const gm$3 = 7750358e-11;
-const gn$3 = 3573448e-10;
-const go$3 = 125189e-8;
-const gp$3 = 1419913e-11;
-const gq$3 = 2958152e-13;
-const gr$3 = 1272005e-9;
-const gs$3 = 4283404e-10;
-const gt$3 = 187251e-9;
-const gu$3 = 5567242e-10;
-const gv$3 = 2662337e-12;
-const gw$3 = 3283549e-11;
-const gx$3 = 0;
-const gy$3 = 1292712e-10;
-const gz$3 = 2366522e-12;
-const ha$3 = 6346715e-9;
-const hb$3 = 7513706e-11;
-const hc$3 = 2100288e-11;
-const hd$3 = 4525972e-11;
-const he$3 = 0.01777908;
-const hf$3 = 2366522e-11;
-const hg$3 = 9761901e-12;
-const hh$3 = 1863636e-11;
-const hi$3 = 4452019e-9;
-const hj$3 = 2662337e-12;
-const hk$3 = 8874456e-12;
-const hl$3 = 1195093e-10;
-const hm$3 = 8341988e-11;
-const hn$3 = 1547113e-10;
-const ho$3 = 3764544e-9;
-const hp$3 = 1922799e-11;
-const hq$3 = 6803749e-12;
-const hr$3 = 6232826e-10;
-const hs$3 = 1576695e-10;
-const ht$3 = 8992782e-10;
-const hu$3 = 5144226e-10;
-const hv$3 = 1094516e-11;
-const hw$3 = 5975467e-11;
-const hx$3 = 2958152e-13;
-const hy$3 = 2331024e-10;
-const hz$3 = 2070706e-12;
-const ia$3 = 1681414e-9;
-const ib$3 = 4292278e-10;
-const ic$3 = 3926355e-9;
-const id$3 = 2862012e-9;
-const ie$3 = 2267423e-9;
-const ig$3 = 1708924e-9;
-const ih$3 = 1567821e-11;
-const ii$3 = 3638527e-11;
-const ij$3 = 3224386e-11;
-const ik$3 = 451414e-9;
-const il$3 = 3767206e-9;
-const im$3 = 1786428e-9;
-const io$3 = 402427e-8;
-const ip$3 = 5712191e-10;
-const iq$3 = 4880951e-11;
-const ir$3 = 2132532e-9;
-const is$3 = 6621231e-9;
-const it$3 = 7161982e-9;
-const iu$3 = 7099565e-11;
-const iv$3 = 1764538e-9;
-const iw$3 = 1449494e-11;
-const ix$3 = 1381457e-10;
-const iy$3 = 1479076e-11;
-const iz$3 = 3659234e-10;
-const ja$3 = 2718542e-10;
-const jb$3 = 1774891e-12;
-const jc$3 = 4141413e-12;
-const jd$3 = 2366522e-12;
-const je$3 = 2964068e-10;
-const jf$3 = 1183261e-12;
-const jg$3 = 5916304e-13;
-const jh$3 = 1774891e-12;
-const ji$3 = 5472581e-11;
-const jj$3 = 2366522e-12;
-const jk$3 = 1479076e-12;
-const jl$3 = 1479076e-12;
-const jm$3 = 8874456e-13;
-const jn$3 = 8874456e-13;
-const jo$3 = 5369046e-10;
-const jp$3 = 5028858e-12;
-const jq$3 = 0;
-const jr$3 = 8578641e-12;
-const js$3 = 3253967e-12;
-const jt$3 = 3253967e-12;
-const ju$3 = 6170705e-10;
-const jv$3 = 1774891e-12;
-const jw$3 = 1479076e-12;
-const jx$3 = 0;
-const jy$3 = 1479076e-12;
-const jz$3 = 0;
-const ka$3 = 2869407e-10;
-const kb$3 = 1922799e-11;
-const kc$3 = 1153679e-11;
-const kd$3 = 1508657e-11;
-const ke$3 = 207396e-8;
-const kf$3 = 3046896e-11;
-const kg$3 = 195238e-10;
-const kh$3 = 5738815e-11;
-const ki$3 = 1001039e-9;
-const kj$3 = 4141413e-12;
-const kk$3 = 1242424e-11;
-const kl$3 = 1224675e-10;
-const km$3 = 2691918e-11;
-const kn$3 = 3043938e-10;
-const ko$3 = 1156637e-10;
-const kp$3 = 2248195e-11;
-const kq$3 = 1183261e-12;
-const kr$3 = 4023087e-11;
-const ks$3 = 5046607e-10;
-const kt$3 = 505844e-10;
-const ku$3 = 505844e-10;
-const kv$3 = 5028858e-12;
-const kw$3 = 2869407e-11;
-const kx$3 = 0;
-const ky$3 = 8341988e-11;
-const kz$3 = 8874456e-13;
-const la$3 = 3555699e-9;
-const lb$3 = 9761901e-11;
-const lc$3 = 9761901e-11;
-const ld$3 = 1886709e-9;
-const le$3 = 5514291e-9;
-const lf$3 = 2810244e-10;
-const lg$3 = 4023087e-11;
-const lh$3 = 3904761e-11;
-const li$3 = 4137271e-9;
-const lj$3 = 6803749e-12;
-const lk$3 = 2082539e-10;
-const ll$3 = 476647e-8;
-const lm$3 = 1979004e-10;
-const ln$3 = 4378065e-11;
-const lo$3 = 266352e-8;
-const lp$3 = 2348773e-10;
-const lq$3 = 3549782e-12;
-const lr$3 = 8933619e-11;
-const ls$3 = 1171132e-9;
-const lt$3 = 7806563e-10;
-const lu$3 = 7697111e-10;
-const lv$3 = 1993794e-10;
-const lw$3 = 1198052e-10;
-const lx$3 = 2958152e-13;
-const ly$3 = 2361788e-9;
-const lz$3 = 3549782e-12;
-const ma$3 = 3542091e-9;
-const mb$3 = 6895452e-10;
-const mc$3 = 9880227e-11;
-const md$3 = 1863636e-11;
-const me$3 = 5176174e-9;
-const mf$3 = 3816016e-11;
-const mg$3 = 7099565e-12;
-const mh$3 = 233694e-10;
-const mi$3 = 2217726e-9;
-const mj$3 = 3845597e-12;
-const mk$3 = 7691195e-12;
-const ml$3 = 2544011e-11;
-const mm$3 = 7501873e-10;
-const mn$3 = 6005048e-11;
-const mo$3 = 2255591e-9;
-const mp$3 = 1371399e-9;
-const mq$3 = 8874456e-13;
-const mr$3 = 8489896e-11;
-const ms$3 = 5434125e-10;
-const mt$3 = 1038311e-10;
-const mu$3 = 7288886e-10;
-const mv$3 = 5916304e-12;
-const mw$3 = 2839826e-11;
-const mx$3 = 1183261e-12;
-const my$3 = 4221283e-10;
-const mz$3 = 2070706e-12;
-const na$3 = 232067e-8;
-const nb$3 = 1053102e-10;
-const nc$3 = 2252633e-9;
-const nd$3 = 8352046e-9;
-const ne$3 = 4876218e-9;
-const nf$3 = 3836723e-10;
-const ng$3 = 7381476e-9;
-const nh$3 = 1127056e-10;
-const ni$3 = 2561168e-9;
-const nj$3 = 136075e-9;
-const nk$3 = 4798122e-10;
-const nl$3 = 3597113e-10;
-const nm$3 = 2511471e-10;
-const nn$3 = 8120127e-10;
-const no$3 = 2702568e-9;
-const np$3 = 6537516e-11;
-const nq$3 = 1212842e-11;
-const nr$3 = 7040402e-11;
-const ns$3 = 3070266e-9;
-const nt$3 = 7127667e-9;
-const nu$3 = 5505121e-10;
-const nv$3 = 3558657e-10;
-const nw$3 = 1212842e-10;
-const nx$3 = 1064935e-11;
-const ny$3 = 7158728e-10;
-const nz$3 = 3135641e-11;
-const oa$3 = 6013923e-10;
-const ob$3 = 6164789e-10;
-const oc$3 = 1095995e-9;
-const od$3 = 1064343e-9;
-const oe$3 = 2789537e-10;
-const of$3 = 5152805e-9;
-const og$3 = 5194515e-10;
-const oh$3 = 1703896e-10;
-const oi$3 = 6676549e-10;
-const oj$3 = 1097474e-10;
-const ok$3 = 5635279e-10;
-const ol$3 = 2446392e-9;
-const om$3 = 3843823e-9;
-const on$3 = 0.01064195;
-const oo$3 = 1937885e-9;
-const op$3 = 1725786e-9;
-const oq$3 = 6212119e-12;
-const or$3 = 8546693e-9;
-const os$3 = 1946168e-9;
-const ot$3 = 2797524e-9;
-const ou$3 = 6662646e-9;
-const ov$3 = 1439733e-9;
-const ow$3 = 2373325e-9;
-const ox$3 = 9229434e-11;
-const oy$3 = 3091269e-10;
-const oz$3 = 4733043e-11;
-const pa$3 = 2239321e-9;
-const pb$3 = 2484848e-11;
-const pc$3 = 3046896e-11;
-const pd$3 = 4466809e-11;
-const pe$3 = 3033881e-9;
-const pf$3 = 1656565e-11;
-const pg$3 = 1538239e-11;
-const ph$3 = 4203534e-10;
-const pi$3 = 8909954e-10;
-const pj$3 = 1774891e-12;
-const pk$3 = 1153679e-11;
-const pl$3 = 1877835e-9;
-const pm$3 = 2236363e-10;
-const pn$3 = 1508657e-11;
-const po$3 = 2226601e-9;
-const pp$3 = 9276764e-10;
-const pq$3 = 8874456e-13;
-const pr$3 = 2652279e-9;
-const ps$3 = 3605987e-10;
-const pt$3 = 4783332e-10;
-const pu$3 = 6945741e-10;
-const pv$3 = 6212119e-12;
-const pw$3 = 174531e-10;
-const px$3 = 2958152e-13;
-const py$3 = 6271282e-11;
-const pz$3 = 5916304e-13;
-const qa$3 = 1035353e-11;
-const qb$3 = 3253967e-12;
-const qc$3 = 2958152e-13;
-const qd$3 = 2958152e-13;
-const qe$3 = 5916304e-13;
-const qf$3 = 2958152e-13;
-const qg$3 = 0;
-const qh$3 = 0;
-const qi$3 = 6803749e-12;
-const qj$3 = 0;
-const qk$3 = 0;
-const ql$3 = 2958152e-13;
-const qm$3 = 2958152e-13;
-const qn$3 = 5916304e-13;
-const qo$3 = 0;
-const qp$3 = 0;
-const qq$3 = 2958152e-13;
-const qr$3 = 1183261e-12;
-const qs$3 = 2958152e-12;
-const qt$3 = 1183261e-12;
-const qu$3 = 6534558e-10;
-const qv$3 = 5916304e-13;
-const qw$3 = 0;
-const qx$3 = 0;
-const qy$3 = 0;
-const qz$3 = 0;
-const ra$3 = 4062134e-9;
-const rb$3 = 2014501e-10;
-const rc$3 = 7800647e-10;
-const rd$3 = 144979e-8;
-const re$3 = 0.01154922;
-const rf$3 = 2221572e-10;
-const rg$3 = 6703172e-10;
-const rh$3 = 1097474e-10;
-const ri$3 = 4604659e-9;
-const rj$3 = 8874456e-12;
-const rk$3 = 8614138e-10;
-const rl$3 = 5780229e-10;
-const rm$3 = 8738381e-10;
-const rn$3 = 1174386e-9;
-const ro$3 = 4841607e-9;
-const rp$3 = 2067748e-10;
-const rq$3 = 9466086e-12;
-const rr$3 = 7824312e-10;
-const rs$3 = 33365e-7;
-const rt$3 = 2691327e-9;
-const ru$3 = 9190978e-10;
-const rv$3 = 4724169e-10;
-const rw$3 = 1348917e-10;
-const rx$3 = 2366522e-12;
-const ry$3 = 1571666e-9;
-const rz$3 = 1005772e-11;
-const sa$3 = 2451125e-9;
-const sb$3 = 1727561e-10;
-const sc$3 = 1084754e-9;
-const sd$3 = 2402019e-10;
-const se$3 = 5418743e-9;
-const sf$3 = 1325252e-10;
-const sg$3 = 5413418e-11;
-const sh$3 = 2418289e-9;
-const si$3 = 3558657e-9;
-const sj$3 = 195238e-10;
-const sk$3 = 3679941e-10;
-const sl$3 = 3952091e-10;
-const sm$3 = 416212e-9;
-const sn$3 = 2245237e-10;
-const so$3 = 2671803e-9;
-const sp$3 = 1318448e-9;
-const sq$3 = 5886722e-11;
-const sr$3 = 9613994e-11;
-const ss$3 = 2453787e-9;
-const st$3 = 7889095e-9;
-const su$3 = 1669581e-9;
-const sv$3 = 3668108e-11;
-const sw$3 = 3177055e-10;
-const sx$3 = 1479076e-12;
-const sy$3 = 2517387e-10;
-const sz$3 = 4733043e-12;
-const ta$3 = 3416961e-9;
-const tb$3 = 1337085e-10;
-const tc$3 = 3097185e-10;
-const td$3 = 5206347e-11;
-const te$3 = 7651852e-9;
-const tf$3 = 7868684e-11;
-const tg$3 = 3638527e-11;
-const th$3 = 0.02087775;
-const ti$3 = 7093352e-9;
-const tj$3 = 1153679e-11;
-const tk$3 = 1301587e-11;
-const tl$3 = 5901513e-10;
-const tm$3 = 2564718e-10;
-const tn$3 = 112114e-9;
-const to$3 = 7909211e-9;
-const tp$3 = 5709233e-11;
-const tq$3 = 2070706e-12;
-const tr$3 = 2584833e-9;
-const ts$3 = 2895143e-9;
-const tt$3 = 1406305e-9;
-const tu$3 = 1464877e-9;
-const tv$3 = 3816016e-11;
-const tw$3 = 5584991e-10;
-const tx$3 = 3253967e-12;
-const ty$3 = 1567821e-9;
-const tz$3 = 4052668e-11;
-const ua$3 = 7200142e-10;
-const ub$3 = 5451874e-10;
-const uc$3 = 9545956e-10;
-const ud$3 = 7280012e-10;
-const ue$3 = 9217601e-10;
-const uf$3 = 9702738e-11;
-const ug$3 = 8569766e-10;
-const uh$3 = 1331168e-11;
-const ui$3 = 6093793e-10;
-const uj$3 = 6803749e-12;
-const uk$3 = 5502163e-11;
-const ul$3 = 197575e-8;
-const um$3 = 7534413e-10;
-const un$3 = 3178534e-9;
-const uo$3 = 4111831e-11;
-const up$3 = 1030324e-9;
-const uq$3 = 3253967e-12;
-const ur$3 = 3587647e-9;
-const us$3 = 2940995e-9;
-const ut$3 = 2849884e-9;
-const uu$3 = 3845597e-12;
-const uv$3 = 3993505e-11;
-const uw$3 = 9466086e-12;
-const ux$3 = 1715728e-11;
-const uy$3 = 9613994e-11;
-const uz$3 = 3283549e-11;
-const va$3 = 7288886e-10;
-const vb$3 = 1774891e-12;
-const vc$3 = 6507934e-12;
-const vd$3 = 5620489e-12;
-const ve$3 = 5776679e-9;
-const vf$3 = 2366522e-12;
-const vg$3 = 8874456e-13;
-const vh$3 = 1774891e-12;
-const vi$3 = 1867777e-9;
-const vj$3 = 0;
-const vk$3 = 0;
-const vl$3 = 3845597e-12;
-const vm$3 = 2366522e-12;
-const vn$3 = 2958152e-12;
-const vo$3 = 4700503e-10;
-const vp$3 = 5028858e-12;
-const vq$3 = 0;
-const vr$3 = 8874456e-12;
-const vs$3 = 1686147e-11;
-const vt$3 = 4141413e-12;
-const vu$3 = 1035353e-11;
-const vv$3 = 3253967e-12;
-const vw$3 = 8874456e-13;
-const vx$3 = 0;
-const vy$3 = 3579364e-11;
-const vz$3 = 2958152e-13;
-const wa$3 = 2816161e-9;
-const wb$3 = 2189032e-11;
-const wc$3 = 3076478e-11;
-const wd$3 = 3963924e-11;
-const we$3 = 2785692e-9;
-const wf$3 = 1449494e-11;
-const wg$3 = 4733043e-12;
-const wh$3 = 2215064e-9;
-const wi$3 = 3103101e-9;
-const wj$3 = 4141413e-12;
-const wk$3 = 1863636e-11;
-const wl$3 = 8489896e-11;
-const wm$3 = 2425685e-11;
-const wn$3 = 6457646e-10;
-const wo$3 = 1726969e-9;
-const wp$3 = 136075e-10;
-const wq$3 = 8874456e-13;
-const wr$3 = 1768975e-10;
-const ws$3 = 3330879e-10;
-const wt$3 = 5797978e-11;
-const wu$3 = 5916304e-12;
-const wv$3 = 2662337e-12;
-const ww$3 = 4525972e-11;
-const wx$3 = 2958152e-13;
-const wy$3 = 292857e-10;
-const wz$3 = 5916304e-13;
-const xa$3 = 1162554e-10;
-const xb$3 = 2662337e-12;
-const xc$3 = 1153679e-10;
-const xd$3 = 5916304e-13;
-const xe$3 = 1032395e-10;
-const xf$3 = 7099565e-12;
-const xg$3 = 1774891e-12;
-const xh$3 = 2514429e-11;
-const xi$3 = 1461327e-10;
-const xj$3 = 0;
-const xk$3 = 2958152e-13;
-const xl$3 = 1183261e-12;
-const xm$3 = 6507934e-12;
-const xn$3 = 8874456e-13;
-const xo$3 = 1301587e-11;
-const xp$3 = 4031961e-10;
-const xq$3 = 1183261e-12;
-const xr$3 = 2070706e-12;
-const xs$3 = 1094516e-11;
-const xt$3 = 2514429e-10;
-const xu$3 = 3549782e-11;
-const xv$3 = 1242424e-11;
-const xw$3 = 2958152e-12;
-const xx$3 = 1479076e-12;
-const xy$3 = 8874456e-12;
-const xz$3 = 0;
-const ya$3 = 2650504e-10;
-const yb$3 = 1112265e-10;
-const yc$3 = 9673157e-11;
-const yd$3 = 5797978e-11;
-const ye$3 = 1093037e-9;
-const yf$3 = 4052668e-11;
-const yg$3 = 2573592e-11;
-const yh$3 = 4851369e-11;
-const yi$3 = 334567e-9;
-const yj$3 = 9466086e-12;
-const yk$3 = 1390331e-11;
-const yl$3 = 1452453e-10;
-const ym$3 = 1573737e-10;
-const yn$3 = 112114e-9;
-const yo$3 = 1425829e-9;
-const yp$3 = 9406923e-11;
-const yq$3 = 1183261e-12;
-const yr$3 = 9821064e-11;
-const ys$3 = 8655552e-10;
-const yt$3 = 265642e-9;
-const yu$3 = 2751081e-11;
-const yv$3 = 2159451e-11;
-const yw$3 = 973232e-10;
-const yx$3 = 5916304e-13;
-const yy$3 = 1390331e-11;
-const yz$3 = 8874456e-12;
-const za$3 = 1493867e-10;
-const zb$3 = 3845597e-12;
-const zc$3 = 2366522e-12;
-const zd$3 = 2070706e-12;
-const ze$3 = 334567e-9;
-const zf$3 = 1479076e-12;
-const zg$3 = 2958152e-12;
-const zh$3 = 1153679e-11;
-const zi$3 = 1127056e-10;
-const zj$3 = 2958152e-13;
-const zk$3 = 4733043e-12;
-const zl$3 = 1774891e-11;
-const zm$3 = 2070706e-12;
-const zn$3 = 2958152e-12;
-const zo$3 = 7957429e-11;
-const zp$3 = 3549782e-12;
-const zq$3 = 0;
-const zr$3 = 2958152e-13;
-const zs$3 = 5324673e-12;
-const zt$3 = 4733043e-12;
-const zu$3 = 2041125e-11;
-const zv$3 = 1479076e-12;
-const zw$3 = 1774891e-12;
-const zx$3 = 0;
-const zy$3 = 1686147e-11;
-const zz$3 = 4200576e-11;
-const bigram_english = {
-  aa: aa$3,
-  ab: ab$3,
-  ac: ac$3,
-  ad: ad$3,
-  ae: ae$3,
-  af: af$3,
-  ag: ag$3,
-  ah: ah$3,
-  ai: ai$3,
-  aj: aj$3,
-  ak: ak$3,
-  al: al$3,
-  am: am$3,
-  an: an$3,
-  ao: ao$3,
-  ap: ap$3,
-  aq: aq$3,
-  ar: ar$3,
-  as: as$3,
-  at: at$3,
-  au: au$3,
-  av: av$3,
-  aw: aw$3,
-  ax: ax$3,
-  ay: ay$3,
-  az: az$3,
-  "a ": 5687047e-9,
-  ba: ba$3,
-  bb: bb$3,
-  bc: bc$3,
-  bd: bd$3,
-  be: be$3,
-  bf: bf$3,
-  bg: bg$3,
-  bh: bh$3,
-  bi: bi$3,
-  bj: bj$3,
-  bk: bk$3,
-  bl: bl$3,
-  bm: bm$3,
-  bn: bn$3,
-  bo: bo$3,
-  bp: bp$3,
-  bq: bq$3,
-  br: br$3,
-  bs: bs$3,
-  bt: bt$3,
-  bu: bu$3,
-  bv: bv$3,
-  bw: bw$3,
-  bx: bx$3,
-  by: by$3,
-  bz: bz$3,
-  "b ": 2579508e-10,
-  ca: ca$3,
-  cb: cb$3,
-  cc: cc$3,
-  cd: cd$3,
-  ce: ce$3,
-  cf: cf$3,
-  cg: cg$3,
-  ch: ch$3,
-  ci: ci$3,
-  cj: cj$3,
-  ck: ck$3,
-  cl: cl$3,
-  cm: cm$3,
-  cn: cn$3,
-  co: co$3,
-  cp: cp$3,
-  cq: cq$3,
-  cr: cr$3,
-  cs: cs$3,
-  ct: ct$3,
-  cu: cu$3,
-  cv: cv$3,
-  cw: cw$3,
-  cx: cx$3,
-  cy: cy$3,
-  cz: cz$3,
-  "c ": 8670343e-10,
-  da: da$3,
-  db: db$3,
-  dc: dc$3,
-  dd: dd$3,
-  de: de$3,
-  df: df$3,
-  dg: dg$3,
-  dh: dh$3,
-  di: di$3,
-  dj: dj$3,
-  dk: dk$3,
-  dl: dl$3,
-  dm: dm$3,
-  dn: dn$3,
-  "do": 1605981e-9,
-  dp: dp$3,
-  dq: dq$3,
-  dr: dr$3,
-  ds: ds$3,
-  dt: dt$3,
-  du: du$3,
-  dv: dv$3,
-  dw: dw$3,
-  dx: dx$3,
-  dy: dy$3,
-  dz: dz$3,
-  "d ": 0.01595627,
-  ea: ea$3,
-  eb: eb$3,
-  ec: ec$3,
-  ed: ed$3,
-  ee: ee$3,
-  ef: ef$3,
-  eg: eg$3,
-  eh: eh$3,
-  ei: ei$3,
-  ej: ej$3,
-  ek: ek$3,
-  el: el$3,
-  em: em$3,
-  en: en$3,
-  eo: eo$3,
-  ep: ep$3,
-  eq: eq$3,
-  er: er$3,
-  es: es$3,
-  et: et$3,
-  eu: eu$3,
-  ev: ev$3,
-  ew: ew$3,
-  ex: ex$3,
-  ey: ey$3,
-  ez: ez$3,
-  "e ": 0.03137416,
-  fa: fa$3,
-  fb: fb$3,
-  fc: fc$3,
-  fd: fd$3,
-  fe: fe$3,
-  ff: ff$3,
-  fg: fg$3,
-  fh: fh$3,
-  fi: fi$3,
-  fj: fj$3,
-  fk: fk$3,
-  fl: fl$3,
-  fm: fm$3,
-  fn: fn$3,
-  fo: fo$3,
-  fp: fp$3,
-  fq: fq$3,
-  fr: fr$3,
-  fs: fs$3,
-  ft: ft$3,
-  fu: fu$3,
-  fv: fv$3,
-  fw: fw$3,
-  fx: fx$3,
-  fy: fy$3,
-  fz: fz$3,
-  "f ": 5264327e-9,
-  ga: ga$3,
-  gb: gb$3,
-  gc: gc$3,
-  gd: gd$3,
-  ge: ge$3,
-  gf: gf$3,
-  gg: gg$3,
-  gh: gh$3,
-  gi: gi$3,
-  gj: gj$3,
-  gk: gk$3,
-  gl: gl$3,
-  gm: gm$3,
-  gn: gn$3,
-  go: go$3,
-  gp: gp$3,
-  gq: gq$3,
-  gr: gr$3,
-  gs: gs$3,
-  gt: gt$3,
-  gu: gu$3,
-  gv: gv$3,
-  gw: gw$3,
-  gx: gx$3,
-  gy: gy$3,
-  gz: gz$3,
-  "g ": 6022206e-9,
-  ha: ha$3,
-  hb: hb$3,
-  hc: hc$3,
-  hd: hd$3,
-  he: he$3,
-  hf: hf$3,
-  hg: hg$3,
-  hh: hh$3,
-  hi: hi$3,
-  hj: hj$3,
-  hk: hk$3,
-  hl: hl$3,
-  hm: hm$3,
-  hn: hn$3,
-  ho: ho$3,
-  hp: hp$3,
-  hq: hq$3,
-  hr: hr$3,
-  hs: hs$3,
-  ht: ht$3,
-  hu: hu$3,
-  hv: hv$3,
-  hw: hw$3,
-  hx: hx$3,
-  hy: hy$3,
-  hz: hz$3,
-  "h ": 4191405e-9,
-  ia: ia$3,
-  ib: ib$3,
-  ic: ic$3,
-  id: id$3,
-  ie: ie$3,
-  "if": 1085938e-9,
-  ig: ig$3,
-  ih: ih$3,
-  ii: ii$3,
-  ij: ij$3,
-  ik: ik$3,
-  il: il$3,
-  im: im$3,
-  "in": 0.01621156,
-  io: io$3,
-  ip: ip$3,
-  iq: iq$3,
-  ir: ir$3,
-  is: is$3,
-  it: it$3,
-  iu: iu$3,
-  iv: iv$3,
-  iw: iw$3,
-  ix: ix$3,
-  iy: iy$3,
-  iz: iz$3,
-  "i ": 1324956e-9,
-  ja: ja$3,
-  jb: jb$3,
-  jc: jc$3,
-  jd: jd$3,
-  je: je$3,
-  jf: jf$3,
-  jg: jg$3,
-  jh: jh$3,
-  ji: ji$3,
-  jj: jj$3,
-  jk: jk$3,
-  jl: jl$3,
-  jm: jm$3,
-  jn: jn$3,
-  jo: jo$3,
-  jp: jp$3,
-  jq: jq$3,
-  jr: jr$3,
-  js: js$3,
-  jt: jt$3,
-  ju: ju$3,
-  jv: jv$3,
-  jw: jw$3,
-  jx: jx$3,
-  jy: jy$3,
-  jz: jz$3,
-  "j ": 2780663e-11,
-  ka: ka$3,
-  kb: kb$3,
-  kc: kc$3,
-  kd: kd$3,
-  ke: ke$3,
-  kf: kf$3,
-  kg: kg$3,
-  kh: kh$3,
-  ki: ki$3,
-  kj: kj$3,
-  kk: kk$3,
-  kl: kl$3,
-  km: km$3,
-  kn: kn$3,
-  ko: ko$3,
-  kp: kp$3,
-  kq: kq$3,
-  kr: kr$3,
-  ks: ks$3,
-  kt: kt$3,
-  ku: ku$3,
-  kv: kv$3,
-  kw: kw$3,
-  kx: kx$3,
-  ky: ky$3,
-  kz: kz$3,
-  "k ": 1847662e-9,
-  la: la$3,
-  lb: lb$3,
-  lc: lc$3,
-  ld: ld$3,
-  le: le$3,
-  lf: lf$3,
-  lg: lg$3,
-  lh: lh$3,
-  li: li$3,
-  lj: lj$3,
-  lk: lk$3,
-  ll: ll$3,
-  lm: lm$3,
-  ln: ln$3,
-  lo: lo$3,
-  lp: lp$3,
-  lq: lq$3,
-  lr: lr$3,
-  ls: ls$3,
-  lt: lt$3,
-  lu: lu$3,
-  lv: lv$3,
-  lw: lw$3,
-  lx: lx$3,
-  ly: ly$3,
-  lz: lz$3,
-  "l ": 5716924e-9,
-  ma: ma$3,
-  mb: mb$3,
-  mc: mc$3,
-  md: md$3,
-  me: me$3,
-  mf: mf$3,
-  mg: mg$3,
-  mh: mh$3,
-  mi: mi$3,
-  mj: mj$3,
-  mk: mk$3,
-  ml: ml$3,
-  mm: mm$3,
-  mn: mn$3,
-  mo: mo$3,
-  mp: mp$3,
-  mq: mq$3,
-  mr: mr$3,
-  ms: ms$3,
-  mt: mt$3,
-  mu: mu$3,
-  mv: mv$3,
-  mw: mw$3,
-  mx: mx$3,
-  my: my$3,
-  mz: mz$3,
-  "m ": 2669732e-9,
-  na: na$3,
-  nb: nb$3,
-  nc: nc$3,
-  nd: nd$3,
-  ne: ne$3,
-  nf: nf$3,
-  ng: ng$3,
-  nh: nh$3,
-  ni: ni$3,
-  nj: nj$3,
-  nk: nk$3,
-  nl: nl$3,
-  nm: nm$3,
-  nn: nn$3,
-  no: no$3,
-  np: np$3,
-  nq: nq$3,
-  nr: nr$3,
-  ns: ns$3,
-  nt: nt$3,
-  nu: nu$3,
-  nv: nv$3,
-  nw: nw$3,
-  nx: nx$3,
-  ny: ny$3,
-  nz: nz$3,
-  "n ": 0.01417606,
-  oa: oa$3,
-  ob: ob$3,
-  oc: oc$3,
-  od: od$3,
-  oe: oe$3,
-  of: of$3,
-  og: og$3,
-  oh: oh$3,
-  oi: oi$3,
-  oj: oj$3,
-  ok: ok$3,
-  ol: ol$3,
-  om: om$3,
-  on: on$3,
-  oo: oo$3,
-  op: op$3,
-  oq: oq$3,
-  or: or$3,
-  os: os$3,
-  ot: ot$3,
-  ou: ou$3,
-  ov: ov$3,
-  ow: ow$3,
-  ox: ox$3,
-  oy: oy$3,
-  oz: oz$3,
-  "o ": 7964824e-9,
-  pa: pa$3,
-  pb: pb$3,
-  pc: pc$3,
-  pd: pd$3,
-  pe: pe$3,
-  pf: pf$3,
-  pg: pg$3,
-  ph: ph$3,
-  pi: pi$3,
-  pj: pj$3,
-  pk: pk$3,
-  pl: pl$3,
-  pm: pm$3,
-  pn: pn$3,
-  po: po$3,
-  pp: pp$3,
-  pq: pq$3,
-  pr: pr$3,
-  ps: ps$3,
-  pt: pt$3,
-  pu: pu$3,
-  pv: pv$3,
-  pw: pw$3,
-  px: px$3,
-  py: py$3,
-  pz: pz$3,
-  "p ": 1323181e-9,
-  qa: qa$3,
-  qb: qb$3,
-  qc: qc$3,
-  qd: qd$3,
-  qe: qe$3,
-  qf: qf$3,
-  qg: qg$3,
-  qh: qh$3,
-  qi: qi$3,
-  qj: qj$3,
-  qk: qk$3,
-  ql: ql$3,
-  qm: qm$3,
-  qn: qn$3,
-  qo: qo$3,
-  qp: qp$3,
-  qq: qq$3,
-  qr: qr$3,
-  qs: qs$3,
-  qt: qt$3,
-  qu: qu$3,
-  qv: qv$3,
-  qw: qw$3,
-  qx: qx$3,
-  qy: qy$3,
-  qz: qz$3,
-  "q ": 2366522e-11,
-  ra: ra$3,
-  rb: rb$3,
-  rc: rc$3,
-  rd: rd$3,
-  re: re$3,
-  rf: rf$3,
-  rg: rg$3,
-  rh: rh$3,
-  ri: ri$3,
-  rj: rj$3,
-  rk: rk$3,
-  rl: rl$3,
-  rm: rm$3,
-  rn: rn$3,
-  ro: ro$3,
-  rp: rp$3,
-  rq: rq$3,
-  rr: rr$3,
-  rs: rs$3,
-  rt: rt$3,
-  ru: ru$3,
-  rv: rv$3,
-  rw: rw$3,
-  rx: rx$3,
-  ry: ry$3,
-  rz: rz$3,
-  "r ": 0.01024822,
-  sa: sa$3,
-  sb: sb$3,
-  sc: sc$3,
-  sd: sd$3,
-  se: se$3,
-  sf: sf$3,
-  sg: sg$3,
-  sh: sh$3,
-  si: si$3,
-  sj: sj$3,
-  sk: sk$3,
-  sl: sl$3,
-  sm: sm$3,
-  sn: sn$3,
-  so: so$3,
-  sp: sp$3,
-  sq: sq$3,
-  sr: sr$3,
-  ss: ss$3,
-  st: st$3,
-  su: su$3,
-  sv: sv$3,
-  sw: sw$3,
-  sx: sx$3,
-  sy: sy$3,
-  sz: sz$3,
-  "s ": 0.02166343,
-  ta: ta$3,
-  tb: tb$3,
-  tc: tc$3,
-  td: td$3,
-  te: te$3,
-  tf: tf$3,
-  tg: tg$3,
-  th: th$3,
-  ti: ti$3,
-  tj: tj$3,
-  tk: tk$3,
-  tl: tl$3,
-  tm: tm$3,
-  tn: tn$3,
-  to: to$3,
-  tp: tp$3,
-  tq: tq$3,
-  tr: tr$3,
-  ts: ts$3,
-  tt: tt$3,
-  tu: tu$3,
-  tv: tv$3,
-  tw: tw$3,
-  tx: tx$3,
-  ty: ty$3,
-  tz: tz$3,
-  "t ": 0.01592521,
-  ua: ua$3,
-  ub: ub$3,
-  uc: uc$3,
-  ud: ud$3,
-  ue: ue$3,
-  uf: uf$3,
-  ug: ug$3,
-  uh: uh$3,
-  ui: ui$3,
-  uj: uj$3,
-  uk: uk$3,
-  ul: ul$3,
-  um: um$3,
-  un: un$3,
-  uo: uo$3,
-  up: up$3,
-  uq: uq$3,
-  ur: ur$3,
-  us: us$3,
-  ut: ut$3,
-  uu: uu$3,
-  uv: uv$3,
-  uw: uw$3,
-  ux: ux$3,
-  uy: uy$3,
-  uz: uz$3,
-  "u ": 7918973e-10,
-  va: va$3,
-  vb: vb$3,
-  vc: vc$3,
-  vd: vd$3,
-  ve: ve$3,
-  vf: vf$3,
-  vg: vg$3,
-  vh: vh$3,
-  vi: vi$3,
-  vj: vj$3,
-  vk: vk$3,
-  vl: vl$3,
-  vm: vm$3,
-  vn: vn$3,
-  vo: vo$3,
-  vp: vp$3,
-  vq: vq$3,
-  vr: vr$3,
-  vs: vs$3,
-  vt: vt$3,
-  vu: vu$3,
-  vv: vv$3,
-  vw: vw$3,
-  vx: vx$3,
-  vy: vy$3,
-  vz: vz$3,
-  "v ": 1514574e-10,
-  wa: wa$3,
-  wb: wb$3,
-  wc: wc$3,
-  wd: wd$3,
-  we: we$3,
-  wf: wf$3,
-  wg: wg$3,
-  wh: wh$3,
-  wi: wi$3,
-  wj: wj$3,
-  wk: wk$3,
-  wl: wl$3,
-  wm: wm$3,
-  wn: wn$3,
-  wo: wo$3,
-  wp: wp$3,
-  wq: wq$3,
-  wr: wr$3,
-  ws: ws$3,
-  wt: wt$3,
-  wu: wu$3,
-  wv: wv$3,
-  ww: ww$3,
-  wx: wx$3,
-  wy: wy$3,
-  wz: wz$3,
-  "w ": 1541493e-9,
-  xa: xa$3,
-  xb: xb$3,
-  xc: xc$3,
-  xd: xd$3,
-  xe: xe$3,
-  xf: xf$3,
-  xg: xg$3,
-  xh: xh$3,
-  xi: xi$3,
-  xj: xj$3,
-  xk: xk$3,
-  xl: xl$3,
-  xm: xm$3,
-  xn: xn$3,
-  xo: xo$3,
-  xp: xp$3,
-  xq: xq$3,
-  xr: xr$3,
-  xs: xs$3,
-  xt: xt$3,
-  xu: xu$3,
-  xv: xv$3,
-  xw: xw$3,
-  xx: xx$3,
-  xy: xy$3,
-  xz: xz$3,
-  "x ": 2600216e-10,
-  ya: ya$3,
-  yb: yb$3,
-  yc: yc$3,
-  yd: yd$3,
-  ye: ye$3,
-  yf: yf$3,
-  yg: yg$3,
-  yh: yh$3,
-  yi: yi$3,
-  yj: yj$3,
-  yk: yk$3,
-  yl: yl$3,
-  ym: ym$3,
-  yn: yn$3,
-  yo: yo$3,
-  yp: yp$3,
-  yq: yq$3,
-  yr: yr$3,
-  ys: ys$3,
-  yt: yt$3,
-  yu: yu$3,
-  yv: yv$3,
-  yw: yw$3,
-  yx: yx$3,
-  yy: yy$3,
-  yz: yz$3,
-  "y ": 9639138e-9,
-  za: za$3,
-  zb: zb$3,
-  zc: zc$3,
-  zd: zd$3,
-  ze: ze$3,
-  zf: zf$3,
-  zg: zg$3,
-  zh: zh$3,
-  zi: zi$3,
-  zj: zj$3,
-  zk: zk$3,
-  zl: zl$3,
-  zm: zm$3,
-  zn: zn$3,
-  zo: zo$3,
-  zp: zp$3,
-  zq: zq$3,
-  zr: zr$3,
-  zs: zs$3,
-  zt: zt$3,
-  zu: zu$3,
-  zv: zv$3,
-  zw: zw$3,
-  zx: zx$3,
-  zy: zy$3,
-  zz: zz$3,
-  "z ": 1106349e-10,
-  " a": 0.01947973,
-  " b": 7749471e-9,
-  " c": 9353381e-9,
-  " d": 5165821e-9,
-  " e": 3850922e-9,
-  " f": 7408396e-9,
-  " g": 3408087e-9,
-  " h": 7161982e-9,
-  " i": 0.0103349,
-  " j": 1250411e-9,
-  " k": 1044819e-9,
-  " l": 4243469e-9,
-  " m": 6370676e-9,
-  " n": 357966e-8,
-  " o": 0.01039317,
-  " p": 723209e-8,
-  " q": 312085e-9,
-  " r": 4846044e-9,
-  " s": 0.01201453,
-  " t": 0.02464614,
-  " u": 1878722e-9,
-  " v": 1273189e-9,
-  " w": 9990566e-9,
-  " x": 3904761e-11,
-  " y": 1892921e-9,
-  " z": 1067893e-10,
-  "  ": 3403058e-9
-};
-const aa$2 = 7196313e-11;
-const ab$2 = 1146417e-9;
-const ac$2 = 2255236e-9;
-const ad$2 = 102687e-8;
-const ae$2 = 6373878e-11;
-const af$2 = 6714601e-10;
-const ag$2 = 1671895e-9;
-const ah$2 = 2599485e-10;
-const ai$2 = 8371809e-9;
-const aj$2 = 2144208e-10;
-const ak$2 = 1374643e-10;
-const al$2 = 4596829e-9;
-const am$2 = 1817877e-9;
-const an$2 = 0.01079858;
-const ao$2 = 160375e-9;
-const ap$2 = 1556166e-9;
-const aq$2 = 2349817e-10;
-const ar$2 = 6379752e-9;
-const as$2 = 2938446e-9;
-const at$2 = 5425433e-9;
-const au$2 = 5215124e-9;
-const av$2 = 2583036e-9;
-const aw$2 = 596266e-10;
-const ax$2 = 9634248e-11;
-const ay$2 = 5386955e-10;
-const az$2 = 1207218e-10;
-const ba$2 = 121603e-8;
-const bb$2 = 4963988e-11;
-const bc$2 = 5022733e-11;
-const bd$2 = 4053434e-11;
-const be$2 = 8676698e-10;
-const bf$2 = 3818452e-12;
-const bg$2 = 2643544e-12;
-const bh$2 = 8224358e-12;
-const bi$2 = 9654809e-10;
-const bj$2 = 7578159e-11;
-const bk$2 = 4112179e-12;
-const bl$2 = 1725353e-9;
-const bm$2 = 1351145e-11;
-const bn$2 = 7431295e-11;
-const bo$2 = 906148e-9;
-const bp$2 = 1997344e-11;
-const bq$2 = 1762362e-12;
-const br$2 = 100719e-8;
-const bs$2 = 1550879e-10;
-const bt$2 = 1077978e-10;
-const bu$2 = 5842232e-10;
-const bv$2 = 1057417e-11;
-const bw$2 = 1468635e-12;
-const bx$2 = 5874542e-13;
-const by$2 = 4141552e-11;
-const bz$2 = 1468635e-12;
-const ca$2 = 2464664e-9;
-const cb$2 = 1233654e-11;
-const cc$2 = 6356254e-10;
-const cd$2 = 1404015e-10;
-const ce$2 = 6541889e-9;
-const cf$2 = 3730334e-11;
-const cg$2 = 2026717e-11;
-const ch$2 = 3648971e-9;
-const ci$2 = 2330431e-9;
-const cj$2 = 2643544e-12;
-const ck$2 = 2106023e-10;
-const cl$2 = 9264152e-10;
-const cm$2 = 2878525e-11;
-const cn$2 = 6755723e-11;
-const co$2 = 615417e-8;
-const cp$2 = 1351145e-11;
-const cq$2 = 6579487e-11;
-const cr$2 = 1133787e-9;
-const cs$2 = 252899e-9;
-const ct$2 = 2083406e-9;
-const cu$2 = 1049781e-9;
-const cv$2 = 4699633e-12;
-const cw$2 = 2937271e-13;
-const cx$2 = 5874542e-13;
-const cy$2 = 5228342e-11;
-const cz$2 = 4112179e-12;
-const da$2 = 350152e-8;
-const db$2 = 207665e-9;
-const dc$2 = 5592564e-10;
-const dd$2 = 6785095e-11;
-const de$2 = 0.01744005;
-const df$2 = 2549551e-10;
-const dg$2 = 1145536e-10;
-const dh$2 = 2067839e-10;
-const di$2 = 3737971e-9;
-const dj$2 = 1988532e-10;
-const dk$2 = 1762362e-12;
-const dl$2 = 1847543e-10;
-const dm$2 = 2470245e-10;
-const dn$2 = 7196313e-11;
-const dp$2 = 3427795e-10;
-const dq$2 = 1263026e-11;
-const dr$2 = 1254508e-9;
-const ds$2 = 5043294e-10;
-const dt$2 = 2608296e-10;
-const du$2 = 3757063e-9;
-const dv$2 = 1865167e-10;
-const dw$2 = 9105539e-12;
-const dx$2 = 8811812e-13;
-const dy$2 = 704945e-10;
-const dz$2 = 3818452e-12;
-const ea$2 = 1181664e-9;
-const eb$2 = 2029654e-10;
-const ec$2 = 2597429e-9;
-const ed$2 = 737255e-9;
-const ee$2 = 3007765e-10;
-const ef$2 = 5290025e-10;
-const eg$2 = 2135396e-10;
-const eh$2 = 4875869e-11;
-const ei$2 = 9672433e-10;
-const ej$2 = 1292399e-10;
-const ek$2 = 6902586e-11;
-const el$2 = 4198535e-9;
-const em$2 = 4368015e-9;
-const en$2 = 0.01575111;
-const eo$2 = 1633123e-10;
-const ep$2 = 1114694e-9;
-const eq$2 = 8371222e-11;
-const er$2 = 0.01000082;
-const es$2 = 0.0187953;
-const et$2 = 5929468e-9;
-const eu$2 = 5790242e-9;
-const ev$2 = 9011547e-10;
-const ew$2 = 8870558e-11;
-const ex$2 = 9690056e-10;
-const ey$2 = 1104414e-10;
-const ez$2 = 3586408e-10;
-const fa$2 = 1901002e-9;
-const fb$2 = 3818452e-12;
-const fc$2 = 3260371e-11;
-const fd$2 = 8018749e-11;
-const fe$2 = 8568019e-10;
-const ff$2 = 1159047e-9;
-const fg$2 = 2379189e-11;
-const fh$2 = 5874542e-13;
-const fi$2 = 1944767e-9;
-const fj$2 = 3230998e-12;
-const fk$2 = 5874542e-13;
-const fl$2 = 243206e-9;
-const fm$2 = 2937271e-11;
-const fn$2 = 8518085e-12;
-const fo$2 = 1385217e-9;
-const fp$2 = 4963988e-11;
-const fq$2 = 8811812e-13;
-const fr$2 = 1406953e-9;
-const fs$2 = 1380517e-10;
-const ft$2 = 704945e-10;
-const fu$2 = 2314569e-10;
-const fv$2 = 4846497e-11;
-const fw$2 = 2937271e-13;
-const fx$2 = 2937271e-13;
-const fy$2 = 1468635e-12;
-const fz$2 = 2937271e-13;
-const ga$2 = 1257152e-9;
-const gb$2 = 1615499e-11;
-const gc$2 = 1556754e-11;
-const gd$2 = 205609e-10;
-const ge$2 = 2225864e-9;
-const gf$2 = 5287087e-12;
-const gg$2 = 3642216e-11;
-const gh$2 = 1025107e-10;
-const gi$2 = 8662011e-10;
-const gj$2 = 8811812e-13;
-const gk$2 = 6168269e-12;
-const gl$2 = 2649418e-10;
-const gm$2 = 1001609e-10;
-const gn$2 = 9916226e-10;
-const go$2 = 5243028e-10;
-const gp$2 = 1380517e-11;
-const gq$2 = 5874542e-13;
-const gr$2 = 1320303e-9;
-const gs$2 = 9252403e-11;
-const gt$2 = 1201344e-10;
-const gu$2 = 5874542e-10;
-const gv$2 = 5874542e-12;
-const gw$2 = 1762362e-12;
-const gx$2 = 0;
-const gy$2 = 281978e-10;
-const gz$2 = 8811812e-13;
-const ha$2 = 1846075e-9;
-const hb$2 = 1644872e-11;
-const hc$2 = 1791735e-11;
-const hd$2 = 205609e-10;
-const he$2 = 1726528e-9;
-const hf$2 = 2937271e-12;
-const hg$2 = 2349817e-12;
-const hh$2 = 2643544e-12;
-const hi$2 = 7989376e-10;
-const hj$2 = 6168269e-12;
-const hk$2 = 5287087e-12;
-const hl$2 = 6931959e-11;
-const hm$2 = 8224358e-11;
-const hn$2 = 1624311e-10;
-const ho$2 = 9737053e-10;
-const hp$2 = 4082806e-11;
-const hq$2 = 1703617e-11;
-const hr$2 = 1856355e-10;
-const hs$2 = 1257152e-10;
-const ht$2 = 1098539e-10;
-const hu$2 = 3095883e-10;
-const hv$2 = 8224358e-12;
-const hw$2 = 1057417e-11;
-const hx$2 = 0;
-const hy$2 = 749004e-10;
-const hz$2 = 4699633e-12;
-const ia$2 = 1291224e-9;
-const ib$2 = 6573612e-10;
-const ic$2 = 2707576e-9;
-const id$2 = 1284469e-9;
-const ie$2 = 5872779e-9;
-const ig$2 = 1090021e-9;
-const ih$2 = 173299e-10;
-const ii$2 = 5257715e-11;
-const ij$2 = 3436607e-11;
-const ik$2 = 608015e-10;
-const il$2 = 4863827e-9;
-const im$2 = 1795847e-9;
-const io$2 = 5168422e-9;
-const ip$2 = 612421e-9;
-const iq$2 = 1575552e-9;
-const ir$2 = 4594479e-9;
-const is$2 = 8363879e-9;
-const it$2 = 7309105e-9;
-const iu$2 = 5698305e-11;
-const iv$2 = 1290931e-9;
-const iw$2 = 7343177e-12;
-const ix$2 = 36804e-8;
-const iy$2 = 8811812e-12;
-const iz$2 = 8958676e-11;
-const ja$2 = 4452902e-10;
-const jb$2 = 8811812e-13;
-const jc$2 = 4112179e-12;
-const jd$2 = 5580814e-12;
-const je$2 = 1142011e-9;
-const jf$2 = 5874542e-13;
-const jg$2 = 8811812e-13;
-const jh$2 = 5874542e-13;
-const ji$2 = 3201625e-11;
-const jj$2 = 1762362e-12;
-const jk$2 = 205609e-11;
-const jl$2 = 3818452e-12;
-const jm$2 = 4112179e-12;
-const jn$2 = 0;
-const jo$2 = 1209274e-9;
-const jp$2 = 3524725e-12;
-const jq$2 = 2937271e-13;
-const jr$2 = 217358e-10;
-const js$2 = 9399266e-12;
-const jt$2 = 1233654e-11;
-const ju$2 = 5651309e-10;
-const jv$2 = 2937271e-13;
-const jw$2 = 0;
-const jx$2 = 0;
-const jy$2 = 1174908e-12;
-const jz$2 = 0;
-const ka$2 = 170068e-9;
-const kb$2 = 7343177e-12;
-const kc$2 = 5287087e-12;
-const kd$2 = 5580814e-12;
-const ke$2 = 1973846e-10;
-const kf$2 = 205609e-11;
-const kg$2 = 6755723e-12;
-const kh$2 = 531646e-10;
-const ki$2 = 1947411e-10;
-const kj$2 = 5874542e-13;
-const kk$2 = 8224358e-12;
-const kl$2 = 2672916e-11;
-const km$2 = 3084134e-11;
-const kn$2 = 9986721e-12;
-const ko$2 = 1577314e-10;
-const kp$2 = 5874542e-12;
-const kq$2 = 0;
-const kr$2 = 2261698e-11;
-const ks$2 = 3935943e-11;
-const kt$2 = 9105539e-12;
-const ku$2 = 1938599e-11;
-const kv$2 = 3230998e-12;
-const kw$2 = 3230998e-12;
-const kx$2 = 2937271e-13;
-const ky$2 = 2526053e-11;
-const kz$2 = 0;
-const la$2 = 0.01002021;
-const lb$2 = 9134912e-11;
-const lc$2 = 2288134e-10;
-const ld$2 = 1586126e-10;
-const le$2 = 0.01637675;
-const lf$2 = 4141552e-11;
-const lg$2 = 3671588e-10;
-const lh$2 = 230282e-9;
-const li$2 = 4837097e-9;
-const lj$2 = 1674244e-11;
-const lk$2 = 2702289e-11;
-const ll$2 = 389159e-8;
-const lm$2 = 3222186e-10;
-const ln$2 = 5815796e-11;
-const lo$2 = 2807737e-9;
-const lp$2 = 1318835e-10;
-const lq$2 = 2581861e-10;
-const lr$2 = 1227779e-10;
-const ls$2 = 742542e-9;
-const lt$2 = 5354645e-10;
-const lu$2 = 2328668e-9;
-const lv$2 = 1806422e-10;
-const lw$2 = 499336e-11;
-const lx$2 = 1174908e-12;
-const ly$2 = 2341005e-10;
-const lz$2 = 5874542e-12;
-const ma$2 = 4654693e-9;
-const mb$2 = 896455e-9;
-const mc$2 = 6814468e-11;
-const md$2 = 1891602e-10;
-const me$2 = 6847366e-9;
-const mf$2 = 1116163e-11;
-const mg$2 = 1380517e-11;
-const mh$2 = 9399266e-12;
-const mi$2 = 3008353e-9;
-const mj$2 = 4112179e-12;
-const mk$2 = 2349817e-12;
-const ml$2 = 9017421e-11;
-const mm$2 = 1971496e-9;
-const mn$2 = 1486259e-10;
-const mo$2 = 2169174e-9;
-const mp$2 = 1801428e-9;
-const mq$2 = 3524725e-12;
-const mr$2 = 2881463e-10;
-const ms$2 = 1318835e-10;
-const mt$2 = 1685993e-10;
-const mu$2 = 4726069e-10;
-const mv$2 = 5580814e-12;
-const mw$2 = 108679e-10;
-const mx$2 = 8811812e-13;
-const my$2 = 3994688e-11;
-const mz$2 = 1468635e-12;
-const na$2 = 3351132e-9;
-const nb$2 = 455277e-10;
-const nc$2 = 364809e-8;
-const nd$2 = 3657783e-9;
-const ne$2 = 7572871e-9;
-const nf$2 = 6876151e-10;
-const ng$2 = 109942e-8;
-const nh$2 = 4934615e-11;
-const ni$2 = 2871182e-9;
-const nj$2 = 8635576e-11;
-const nk$2 = 6256387e-11;
-const nl$2 = 2232326e-10;
-const nm$2 = 1139661e-10;
-const nn$2 = 2348642e-9;
-const no$2 = 266851e-8;
-const np$2 = 7666277e-11;
-const nq$2 = 3571721e-10;
-const nr$2 = 2849153e-10;
-const ns$2 = 6248162e-9;
-const nt$2 = 0.01379989;
-const nu$2 = 8118616e-10;
-const nv$2 = 5198969e-10;
-const nw$2 = 6168269e-12;
-const nx$2 = 2643544e-12;
-const ny$2 = 1471573e-10;
-const nz$2 = 5727678e-11;
-const oa$2 = 1257152e-10;
-const ob$2 = 6224077e-10;
-const oc$2 = 1228073e-9;
-const od$2 = 5008047e-10;
-const oe$2 = 166837e-9;
-const of$2 = 4141552e-10;
-const og$2 = 5149036e-10;
-const oh$2 = 7930631e-11;
-const oi$2 = 3698905e-9;
-const oj$2 = 1418702e-10;
-const ok$2 = 7636904e-11;
-const ol$2 = 1910988e-9;
-const om$2 = 2869126e-9;
-const on$2 = 0.01517805;
-const oo$2 = 3818452e-10;
-const op$2 = 113173e-8;
-const oq$2 = 1677182e-10;
-const or$2 = 4215571e-9;
-const os$2 = 1615793e-9;
-const ot$2 = 1249221e-9;
-const ou$2 = 9658921e-9;
-const ov$2 = 2655293e-10;
-const ow$2 = 8606203e-11;
-const ox$2 = 5404578e-11;
-const oy$2 = 3430732e-10;
-const oz$2 = 7166941e-11;
-const pa$2 = 532909e-8;
-const pb$2 = 6168269e-12;
-const pc$2 = 1559691e-10;
-const pd$2 = 5580814e-11;
-const pe$2 = 3069448e-9;
-const pf$2 = 1174908e-11;
-const pg$2 = 5580814e-12;
-const ph$2 = 4288415e-10;
-const pi$2 = 8271354e-10;
-const pj$2 = 2937271e-12;
-const pk$2 = 1116163e-11;
-const pl$2 = 2380952e-9;
-const pm$2 = 1556754e-11;
-const pn$2 = 4963988e-11;
-const po$2 = 4948126e-9;
-const pp$2 = 9340521e-10;
-const pq$2 = 7930631e-12;
-const pr$2 = 5196326e-9;
-const ps$2 = 3524725e-10;
-const pt$2 = 6911398e-10;
-const pu$2 = 100484e-8;
-const pv$2 = 6461996e-12;
-const pw$2 = 205609e-11;
-const px$2 = 0;
-const py$2 = 1263026e-11;
-const pz$2 = 5874542e-13;
-const qa$2 = 2202953e-11;
-const qb$2 = 0;
-const qc$2 = 3818452e-12;
-const qd$2 = 5874542e-13;
-const qe$2 = 2937271e-13;
-const qf$2 = 0;
-const qg$2 = 2937271e-13;
-const qh$2 = 0;
-const qi$2 = 4405906e-12;
-const qj$2 = 2937271e-13;
-const qk$2 = 0;
-const ql$2 = 2937271e-12;
-const qm$2 = 4112179e-12;
-const qn$2 = 1174908e-12;
-const qo$2 = 1468635e-12;
-const qp$2 = 0;
-const qq$2 = 2937271e-13;
-const qr$2 = 5874542e-13;
-const qs$2 = 5874542e-13;
-const qt$2 = 0;
-const qu$2 = 8085425e-9;
-const qv$2 = 5874542e-13;
-const qw$2 = 2937271e-13;
-const qx$2 = 0;
-const qy$2 = 2937271e-13;
-const qz$2 = 0;
-const ra$2 = 6717538e-9;
-const rb$2 = 1876916e-10;
-const rc$2 = 1493308e-9;
-const rd$2 = 1478916e-9;
-const re$2 = 0.0134198;
-const rf$2 = 301364e-9;
-const rg$2 = 9258277e-10;
-const rh$2 = 4729006e-11;
-const ri$2 = 4941664e-9;
-const rj$2 = 4170924e-11;
-const rk$2 = 1436325e-10;
-const rl$2 = 5372268e-10;
-const rm$2 = 1343508e-9;
-const rn$2 = 1307673e-9;
-const ro$2 = 468994e-8;
-const rp$2 = 4335412e-10;
-const rq$2 = 2100149e-10;
-const rr$2 = 118372e-8;
-const rs$2 = 5229811e-9;
-const rt$2 = 3357888e-9;
-const ru$2 = 7410734e-10;
-const rv$2 = 7290306e-10;
-const rw$2 = 1527381e-11;
-const rx$2 = 2349817e-12;
-const ry$2 = 1359956e-10;
-const rz$2 = 1791735e-11;
-const sa$2 = 33573e-7;
-const sb$2 = 878244e-10;
-const sc$2 = 9607813e-10;
-const sd$2 = 1832857e-10;
-const se$2 = 7484166e-9;
-const sf$2 = 9458012e-11;
-const sg$2 = 3818452e-11;
-const sh$2 = 1788798e-10;
-const si$2 = 4056958e-9;
-const sj$2 = 8841185e-11;
-const sk$2 = 7871886e-11;
-const sl$2 = 7795517e-10;
-const sm$2 = 3515913e-10;
-const sn$2 = 1324709e-10;
-const so$2 = 4051965e-9;
-const sp$2 = 1079447e-9;
-const sq$2 = 5809922e-10;
-const sr$2 = 2505492e-10;
-const ss$2 = 3699199e-9;
-const st$2 = 5545273e-9;
-const su$2 = 3029501e-9;
-const sv$2 = 6579487e-11;
-const sw$2 = 2202953e-11;
-const sx$2 = 2349817e-12;
-const sy$2 = 220589e-9;
-const sz$2 = 7636904e-12;
-const ta$2 = 4360378e-9;
-const tb$2 = 5404578e-11;
-const tc$2 = 3254496e-10;
-const td$2 = 8048122e-11;
-const te$2 = 887937e-8;
-const tf$2 = 3084134e-11;
-const tg$2 = 1404015e-10;
-const th$2 = 4314851e-10;
-const ti$2 = 7908014e-9;
-const tj$2 = 3818452e-11;
-const tk$2 = 8518085e-12;
-const tl$2 = 3800828e-10;
-const tm$2 = 1759425e-10;
-const tn$2 = 4670261e-11;
-const to$2 = 262592e-8;
-const tp$2 = 1116163e-10;
-const tq$2 = 1556754e-11;
-const tr$2 = 5963835e-9;
-const ts$2 = 2344236e-9;
-const tt$2 = 1884553e-9;
-const tu$2 = 1343214e-9;
-const tv$2 = 3289743e-11;
-const tw$2 = 3348489e-11;
-const tx$2 = 4405906e-12;
-const ty$2 = 9164285e-11;
-const tz$2 = 2555426e-11;
-const ua$2 = 9272964e-10;
-const ub$2 = 6829155e-10;
-const uc$2 = 8112742e-10;
-const ud$2 = 695252e-9;
-const ue$2 = 5823139e-9;
-const uf$2 = 1956222e-10;
-const ug$2 = 3075322e-10;
-const uh$2 = 5727678e-11;
-const ui$2 = 4204116e-9;
-const uj$2 = 2699352e-10;
-const uk$2 = 2849153e-11;
-const ul$2 = 1523856e-9;
-const um$2 = 5254777e-10;
-const un$2 = 5375499e-9;
-const uo$2 = 3383736e-10;
-const up$2 = 881475e-9;
-const uq$2 = 2202953e-11;
-const ur$2 = 0.01002314;
-const us$2 = 3980002e-9;
-const ut$2 = 3309423e-9;
-const uu$2 = 1122037e-10;
-const uv$2 = 1420758e-9;
-const uw$2 = 4405906e-12;
-const ux$2 = 1964447e-9;
-const uy$2 = 4729006e-11;
-const uz$2 = 4112179e-11;
-const va$2 = 2019667e-9;
-const vb$2 = 1174908e-12;
-const vc$2 = 1909226e-11;
-const vd$2 = 108679e-10;
-const ve$2 = 4250525e-9;
-const vf$2 = 1762362e-12;
-const vg$2 = 1204281e-11;
-const vh$2 = 3407234e-11;
-const vi$2 = 2239963e-9;
-const vj$2 = 8811812e-13;
-const vk$2 = 2937271e-13;
-const vl$2 = 6315132e-11;
-const vm$2 = 7636904e-12;
-const vn$2 = 4347161e-11;
-const vo$2 = 1731521e-9;
-const vp$2 = 3524725e-12;
-const vq$2 = 7636904e-12;
-const vr$2 = 7213937e-10;
-const vs$2 = 4817124e-11;
-const vt$2 = 3113507e-11;
-const vu$2 = 1953285e-10;
-const vv$2 = 1174908e-12;
-const vw$2 = 0;
-const vx$2 = 0;
-const vy$2 = 9105539e-12;
-const vz$2 = 0;
-const wa$2 = 1656621e-10;
-const wb$2 = 3818452e-12;
-const wc$2 = 3524725e-12;
-const wd$2 = 205609e-11;
-const we$2 = 1195469e-10;
-const wf$2 = 2937271e-13;
-const wg$2 = 8811812e-13;
-const wh$2 = 8811812e-12;
-const wi$2 = 1324709e-10;
-const wj$2 = 0;
-const wk$2 = 5874542e-12;
-const wl$2 = 6168269e-12;
-const wm$2 = 2643544e-12;
-const wn$2 = 1498008e-11;
-const wo$2 = 5845169e-11;
-const wp$2 = 1174908e-12;
-const wq$2 = 0;
-const wr$2 = 8224358e-12;
-const ws$2 = 3671588e-11;
-const wt$2 = 4112179e-12;
-const wu$2 = 205609e-11;
-const wv$2 = 8811812e-13;
-const ww$2 = 9105539e-12;
-const wx$2 = 5874542e-13;
-const wy$2 = 704945e-11;
-const wz$2 = 5874542e-13;
-const xa$2 = 1036857e-10;
-const xb$2 = 8811812e-12;
-const xc$2 = 1480384e-10;
-const xd$2 = 1204281e-11;
-const xe$2 = 2100149e-10;
-const xf$2 = 4112179e-12;
-const xg$2 = 1174908e-12;
-const xh$2 = 1174908e-11;
-const xi$2 = 281978e-9;
-const xj$2 = 5874542e-12;
-const xk$2 = 0;
-const xl$2 = 4288415e-11;
-const xm$2 = 1879853e-11;
-const xn$2 = 1263026e-11;
-const xo$2 = 2291071e-11;
-const xp$2 = 3645153e-10;
-const xq$2 = 9105539e-12;
-const xr$2 = 5580814e-12;
-const xs$2 = 1351145e-11;
-const xt$2 = 1459824e-10;
-const xu$2 = 2878525e-11;
-const xv$2 = 9986721e-12;
-const xw$2 = 5874542e-13;
-const xx$2 = 8811812e-12;
-const xy$2 = 8224358e-12;
-const xz$2 = 2937271e-13;
-const ya$2 = 3768518e-10;
-const yb$2 = 1498008e-11;
-const yc$2 = 6638232e-11;
-const yd$2 = 314288e-10;
-const ye$2 = 3286806e-10;
-const yf$2 = 1468635e-12;
-const yg$2 = 1527381e-11;
-const yh$2 = 1174908e-12;
-const yi$2 = 140989e-10;
-const yj$2 = 499336e-11;
-const yk$2 = 2643544e-12;
-const yl$2 = 6344505e-11;
-const ym$2 = 1095602e-10;
-const yn$2 = 1133787e-10;
-const yo$2 = 1374643e-10;
-const yp$2 = 7695649e-11;
-const yq$2 = 8811812e-13;
-const yr$2 = 358347e-10;
-const ys$2 = 4499899e-10;
-const yt$2 = 3407234e-11;
-const yu$2 = 173299e-10;
-const yv$2 = 2085462e-11;
-const yw$2 = 8224358e-12;
-const yx$2 = 8811812e-13;
-const yy$2 = 1468635e-12;
-const yz$2 = 1174908e-12;
-const za$2 = 1245403e-10;
-const zb$2 = 7636904e-12;
-const zc$2 = 205609e-11;
-const zd$2 = 2643544e-12;
-const ze$2 = 9105539e-11;
-const zf$2 = 205609e-11;
-const zg$2 = 2643544e-12;
-const zh$2 = 9105539e-12;
-const zi$2 = 7783768e-11;
-const zj$2 = 2937271e-13;
-const zk$2 = 8811812e-13;
-const zl$2 = 1879853e-11;
-const zm$2 = 499336e-11;
-const zn$2 = 8518085e-12;
-const zo$2 = 1030982e-10;
-const zp$2 = 1468635e-12;
-const zq$2 = 1468635e-12;
-const zr$2 = 7636904e-12;
-const zs$2 = 7343177e-12;
-const zt$2 = 8811812e-13;
-const zu$2 = 2731662e-11;
-const zv$2 = 3495352e-11;
-const zw$2 = 2937271e-13;
-const zx$2 = 2937271e-13;
-const zy$2 = 531646e-10;
-const zz$2 = 3230998e-11;
-const bigram_french = {
-  aa: aa$2,
-  ab: ab$2,
-  ac: ac$2,
-  ad: ad$2,
-  ae: ae$2,
-  af: af$2,
-  ag: ag$2,
-  ah: ah$2,
-  ai: ai$2,
-  aj: aj$2,
-  ak: ak$2,
-  al: al$2,
-  am: am$2,
-  an: an$2,
-  ao: ao$2,
-  ap: ap$2,
-  aq: aq$2,
-  ar: ar$2,
-  as: as$2,
-  at: at$2,
-  au: au$2,
-  av: av$2,
-  aw: aw$2,
-  ax: ax$2,
-  ay: ay$2,
-  az: az$2,
-  "a ": 0.01044523,
-  ba: ba$2,
-  bb: bb$2,
-  bc: bc$2,
-  bd: bd$2,
-  be: be$2,
-  bf: bf$2,
-  bg: bg$2,
-  bh: bh$2,
-  bi: bi$2,
-  bj: bj$2,
-  bk: bk$2,
-  bl: bl$2,
-  bm: bm$2,
-  bn: bn$2,
-  bo: bo$2,
-  bp: bp$2,
-  bq: bq$2,
-  br: br$2,
-  bs: bs$2,
-  bt: bt$2,
-  bu: bu$2,
-  bv: bv$2,
-  bw: bw$2,
-  bx: bx$2,
-  by: by$2,
-  bz: bz$2,
-  "b ": 1715366e-10,
-  ca: ca$2,
-  cb: cb$2,
-  cc: cc$2,
-  cd: cd$2,
-  ce: ce$2,
-  cf: cf$2,
-  cg: cg$2,
-  ch: ch$2,
-  ci: ci$2,
-  cj: cj$2,
-  ck: ck$2,
-  cl: cl$2,
-  cm: cm$2,
-  cn: cn$2,
-  co: co$2,
-  cp: cp$2,
-  cq: cq$2,
-  cr: cr$2,
-  cs: cs$2,
-  ct: ct$2,
-  cu: cu$2,
-  cv: cv$2,
-  cw: cw$2,
-  cx: cx$2,
-  cy: cy$2,
-  cz: cz$2,
-  "c ": 1602869e-9,
-  da: da$2,
-  db: db$2,
-  dc: dc$2,
-  dd: dd$2,
-  de: de$2,
-  df: df$2,
-  dg: dg$2,
-  dh: dh$2,
-  di: di$2,
-  dj: dj$2,
-  dk: dk$2,
-  dl: dl$2,
-  dm: dm$2,
-  dn: dn$2,
-  "do": 1679238e-9,
-  dp: dp$2,
-  dq: dq$2,
-  dr: dr$2,
-  ds: ds$2,
-  dt: dt$2,
-  du: du$2,
-  dv: dv$2,
-  dw: dw$2,
-  dx: dx$2,
-  dy: dy$2,
-  dz: dz$2,
-  "d ": 1422227e-9,
-  ea: ea$2,
-  eb: eb$2,
-  ec: ec$2,
-  ed: ed$2,
-  ee: ee$2,
-  ef: ef$2,
-  eg: eg$2,
-  eh: eh$2,
-  ei: ei$2,
-  ej: ej$2,
-  ek: ek$2,
-  el: el$2,
-  em: em$2,
-  en: en$2,
-  eo: eo$2,
-  ep: ep$2,
-  eq: eq$2,
-  er: er$2,
-  es: es$2,
-  et: et$2,
-  eu: eu$2,
-  ev: ev$2,
-  ew: ew$2,
-  ex: ex$2,
-  ey: ey$2,
-  ez: ez$2,
-  "e ": 0.04610076,
-  fa: fa$2,
-  fb: fb$2,
-  fc: fc$2,
-  fd: fd$2,
-  fe: fe$2,
-  ff: ff$2,
-  fg: fg$2,
-  fh: fh$2,
-  fi: fi$2,
-  fj: fj$2,
-  fk: fk$2,
-  fl: fl$2,
-  fm: fm$2,
-  fn: fn$2,
-  fo: fo$2,
-  fp: fp$2,
-  fq: fq$2,
-  fr: fr$2,
-  fs: fs$2,
-  ft: ft$2,
-  fu: fu$2,
-  fv: fv$2,
-  fw: fw$2,
-  fx: fx$2,
-  fy: fy$2,
-  fz: fz$2,
-  "f ": 435891e-9,
-  ga: ga$2,
-  gb: gb$2,
-  gc: gc$2,
-  gd: gd$2,
-  ge: ge$2,
-  gf: gf$2,
-  gg: gg$2,
-  gh: gh$2,
-  gi: gi$2,
-  gj: gj$2,
-  gk: gk$2,
-  gl: gl$2,
-  gm: gm$2,
-  gn: gn$2,
-  go: go$2,
-  gp: gp$2,
-  gq: gq$2,
-  gr: gr$2,
-  gs: gs$2,
-  gt: gt$2,
-  gu: gu$2,
-  gv: gv$2,
-  gw: gw$2,
-  gx: gx$2,
-  gy: gy$2,
-  gz: gz$2,
-  "g ": 4461714e-10,
-  ha: ha$2,
-  hb: hb$2,
-  hc: hc$2,
-  hd: hd$2,
-  he: he$2,
-  hf: hf$2,
-  hg: hg$2,
-  hh: hh$2,
-  hi: hi$2,
-  hj: hj$2,
-  hk: hk$2,
-  hl: hl$2,
-  hm: hm$2,
-  hn: hn$2,
-  ho: ho$2,
-  hp: hp$2,
-  hq: hq$2,
-  hr: hr$2,
-  hs: hs$2,
-  ht: ht$2,
-  hu: hu$2,
-  hv: hv$2,
-  hw: hw$2,
-  hx: hx$2,
-  hy: hy$2,
-  hz: hz$2,
-  "h ": 5783486e-10,
-  ia: ia$2,
-  ib: ib$2,
-  ic: ic$2,
-  id: id$2,
-  ie: ie$2,
-  "if": 938458e-9,
-  ig: ig$2,
-  ih: ih$2,
-  ii: ii$2,
-  ij: ij$2,
-  ik: ik$2,
-  il: il$2,
-  im: im$2,
-  "in": 7387236e-9,
-  io: io$2,
-  ip: ip$2,
-  iq: iq$2,
-  ir: ir$2,
-  is: is$2,
-  it: it$2,
-  iu: iu$2,
-  iv: iv$2,
-  iw: iw$2,
-  ix: ix$2,
-  iy: iy$2,
-  iz: iz$2,
-  "i ": 4534265e-9,
-  ja: ja$2,
-  jb: jb$2,
-  jc: jc$2,
-  jd: jd$2,
-  je: je$2,
-  jf: jf$2,
-  jg: jg$2,
-  jh: jh$2,
-  ji: ji$2,
-  jj: jj$2,
-  jk: jk$2,
-  jl: jl$2,
-  jm: jm$2,
-  jn: jn$2,
-  jo: jo$2,
-  jp: jp$2,
-  jq: jq$2,
-  jr: jr$2,
-  js: js$2,
-  jt: jt$2,
-  ju: ju$2,
-  jv: jv$2,
-  jw: jw$2,
-  jx: jx$2,
-  jy: jy$2,
-  jz: jz$2,
-  "j ": 1530318e-10,
-  ka: ka$2,
-  kb: kb$2,
-  kc: kc$2,
-  kd: kd$2,
-  ke: ke$2,
-  kf: kf$2,
-  kg: kg$2,
-  kh: kh$2,
-  ki: ki$2,
-  kj: kj$2,
-  kk: kk$2,
-  kl: kl$2,
-  km: km$2,
-  kn: kn$2,
-  ko: ko$2,
-  kp: kp$2,
-  kq: kq$2,
-  kr: kr$2,
-  ks: ks$2,
-  kt: kt$2,
-  ku: ku$2,
-  kv: kv$2,
-  kw: kw$2,
-  kx: kx$2,
-  ky: ky$2,
-  kz: kz$2,
-  "k ": 2714038e-10,
-  la: la$2,
-  lb: lb$2,
-  lc: lc$2,
-  ld: ld$2,
-  le: le$2,
-  lf: lf$2,
-  lg: lg$2,
-  lh: lh$2,
-  li: li$2,
-  lj: lj$2,
-  lk: lk$2,
-  ll: ll$2,
-  lm: lm$2,
-  ln: ln$2,
-  lo: lo$2,
-  lp: lp$2,
-  lq: lq$2,
-  lr: lr$2,
-  ls: ls$2,
-  lt: lt$2,
-  lu: lu$2,
-  lv: lv$2,
-  lw: lw$2,
-  lx: lx$2,
-  ly: ly$2,
-  lz: lz$2,
-  "l ": 3821977e-9,
-  ma: ma$2,
-  mb: mb$2,
-  mc: mc$2,
-  md: md$2,
-  me: me$2,
-  mf: mf$2,
-  mg: mg$2,
-  mh: mh$2,
-  mi: mi$2,
-  mj: mj$2,
-  mk: mk$2,
-  ml: ml$2,
-  mm: mm$2,
-  mn: mn$2,
-  mo: mo$2,
-  mp: mp$2,
-  mq: mq$2,
-  mr: mr$2,
-  ms: ms$2,
-  mt: mt$2,
-  mu: mu$2,
-  mv: mv$2,
-  mw: mw$2,
-  mx: mx$2,
-  my: my$2,
-  mz: mz$2,
-  "m ": 737255e-9,
-  na: na$2,
-  nb: nb$2,
-  nc: nc$2,
-  nd: nd$2,
-  ne: ne$2,
-  nf: nf$2,
-  ng: ng$2,
-  nh: nh$2,
-  ni: ni$2,
-  nj: nj$2,
-  nk: nk$2,
-  nl: nl$2,
-  nm: nm$2,
-  nn: nn$2,
-  no: no$2,
-  np: np$2,
-  nq: nq$2,
-  nr: nr$2,
-  ns: ns$2,
-  nt: nt$2,
-  nu: nu$2,
-  nv: nv$2,
-  nw: nw$2,
-  nx: nx$2,
-  ny: ny$2,
-  nz: nz$2,
-  "n ": 0.0134248,
-  oa: oa$2,
-  ob: ob$2,
-  oc: oc$2,
-  od: od$2,
-  oe: oe$2,
-  of: of$2,
-  og: og$2,
-  oh: oh$2,
-  oi: oi$2,
-  oj: oj$2,
-  ok: ok$2,
-  ol: ol$2,
-  om: om$2,
-  on: on$2,
-  oo: oo$2,
-  op: op$2,
-  oq: oq$2,
-  or: or$2,
-  os: os$2,
-  ot: ot$2,
-  ou: ou$2,
-  ov: ov$2,
-  ow: ow$2,
-  ox: ox$2,
-  oy: oy$2,
-  oz: oz$2,
-  "o ": 9458012e-10,
-  pa: pa$2,
-  pb: pb$2,
-  pc: pc$2,
-  pd: pd$2,
-  pe: pe$2,
-  pf: pf$2,
-  pg: pg$2,
-  ph: ph$2,
-  pi: pi$2,
-  pj: pj$2,
-  pk: pk$2,
-  pl: pl$2,
-  pm: pm$2,
-  pn: pn$2,
-  po: po$2,
-  pp: pp$2,
-  pq: pq$2,
-  pr: pr$2,
-  ps: ps$2,
-  pt: pt$2,
-  pu: pu$2,
-  pv: pv$2,
-  pw: pw$2,
-  px: px$2,
-  py: py$2,
-  pz: pz$2,
-  "p ": 4996298e-10,
-  qa: qa$2,
-  qb: qb$2,
-  qc: qc$2,
-  qd: qd$2,
-  qe: qe$2,
-  qf: qf$2,
-  qg: qg$2,
-  qh: qh$2,
-  qi: qi$2,
-  qj: qj$2,
-  qk: qk$2,
-  ql: ql$2,
-  qm: qm$2,
-  qn: qn$2,
-  qo: qo$2,
-  qp: qp$2,
-  qq: qq$2,
-  qr: qr$2,
-  qs: qs$2,
-  qt: qt$2,
-  qu: qu$2,
-  qv: qv$2,
-  qw: qw$2,
-  qx: qx$2,
-  qy: qy$2,
-  qz: qz$2,
-  "q ": 8694321e-11,
-  ra: ra$2,
-  rb: rb$2,
-  rc: rc$2,
-  rd: rd$2,
-  re: re$2,
-  rf: rf$2,
-  rg: rg$2,
-  rh: rh$2,
-  ri: ri$2,
-  rj: rj$2,
-  rk: rk$2,
-  rl: rl$2,
-  rm: rm$2,
-  rn: rn$2,
-  ro: ro$2,
-  rp: rp$2,
-  rq: rq$2,
-  rr: rr$2,
-  rs: rs$2,
-  rt: rt$2,
-  ru: ru$2,
-  rv: rv$2,
-  rw: rw$2,
-  rx: rx$2,
-  ry: ry$2,
-  rz: rz$2,
-  "r ": 0.01154612,
-  sa: sa$2,
-  sb: sb$2,
-  sc: sc$2,
-  sd: sd$2,
-  se: se$2,
-  sf: sf$2,
-  sg: sg$2,
-  sh: sh$2,
-  si: si$2,
-  sj: sj$2,
-  sk: sk$2,
-  sl: sl$2,
-  sm: sm$2,
-  sn: sn$2,
-  so: so$2,
-  sp: sp$2,
-  sq: sq$2,
-  sr: sr$2,
-  ss: ss$2,
-  st: st$2,
-  su: su$2,
-  sv: sv$2,
-  sw: sw$2,
-  sx: sx$2,
-  sy: sy$2,
-  sz: sz$2,
-  "s ": 0.03208968,
-  ta: ta$2,
-  tb: tb$2,
-  tc: tc$2,
-  td: td$2,
-  te: te$2,
-  tf: tf$2,
-  tg: tg$2,
-  th: th$2,
-  ti: ti$2,
-  tj: tj$2,
-  tk: tk$2,
-  tl: tl$2,
-  tm: tm$2,
-  tn: tn$2,
-  to: to$2,
-  tp: tp$2,
-  tq: tq$2,
-  tr: tr$2,
-  ts: ts$2,
-  tt: tt$2,
-  tu: tu$2,
-  tv: tv$2,
-  tw: tw$2,
-  tx: tx$2,
-  ty: ty$2,
-  tz: tz$2,
-  "t ": 0.02101324,
-  ua: ua$2,
-  ub: ub$2,
-  uc: uc$2,
-  ud: ud$2,
-  ue: ue$2,
-  uf: uf$2,
-  ug: ug$2,
-  uh: uh$2,
-  ui: ui$2,
-  uj: uj$2,
-  uk: uk$2,
-  ul: ul$2,
-  um: um$2,
-  un: un$2,
-  uo: uo$2,
-  up: up$2,
-  uq: uq$2,
-  ur: ur$2,
-  us: us$2,
-  ut: ut$2,
-  uu: uu$2,
-  uv: uv$2,
-  uw: uw$2,
-  ux: ux$2,
-  uy: uy$2,
-  uz: uz$2,
-  "u ": 5844288e-9,
-  va: va$2,
-  vb: vb$2,
-  vc: vc$2,
-  vd: vd$2,
-  ve: ve$2,
-  vf: vf$2,
-  vg: vg$2,
-  vh: vh$2,
-  vi: vi$2,
-  vj: vj$2,
-  vk: vk$2,
-  vl: vl$2,
-  vm: vm$2,
-  vn: vn$2,
-  vo: vo$2,
-  vp: vp$2,
-  vq: vq$2,
-  vr: vr$2,
-  vs: vs$2,
-  vt: vt$2,
-  vu: vu$2,
-  vv: vv$2,
-  vw: vw$2,
-  vx: vx$2,
-  vy: vy$2,
-  vz: vz$2,
-  "v ": 1891602e-10,
-  wa: wa$2,
-  wb: wb$2,
-  wc: wc$2,
-  wd: wd$2,
-  we: we$2,
-  wf: wf$2,
-  wg: wg$2,
-  wh: wh$2,
-  wi: wi$2,
-  wj: wj$2,
-  wk: wk$2,
-  wl: wl$2,
-  wm: wm$2,
-  wn: wn$2,
-  wo: wo$2,
-  wp: wp$2,
-  wq: wq$2,
-  wr: wr$2,
-  ws: ws$2,
-  wt: wt$2,
-  wu: wu$2,
-  wv: wv$2,
-  ww: ww$2,
-  wx: wx$2,
-  wy: wy$2,
-  wz: wz$2,
-  "w ": 8811812e-11,
-  xa: xa$2,
-  xb: xb$2,
-  xc: xc$2,
-  xd: xd$2,
-  xe: xe$2,
-  xf: xf$2,
-  xg: xg$2,
-  xh: xh$2,
-  xi: xi$2,
-  xj: xj$2,
-  xk: xk$2,
-  xl: xl$2,
-  xm: xm$2,
-  xn: xn$2,
-  xo: xo$2,
-  xp: xp$2,
-  xq: xq$2,
-  xr: xr$2,
-  xs: xs$2,
-  xt: xt$2,
-  xu: xu$2,
-  xv: xv$2,
-  xw: xw$2,
-  xx: xx$2,
-  xy: xy$2,
-  xz: xz$2,
-  "x ": 2058439e-9,
-  ya: ya$2,
-  yb: yb$2,
-  yc: yc$2,
-  yd: yd$2,
-  ye: ye$2,
-  yf: yf$2,
-  yg: yg$2,
-  yh: yh$2,
-  yi: yi$2,
-  yj: yj$2,
-  yk: yk$2,
-  yl: yl$2,
-  ym: ym$2,
-  yn: yn$2,
-  yo: yo$2,
-  yp: yp$2,
-  yq: yq$2,
-  yr: yr$2,
-  ys: ys$2,
-  yt: yt$2,
-  yu: yu$2,
-  yv: yv$2,
-  yw: yw$2,
-  yx: yx$2,
-  yy: yy$2,
-  yz: yz$2,
-  "y ": 7566409e-10,
-  za: za$2,
-  zb: zb$2,
-  zc: zc$2,
-  zd: zd$2,
-  ze: ze$2,
-  zf: zf$2,
-  zg: zg$2,
-  zh: zh$2,
-  zi: zi$2,
-  zj: zj$2,
-  zk: zk$2,
-  zl: zl$2,
-  zm: zm$2,
-  zn: zn$2,
-  zo: zo$2,
-  zp: zp$2,
-  zq: zq$2,
-  zr: zr$2,
-  zs: zs$2,
-  zt: zt$2,
-  zu: zu$2,
-  zv: zv$2,
-  zw: zw$2,
-  zx: zx$2,
-  zy: zy$2,
-  zz: zz$2,
-  "z ": 3609906e-10,
-  " a": 0.011856,
-  " b": 3074735e-9,
-  " c": 0.01144243,
-  " d": 0.0258098,
-  " e": 9825464e-9,
-  " f": 4653812e-9,
-  " g": 2423248e-9,
-  " h": 1272426e-9,
-  " i": 2667336e-9,
-  " j": 2249362e-9,
-  " k": 3216311e-10,
-  " l": 0.01882438,
-  " m": 7392229e-9,
-  " n": 4060189e-9,
-  " o": 2496093e-9,
-  " p": 0.01520361,
-  " q": 4580674e-9,
-  " r": 5543805e-9,
-  " s": 0.0122023,
-  " t": 6154463e-9,
-  " u": 3391079e-9,
-  " v": 3304723e-9,
-  " w": 2975455e-10,
-  " x": 596266e-10,
-  " y": 3812577e-10,
-  " z": 1365831e-10,
-  "  ": 7936799e-9
-};
-const aa$1 = 3225511e-10;
-const ab$1 = 2647594e-9;
-const ac$1 = 2465323e-9;
-const ad$1 = 9010903e-10;
-const ae$1 = 1710734e-10;
-const af$1 = 1023641e-9;
-const ag$1 = 2346816e-9;
-const ah$1 = 180809e-8;
-const ai$1 = 5897367e-10;
-const aj$1 = 2363924e-11;
-const ak$1 = 7371709e-10;
-const al$1 = 5195033e-9;
-const am$1 = 2564235e-9;
-const an$1 = 8910748e-9;
-const ao$1 = 2270611e-11;
-const ap$1 = 533127e-9;
-const aq$1 = 1337483e-11;
-const ar$1 = 4712606e-9;
-const as$1 = 4594099e-9;
-const at$1 = 3931267e-9;
-const au$1 = 6741226e-9;
-const av$1 = 1937795e-10;
-const aw$1 = 606533e-10;
-const ax$1 = 9362381e-11;
-const ay$1 = 2202181e-10;
-const az$1 = 2307936e-10;
-const ba$1 = 1525975e-9;
-const bb$1 = 6687415e-11;
-const bc$1 = 3888032e-11;
-const bd$1 = 357699e-10;
-const be$1 = 9015569e-9;
-const bf$1 = 3763615e-11;
-const bg$1 = 1530329e-10;
-const bh$1 = 8522566e-11;
-const bi$1 = 1405601e-9;
-const bj$1 = 2830487e-11;
-const bk$1 = 3701407e-11;
-const bl$1 = 8052892e-10;
-const bm$1 = 29238e-9;
-const bn$1 = 1225508e-10;
-const bo$1 = 5682748e-10;
-const bp$1 = 1399692e-11;
-const bq$1 = 0;
-const br$1 = 115459e-8;
-const bs$1 = 56983e-8;
-const bt$1 = 4920693e-10;
-const bu$1 = 7489905e-10;
-const bv$1 = 2301715e-11;
-const bw$1 = 7682752e-11;
-const bx$1 = 124417e-11;
-const by$1 = 5318828e-11;
-const bz$1 = 5660975e-11;
-const ca$1 = 2681187e-10;
-const cb$1 = 9953362e-12;
-const cc$1 = 3825824e-11;
-const cd$1 = 4261283e-11;
-const ce$1 = 3384143e-10;
-const cf$1 = 5287724e-12;
-const cg$1 = 3110426e-12;
-const ch$1 = 0.02065509;
-const ci$1 = 102333e-9;
-const cj$1 = 3110426e-13;
-const ck$1 = 150949e-8;
-const cl$1 = 1088649e-10;
-const cm$1 = 5909809e-12;
-const cn$1 = 6220851e-12;
-const co$1 = 379783e-9;
-const cp$1 = 9020235e-12;
-const cq$1 = 4354596e-12;
-const cr$1 = 1116643e-10;
-const cs$1 = 4914473e-11;
-const ct$1 = 6003122e-11;
-const cu$1 = 8491462e-11;
-const cv$1 = 6842937e-12;
-const cw$1 = 3110426e-12;
-const cx$1 = 2488341e-12;
-const cy$1 = 1772943e-11;
-const cz$1 = 964232e-11;
-const da$1 = 4790056e-9;
-const db$1 = 8709192e-11;
-const dc$1 = 5443245e-11;
-const dd$1 = 1237949e-10;
-const de$1 = 0.01713907;
-const df$1 = 671852e-10;
-const dg$1 = 9766737e-11;
-const dh$1 = 8242628e-11;
-const di$1 = 7514166e-9;
-const dj$1 = 167963e-10;
-const dk$1 = 5474349e-11;
-const dl$1 = 3101094e-10;
-const dm$1 = 8118211e-11;
-const dn$1 = 1377919e-10;
-const dp$1 = 109798e-9;
-const dq$1 = 5909809e-12;
-const dr$1 = 9318835e-10;
-const ds$1 = 3981345e-10;
-const dt$1 = 2758948e-10;
-const du$1 = 9894264e-10;
-const dv$1 = 3639198e-11;
-const dw$1 = 1213066e-10;
-const dx$1 = 1555213e-12;
-const dy$1 = 5660975e-11;
-const dz$1 = 2208402e-11;
-const ea$1 = 7147758e-10;
-const eb$1 = 1851636e-9;
-const ec$1 = 1271542e-9;
-const ed$1 = 1845727e-9;
-const ee$1 = 5216184e-10;
-const ef$1 = 1069986e-9;
-const eg$1 = 2448527e-9;
-const eh$1 = 2901405e-9;
-const ei$1 = 0.01588557;
-const ej$1 = 2954904e-11;
-const ek$1 = 9001572e-10;
-const el$1 = 5609031e-9;
-const em$1 = 3601251e-9;
-const en$1 = 0.03137642;
-const eo$1 = 241058e-9;
-const ep$1 = 4211516e-10;
-const eq$1 = 314153e-10;
-const er$1 = 0.03091825;
-const es$1 = 8061601e-9;
-const et$1 = 3596585e-9;
-const eu$1 = 2413068e-9;
-const ev$1 = 2587874e-10;
-const ew$1 = 9247296e-10;
-const ex$1 = 3754284e-10;
-const ey$1 = 9082443e-11;
-const ez$1 = 4037333e-10;
-const fa$1 = 1489894e-9;
-const fb$1 = 7340605e-11;
-const fc$1 = 606533e-10;
-const fd$1 = 5598766e-11;
-const fe$1 = 2305759e-9;
-const ff$1 = 9797841e-10;
-const fg$1 = 2534997e-10;
-const fh$1 = 4404363e-10;
-const fi$1 = 9446363e-10;
-const fj$1 = 7776064e-12;
-const fk$1 = 3328156e-11;
-const fl$1 = 796269e-9;
-const fm$1 = 4012449e-11;
-const fn$1 = 2528776e-10;
-const fo$1 = 1036083e-9;
-const fp$1 = 3825824e-11;
-const fq$1 = 6220851e-13;
-const fr$1 = 2700783e-9;
-const fs$1 = 2357703e-10;
-const ft$1 = 1531263e-9;
-const fu$1 = 4139977e-10;
-const fv$1 = 1586317e-11;
-const fw$1 = 3981345e-11;
-const fx$1 = 964232e-11;
-const fy$1 = 6842937e-12;
-const fz$1 = 4199075e-11;
-const ga$1 = 1414311e-9;
-const gb$1 = 7682752e-11;
-const gc$1 = 1399692e-11;
-const gd$1 = 1433906e-10;
-const ge$1 = 0.01195554;
-const gf$1 = 4945577e-11;
-const gg$1 = 1066876e-10;
-const gh$1 = 1157078e-10;
-const gi$1 = 1108556e-9;
-const gj$1 = 1213066e-11;
-const gk$1 = 1430796e-10;
-const gl$1 = 8740296e-10;
-const gm$1 = 6251956e-11;
-const gn$1 = 3303272e-10;
-const go$1 = 2594095e-10;
-const gp$1 = 3452573e-11;
-const gq$1 = 1866255e-12;
-const gr$1 = 1544015e-9;
-const gs$1 = 1158011e-9;
-const gt$1 = 1272475e-9;
-const gu$1 = 686471e-9;
-const gv$1 = 2612758e-11;
-const gw$1 = 460343e-10;
-const gx$1 = 6220851e-13;
-const gy$1 = 2270611e-11;
-const gz$1 = 4696743e-11;
-const ha$1 = 4237955e-9;
-const hb$1 = 1116643e-10;
-const hc$1 = 482116e-10;
-const hd$1 = 153344e-9;
-const he$1 = 7440449e-9;
-const hf$1 = 2080875e-10;
-const hg$1 = 7589439e-11;
-const hh$1 = 1657857e-10;
-const hi$1 = 1631729e-9;
-const hj$1 = 1493004e-11;
-const hk$1 = 1412133e-10;
-const hl$1 = 1911668e-9;
-const hm$1 = 7841383e-10;
-const hn$1 = 1342149e-9;
-const ho$1 = 1116332e-9;
-const hp$1 = 4012449e-11;
-const hq$1 = 3110426e-12;
-const hr$1 = 390825e-8;
-const hs$1 = 6550557e-10;
-const ht$1 = 4411517e-9;
-const hu$1 = 7069998e-10;
-const hv$1 = 3017113e-11;
-const hw$1 = 5206853e-10;
-const hx$1 = 3110426e-13;
-const hy$1 = 4696743e-11;
-const hz$1 = 6936249e-11;
-const ia$1 = 6612765e-10;
-const ib$1 = 628617e-9;
-const ic$1 = 7274042e-9;
-const id$1 = 1017109e-9;
-const ie$1 = 0.01445166;
-const ig$1 = 3284299e-9;
-const ih$1 = 9007793e-10;
-const ii$1 = 4541222e-11;
-const ij$1 = 1493004e-11;
-const ik$1 = 8525677e-10;
-const il$1 = 2460347e-9;
-const im$1 = 24224e-7;
-const io$1 = 1646037e-9;
-const ip$1 = 2858481e-10;
-const iq$1 = 167963e-10;
-const ir$1 = 179907e-8;
-const is$1 = 6019296e-9;
-const it$1 = 7041382e-9;
-const iu$1 = 1197514e-10;
-const iv$1 = 6273729e-10;
-const iw$1 = 43857e-9;
-const ix$1 = 5412141e-11;
-const iy$1 = 4043553e-12;
-const iz$1 = 503889e-9;
-const ja$1 = 8248849e-10;
-const jb$1 = 6220851e-13;
-const jc$1 = 9331277e-13;
-const jd$1 = 7153979e-12;
-const je$1 = 6668753e-10;
-const jf$1 = 0;
-const jg$1 = 964232e-11;
-const jh$1 = 1573875e-10;
-const ji$1 = 1928464e-11;
-const jj$1 = 1555213e-12;
-const jk$1 = 2799383e-12;
-const jl$1 = 3110426e-13;
-const jm$1 = 2177298e-12;
-const jn$1 = 3950241e-11;
-const jo$1 = 1573875e-10;
-const jp$1 = 2488341e-12;
-const jq$1 = 0;
-const jr$1 = 2239507e-11;
-const js$1 = 4354596e-12;
-const jt$1 = 6220851e-13;
-const ju$1 = 27745e-8;
-const jv$1 = 2488341e-12;
-const jw$1 = 3110426e-13;
-const jx$1 = 0;
-const jy$1 = 0;
-const jz$1 = 3110426e-13;
-const ka$1 = 1664389e-9;
-const kb$1 = 4199075e-11;
-const kc$1 = 1959568e-11;
-const kd$1 = 3950241e-11;
-const ke$1 = 2329709e-9;
-const kf$1 = 7931586e-11;
-const kg$1 = 5287724e-11;
-const kh$1 = 6314164e-11;
-const ki$1 = 4687412e-10;
-const kj$1 = 5598766e-12;
-const kk$1 = 6314164e-11;
-const kl$1 = 9045118e-10;
-const km$1 = 1188183e-10;
-const kn$1 = 6584771e-10;
-const ko$1 = 1808402e-9;
-const kp$1 = 4727847e-11;
-const kq$1 = 2799383e-12;
-const kr$1 = 8572333e-10;
-const ks$1 = 3153972e-10;
-const kt$1 = 168274e-8;
-const ku$1 = 8074665e-10;
-const kv$1 = 1524109e-11;
-const kw$1 = 5629871e-11;
-const kx$1 = 3110426e-13;
-const ky$1 = 3297051e-11;
-const kz$1 = 460343e-10;
-const la$1 = 328181e-8;
-const lb$1 = 5424582e-10;
-const lc$1 = 4357706e-10;
-const ld$1 = 1006845e-9;
-const le$1 = 6315097e-9;
-const lf$1 = 3828934e-10;
-const lg$1 = 4513228e-10;
-const lh$1 = 7993794e-11;
-const li$1 = 5225515e-9;
-const lj$1 = 102644e-10;
-const lk$1 = 2351482e-10;
-const ll$1 = 422458e-8;
-const lm$1 = 2149304e-10;
-const ln$1 = 5225515e-10;
-const lo$1 = 1003112e-9;
-const lp$1 = 1107312e-10;
-const lq$1 = 5598766e-12;
-const lr$1 = 2373255e-10;
-const ls$1 = 1864078e-9;
-const lt$1 = 2480253e-9;
-const lu$1 = 1100158e-9;
-const lv$1 = 1017109e-10;
-const lw$1 = 9175756e-11;
-const lx$1 = 124417e-11;
-const ly$1 = 1290827e-10;
-const lz$1 = 1396581e-10;
-const ma$1 = 3131577e-9;
-const mb$1 = 3166413e-10;
-const mc$1 = 8491462e-11;
-const md$1 = 1057545e-10;
-const me$1 = 4343398e-9;
-const mf$1 = 9144652e-11;
-const mg$1 = 2650083e-10;
-const mh$1 = 5225515e-11;
-const mi$1 = 3845108e-9;
-const mj$1 = 3421468e-12;
-const mk$1 = 4727847e-11;
-const ml$1 = 1468121e-10;
-const mm$1 = 1613067e-9;
-const mn$1 = 1953347e-10;
-const mo$1 = 8423033e-10;
-const mp$1 = 5738735e-10;
-const mq$1 = 3732511e-12;
-const mr$1 = 1091759e-10;
-const ms$1 = 5947134e-10;
-const mt$1 = 503889e-9;
-const mu$1 = 6743403e-10;
-const mv$1 = 2332819e-11;
-const mw$1 = 606533e-10;
-const mx$1 = 2799383e-12;
-const my$1 = 2488341e-11;
-const mz$1 = 29238e-9;
-const na$1 = 3354905e-9;
-const nb$1 = 6569219e-10;
-const nc$1 = 4805608e-10;
-const nd$1 = 0.01075834;
-const ne$1 = 8832676e-9;
-const nf$1 = 9486798e-10;
-const ng$1 = 6318208e-9;
-const nh$1 = 4737178e-10;
-const ni$1 = 3482433e-9;
-const nj$1 = 6998458e-11;
-const nk$1 = 1328774e-9;
-const nl$1 = 5891146e-10;
-const nm$1 = 4105762e-10;
-const nn$1 = 2996584e-9;
-const no$1 = 1232662e-9;
-const np$1 = 1701403e-10;
-const nq$1 = 1150858e-11;
-const nr$1 = 2373255e-10;
-const ns$1 = 3379478e-9;
-const nt$1 = 5103898e-9;
-const nu$1 = 1314777e-9;
-const nv$1 = 2989119e-10;
-const nw$1 = 4790056e-10;
-const nx$1 = 5909809e-12;
-const ny$1 = 4883368e-11;
-const nz$1 = 1355835e-9;
-const oa$1 = 139036e-9;
-const ob$1 = 7779175e-10;
-const oc$1 = 1409956e-9;
-const od$1 = 8124432e-10;
-const oe$1 = 2105758e-10;
-const of$1 = 6895814e-10;
-const og$1 = 5461908e-10;
-const oh$1 = 6183526e-10;
-const oi$1 = 1048213e-10;
-const oj$1 = 7931586e-11;
-const ok$1 = 3054438e-10;
-const ol$1 = 2487718e-9;
-const om$1 = 1579163e-9;
-const on$1 = 5451643e-9;
-const oo$1 = 29238e-8;
-const op$1 = 6830495e-10;
-const oq$1 = 2177298e-12;
-const or$1 = 4012449e-9;
-const os$1 = 1140282e-9;
-const ot$1 = 986627e-9;
-const ou$1 = 3446352e-10;
-const ov$1 = 1636084e-10;
-const ow$1 = 3477456e-10;
-const ox$1 = 5692079e-11;
-const oy$1 = 2799383e-11;
-const oz$1 = 3660971e-10;
-const pa$1 = 1267498e-9;
-const pb$1 = 1275275e-11;
-const pc$1 = 4012449e-11;
-const pd$1 = 8709192e-11;
-const pe$1 = 1142148e-9;
-const pf$1 = 5253509e-10;
-const pg$1 = 1306379e-11;
-const ph$1 = 2457236e-10;
-const pi$1 = 1018353e-9;
-const pj$1 = 3110426e-12;
-const pk$1 = 2737175e-11;
-const pl$1 = 6174195e-10;
-const pm$1 = 1835151e-11;
-const pn$1 = 1804047e-11;
-const po$1 = 9315725e-10;
-const pp$1 = 5023338e-10;
-const pq$1 = 3110426e-13;
-const pr$1 = 1997826e-9;
-const ps$1 = 1592538e-10;
-const pt$1 = 4000007e-10;
-const pu$1 = 3567658e-10;
-const pv$1 = 964232e-11;
-const pw$1 = 5287724e-12;
-const px$1 = 124417e-11;
-const py$1 = 1057545e-11;
-const pz$1 = 3328156e-11;
-const qa$1 = 3421468e-12;
-const qb$1 = 3110426e-13;
-const qc$1 = 9331277e-13;
-const qd$1 = 6220851e-13;
-const qe$1 = 1555213e-12;
-const qf$1 = 3110426e-13;
-const qg$1 = 0;
-const qh$1 = 6220851e-13;
-const qi$1 = 4665639e-12;
-const qj$1 = 0;
-const qk$1 = 0;
-const ql$1 = 6220851e-13;
-const qm$1 = 0;
-const qn$1 = 0;
-const qo$1 = 0;
-const qp$1 = 0;
-const qq$1 = 0;
-const qr$1 = 6220851e-13;
-const qs$1 = 124417e-11;
-const qt$1 = 124417e-11;
-const qu$1 = 2622089e-10;
-const qv$1 = 6220851e-13;
-const qw$1 = 6220851e-13;
-const qx$1 = 3110426e-13;
-const qy$1 = 0;
-const qz$1 = 0;
-const ra$1 = 4146197e-9;
-const rb$1 = 1229551e-9;
-const rc$1 = 9928479e-10;
-const rd$1 = 2955838e-9;
-const re$1 = 8726299e-9;
-const rf$1 = 1071853e-9;
-const rg$1 = 1529085e-9;
-const rh$1 = 8631431e-10;
-const ri$1 = 3930956e-9;
-const rj$1 = 6376373e-11;
-const rk$1 = 1325041e-9;
-const rl$1 = 9987577e-10;
-const rm$1 = 9682755e-10;
-const rn$1 = 2159569e-9;
-const ro$1 = 2820845e-9;
-const rp$1 = 2370144e-10;
-const rq$1 = 1337483e-11;
-const rr$1 = 6886483e-10;
-const rs$1 = 3052261e-9;
-const rt$1 = 4325047e-9;
-const ru$1 = 2158946e-9;
-const rv$1 = 2401249e-10;
-const rw$1 = 570141e-9;
-const rx$1 = 1866255e-12;
-const ry$1 = 73095e-9;
-const rz$1 = 7371709e-10;
-const sa$1 = 1981652e-9;
-const sb$1 = 3962682e-10;
-const sc$1 = 6488348e-9;
-const sd$1 = 3107315e-10;
-const se$1 = 6538737e-9;
-const sf$1 = 226439e-9;
-const sg$1 = 4618982e-10;
-const sh$1 = 4423025e-10;
-const si$1 = 4906074e-9;
-const sj$1 = 2954904e-11;
-const sk$1 = 4628313e-10;
-const sl$1 = 4805608e-10;
-const sm$1 = 3586321e-10;
-const sn$1 = 1648526e-10;
-const so$1 = 2473722e-9;
-const sp$1 = 1997826e-9;
-const sq$1 = 1524109e-11;
-const sr$1 = 2569212e-10;
-const ss$1 = 3931889e-9;
-const st$1 = 999442e-8;
-const su$1 = 7138427e-10;
-const sv$1 = 2183519e-10;
-const sw$1 = 3259726e-10;
-const sx$1 = 3110426e-12;
-const sy$1 = 2678077e-10;
-const sz$1 = 1984452e-10;
-const ta$1 = 3292075e-9;
-const tb$1 = 2656304e-10;
-const tc$1 = 14619e-8;
-const td$1 = 6167974e-10;
-const te$1 = 0.01527095;
-const tf$1 = 2139973e-10;
-const tg$1 = 3312603e-10;
-const th$1 = 6780728e-10;
-const ti$1 = 4324114e-9;
-const tj$1 = 3483677e-11;
-const tk$1 = 1197514e-10;
-const tl$1 = 9950252e-10;
-const tm$1 = 3026444e-10;
-const tn$1 = 3744953e-10;
-const to$1 = 1458479e-9;
-const tp$1 = 1866255e-10;
-const tq$1 = 7776064e-12;
-const tr$1 = 271478e-8;
-const ts$1 = 2503582e-9;
-const tt$1 = 241649e-8;
-const tu$1 = 153655e-8;
-const tv$1 = 1776053e-10;
-const tw$1 = 8668756e-10;
-const tx$1 = 6220851e-12;
-const ty$1 = 1054434e-10;
-const tz$1 = 1997515e-9;
-const ua$1 = 3377922e-10;
-const ub$1 = 4936246e-10;
-const uc$1 = 165879e-8;
-const ud$1 = 3735621e-10;
-const ue$1 = 1293626e-9;
-const uf$1 = 2606848e-9;
-const ug$1 = 6186637e-10;
-const uh$1 = 2858481e-10;
-const ui$1 = 1004668e-10;
-const uj$1 = 1275275e-11;
-const uk$1 = 2762058e-10;
-const ul$1 = 6625207e-10;
-const um$1 = 2081808e-9;
-const un$1 = 9899863e-9;
-const uo$1 = 4416805e-11;
-const up$1 = 3953351e-10;
-const uq$1 = 9331277e-13;
-const ur$1 = 3217735e-9;
-const us$1 = 3543086e-9;
-const ut$1 = 218974e-8;
-const uu$1 = 2052881e-11;
-const uv$1 = 8367045e-11;
-const uw$1 = 482116e-10;
-const ux$1 = 2799383e-11;
-const uy$1 = 1119753e-11;
-const uz$1 = 942459e-10;
-const va$1 = 2926911e-10;
-const vb$1 = 1990672e-11;
-const vc$1 = 5598766e-12;
-const vd$1 = 1866255e-11;
-const ve$1 = 3385076e-9;
-const vf$1 = 1928464e-11;
-const vg$1 = 1181962e-11;
-const vh$1 = 124417e-11;
-const vi$1 = 9667203e-10;
-const vj$1 = 1555213e-12;
-const vk$1 = 1119753e-11;
-const vl$1 = 5381036e-11;
-const vm$1 = 8398149e-12;
-const vn$1 = 2177298e-12;
-const vo$1 = 314464e-8;
-const vp$1 = 3110426e-11;
-const vq$1 = 6220851e-13;
-const vr$1 = 2146194e-11;
-const vs$1 = 3048217e-11;
-const vt$1 = 1306379e-11;
-const vu$1 = 1399692e-11;
-const vv$1 = 4354596e-12;
-const vw$1 = 2986009e-11;
-const vx$1 = 3110426e-13;
-const vy$1 = 3732511e-12;
-const vz$1 = 4043553e-12;
-const wa$1 = 2156458e-9;
-const wb$1 = 7153979e-12;
-const wc$1 = 4790056e-11;
-const wd$1 = 1524109e-11;
-const we$1 = 4397831e-9;
-const wf$1 = 167963e-10;
-const wg$1 = 8709192e-12;
-const wh$1 = 2149304e-10;
-const wi$1 = 3425201e-9;
-const wj$1 = 7776064e-12;
-const wk$1 = 1088649e-11;
-const wl$1 = 7122875e-11;
-const wm$1 = 43857e-9;
-const wn$1 = 628306e-10;
-const wo$1 = 1134994e-9;
-const wp$1 = 5909809e-12;
-const wq$1 = 0;
-const wr$1 = 3412137e-10;
-const ws$1 = 1539661e-10;
-const wt$1 = 1772943e-11;
-const wu$1 = 4870927e-10;
-const wv$1 = 1866255e-12;
-const ww$1 = 3483677e-11;
-const wx$1 = 0;
-const wy$1 = 2799383e-12;
-const wz$1 = 1866255e-12;
-const xa$1 = 3545885e-11;
-const xb$1 = 1399692e-11;
-const xc$1 = 8398149e-12;
-const xd$1 = 6220851e-12;
-const xe$1 = 5816496e-11;
-const xf$1 = 8087107e-12;
-const xg$1 = 9331277e-13;
-const xh$1 = 5598766e-12;
-const xi$1 = 102022e-9;
-const xj$1 = 6220851e-13;
-const xk$1 = 1710734e-11;
-const xl$1 = 6842937e-12;
-const xm$1 = 4976681e-12;
-const xn$1 = 2799383e-12;
-const xo$1 = 6842937e-12;
-const xp$1 = 1054434e-10;
-const xq$1 = 9331277e-13;
-const xr$1 = 1866255e-12;
-const xs$1 = 1119753e-11;
-const xt$1 = 7931586e-11;
-const xu$1 = 2332819e-11;
-const xv$1 = 3110426e-12;
-const xw$1 = 2488341e-12;
-const xx$1 = 8087107e-12;
-const xy$1 = 964232e-11;
-const xz$1 = 2799383e-12;
-const ya$1 = 4945577e-11;
-const yb$1 = 3110426e-11;
-const yc$1 = 2643862e-11;
-const yd$1 = 2270611e-11;
-const ye$1 = 1331262e-10;
-const yf$1 = 7153979e-12;
-const yg$1 = 1088649e-11;
-const yh$1 = 4043553e-12;
-const yi$1 = 964232e-11;
-const yj$1 = 6220851e-13;
-const yk$1 = 1430796e-11;
-const yl$1 = 7807169e-11;
-const ym$1 = 7496126e-11;
-const yn$1 = 4572326e-11;
-const yo$1 = 6469685e-11;
-const yp$1 = 6936249e-11;
-const yq$1 = 0;
-const yr$1 = 6749624e-11;
-const ys$1 = 2304825e-10;
-const yt$1 = 335926e-10;
-const yu$1 = 1213066e-11;
-const yv$1 = 5287724e-12;
-const yw$1 = 1088649e-11;
-const yx$1 = 3110426e-13;
-const yy$1 = 1866255e-12;
-const yz$1 = 2488341e-12;
-const za$1 = 3060659e-10;
-const zb$1 = 1045103e-10;
-const zc$1 = 9331277e-12;
-const zd$1 = 6998458e-11;
-const ze$1 = 2650083e-9;
-const zf$1 = 3421468e-11;
-const zg$1 = 7278396e-11;
-const zh$1 = 8646983e-11;
-const zi$1 = 9968914e-10;
-const zj$1 = 6220851e-13;
-const zk$1 = 3888032e-11;
-const zl$1 = 1421465e-10;
-const zm$1 = 4416805e-11;
-const zn$1 = 2737175e-11;
-const zo$1 = 1763611e-10;
-const zp$1 = 2177298e-11;
-const zq$1 = 9331277e-13;
-const zr$1 = 335926e-10;
-const zs$1 = 7465022e-11;
-const zt$1 = 6752734e-10;
-const zu$1 = 3590986e-9;
-const zv$1 = 1586317e-11;
-const zw$1 = 7069998e-10;
-const zx$1 = 6220851e-13;
-const zy$1 = 1181962e-11;
-const zz$1 = 3670302e-11;
-const bigram_german = {
-  aa: aa$1,
-  ab: ab$1,
-  ac: ac$1,
-  ad: ad$1,
-  ae: ae$1,
-  af: af$1,
-  ag: ag$1,
-  ah: ah$1,
-  ai: ai$1,
-  aj: aj$1,
-  ak: ak$1,
-  al: al$1,
-  am: am$1,
-  an: an$1,
-  ao: ao$1,
-  ap: ap$1,
-  aq: aq$1,
-  ar: ar$1,
-  as: as$1,
-  at: at$1,
-  au: au$1,
-  av: av$1,
-  aw: aw$1,
-  ax: ax$1,
-  ay: ay$1,
-  az: az$1,
-  "a ": 1518821e-9,
-  ba: ba$1,
-  bb: bb$1,
-  bc: bc$1,
-  bd: bd$1,
-  be: be$1,
-  bf: bf$1,
-  bg: bg$1,
-  bh: bh$1,
-  bi: bi$1,
-  bj: bj$1,
-  bk: bk$1,
-  bl: bl$1,
-  bm: bm$1,
-  bn: bn$1,
-  bo: bo$1,
-  bp: bp$1,
-  bq: bq$1,
-  br: br$1,
-  bs: bs$1,
-  bt: bt$1,
-  bu: bu$1,
-  bv: bv$1,
-  bw: bw$1,
-  bx: bx$1,
-  by: by$1,
-  bz: bz$1,
-  "b ": 7032673e-10,
-  ca: ca$1,
-  cb: cb$1,
-  cc: cc$1,
-  cd: cd$1,
-  ce: ce$1,
-  cf: cf$1,
-  cg: cg$1,
-  ch: ch$1,
-  ci: ci$1,
-  cj: cj$1,
-  ck: ck$1,
-  cl: cl$1,
-  cm: cm$1,
-  cn: cn$1,
-  co: co$1,
-  cp: cp$1,
-  cq: cq$1,
-  cr: cr$1,
-  cs: cs$1,
-  ct: ct$1,
-  cu: cu$1,
-  cv: cv$1,
-  cw: cw$1,
-  cx: cx$1,
-  cy: cy$1,
-  cz: cz$1,
-  "c ": 2037329e-10,
-  da: da$1,
-  db: db$1,
-  dc: dc$1,
-  dd: dd$1,
-  de: de$1,
-  df: df$1,
-  dg: dg$1,
-  dh: dh$1,
-  di: di$1,
-  dj: dj$1,
-  dk: dk$1,
-  dl: dl$1,
-  dm: dm$1,
-  dn: dn$1,
-  "do": 9312615e-10,
-  dp: dp$1,
-  dq: dq$1,
-  dr: dr$1,
-  ds: ds$1,
-  dt: dt$1,
-  du: du$1,
-  dv: dv$1,
-  dw: dw$1,
-  dx: dx$1,
-  dy: dy$1,
-  dz: dz$1,
-  "d ": 6132515e-9,
-  ea: ea$1,
-  eb: eb$1,
-  ec: ec$1,
-  ed: ed$1,
-  ee: ee$1,
-  ef: ef$1,
-  eg: eg$1,
-  eh: eh$1,
-  ei: ei$1,
-  ej: ej$1,
-  ek: ek$1,
-  el: el$1,
-  em: em$1,
-  en: en$1,
-  eo: eo$1,
-  ep: ep$1,
-  eq: eq$1,
-  er: er$1,
-  es: es$1,
-  et: et$1,
-  eu: eu$1,
-  ev: ev$1,
-  ew: ew$1,
-  ex: ex$1,
-  ey: ey$1,
-  ez: ez$1,
-  "e ": 0.02186629,
-  fa: fa$1,
-  fb: fb$1,
-  fc: fc$1,
-  fd: fd$1,
-  fe: fe$1,
-  ff: ff$1,
-  fg: fg$1,
-  fh: fh$1,
-  fi: fi$1,
-  fj: fj$1,
-  fk: fk$1,
-  fl: fl$1,
-  fm: fm$1,
-  fn: fn$1,
-  fo: fo$1,
-  fp: fp$1,
-  fq: fq$1,
-  fr: fr$1,
-  fs: fs$1,
-  ft: ft$1,
-  fu: fu$1,
-  fv: fv$1,
-  fw: fw$1,
-  fx: fx$1,
-  fy: fy$1,
-  fz: fz$1,
-  "f ": 205257e-8,
-  ga: ga$1,
-  gb: gb$1,
-  gc: gc$1,
-  gd: gd$1,
-  ge: ge$1,
-  gf: gf$1,
-  gg: gg$1,
-  gh: gh$1,
-  gi: gi$1,
-  gj: gj$1,
-  gk: gk$1,
-  gl: gl$1,
-  gm: gm$1,
-  gn: gn$1,
-  go: go$1,
-  gp: gp$1,
-  gq: gq$1,
-  gr: gr$1,
-  gs: gs$1,
-  gt: gt$1,
-  gu: gu$1,
-  gv: gv$1,
-  gw: gw$1,
-  gx: gx$1,
-  gy: gy$1,
-  gz: gz$1,
-  "g ": 4046664e-9,
-  ha: ha$1,
-  hb: hb$1,
-  hc: hc$1,
-  hd: hd$1,
-  he: he$1,
-  hf: hf$1,
-  hg: hg$1,
-  hh: hh$1,
-  hi: hi$1,
-  hj: hj$1,
-  hk: hk$1,
-  hl: hl$1,
-  hm: hm$1,
-  hn: hn$1,
-  ho: ho$1,
-  hp: hp$1,
-  hq: hq$1,
-  hr: hr$1,
-  hs: hs$1,
-  ht: ht$1,
-  hu: hu$1,
-  hv: hv$1,
-  hw: hw$1,
-  hx: hx$1,
-  hy: hy$1,
-  hz: hz$1,
-  "h ": 6069996e-9,
-  ia: ia$1,
-  ib: ib$1,
-  ic: ic$1,
-  id: id$1,
-  ie: ie$1,
-  "if": 5129092e-10,
-  ig: ig$1,
-  ih: ih$1,
-  ii: ii$1,
-  ij: ij$1,
-  ik: ik$1,
-  il: il$1,
-  im: im$1,
-  "in": 0.01514,
-  io: io$1,
-  ip: ip$1,
-  iq: iq$1,
-  ir: ir$1,
-  is: is$1,
-  it: it$1,
-  iu: iu$1,
-  iv: iv$1,
-  iw: iw$1,
-  ix: ix$1,
-  iy: iy$1,
-  iz: iz$1,
-  "i ": 2008402e-9,
-  ja: ja$1,
-  jb: jb$1,
-  jc: jc$1,
-  jd: jd$1,
-  je: je$1,
-  jf: jf$1,
-  jg: jg$1,
-  jh: jh$1,
-  ji: ji$1,
-  jj: jj$1,
-  jk: jk$1,
-  jl: jl$1,
-  jm: jm$1,
-  jn: jn$1,
-  jo: jo$1,
-  jp: jp$1,
-  jq: jq$1,
-  jr: jr$1,
-  js: js$1,
-  jt: jt$1,
-  ju: ju$1,
-  jv: jv$1,
-  jw: jw$1,
-  jx: jx$1,
-  jy: jy$1,
-  jz: jz$1,
-  "j ": 1493004e-11,
-  ka: ka$1,
-  kb: kb$1,
-  kc: kc$1,
-  kd: kd$1,
-  ke: ke$1,
-  kf: kf$1,
-  kg: kg$1,
-  kh: kh$1,
-  ki: ki$1,
-  kj: kj$1,
-  kk: kk$1,
-  kl: kl$1,
-  km: km$1,
-  kn: kn$1,
-  ko: ko$1,
-  kp: kp$1,
-  kq: kq$1,
-  kr: kr$1,
-  ks: ks$1,
-  kt: kt$1,
-  ku: ku$1,
-  kv: kv$1,
-  kw: kw$1,
-  kx: kx$1,
-  ky: ky$1,
-  kz: kz$1,
-  "k ": 9881822e-10,
-  la: la$1,
-  lb: lb$1,
-  lc: lc$1,
-  ld: ld$1,
-  le: le$1,
-  lf: lf$1,
-  lg: lg$1,
-  lh: lh$1,
-  li: li$1,
-  lj: lj$1,
-  lk: lk$1,
-  ll: ll$1,
-  lm: lm$1,
-  ln: ln$1,
-  lo: lo$1,
-  lp: lp$1,
-  lq: lq$1,
-  lr: lr$1,
-  ls: ls$1,
-  lt: lt$1,
-  lu: lu$1,
-  lv: lv$1,
-  lw: lw$1,
-  lx: lx$1,
-  ly: ly$1,
-  lz: lz$1,
-  "l ": 3090519e-9,
-  ma: ma$1,
-  mb: mb$1,
-  mc: mc$1,
-  md: md$1,
-  me: me$1,
-  mf: mf$1,
-  mg: mg$1,
-  mh: mh$1,
-  mi: mi$1,
-  mj: mj$1,
-  mk: mk$1,
-  ml: ml$1,
-  mm: mm$1,
-  mn: mn$1,
-  mo: mo$1,
-  mp: mp$1,
-  mq: mq$1,
-  mr: mr$1,
-  ms: ms$1,
-  mt: mt$1,
-  mu: mu$1,
-  mv: mv$1,
-  mw: mw$1,
-  mx: mx$1,
-  my: my$1,
-  mz: mz$1,
-  "m ": 6497368e-9,
-  na: na$1,
-  nb: nb$1,
-  nc: nc$1,
-  nd: nd$1,
-  ne: ne$1,
-  nf: nf$1,
-  ng: ng$1,
-  nh: nh$1,
-  ni: ni$1,
-  nj: nj$1,
-  nk: nk$1,
-  nl: nl$1,
-  nm: nm$1,
-  nn: nn$1,
-  no: no$1,
-  np: np$1,
-  nq: nq$1,
-  nr: nr$1,
-  ns: ns$1,
-  nt: nt$1,
-  nu: nu$1,
-  nv: nv$1,
-  nw: nw$1,
-  nx: nx$1,
-  ny: ny$1,
-  nz: nz$1,
-  "n ": 0.03082743,
-  oa: oa$1,
-  ob: ob$1,
-  oc: oc$1,
-  od: od$1,
-  oe: oe$1,
-  of: of$1,
-  og: og$1,
-  oh: oh$1,
-  oi: oi$1,
-  oj: oj$1,
-  ok: ok$1,
-  ol: ol$1,
-  om: om$1,
-  on: on$1,
-  oo: oo$1,
-  op: op$1,
-  oq: oq$1,
-  or: or$1,
-  os: os$1,
-  ot: ot$1,
-  ou: ou$1,
-  ov: ov$1,
-  ow: ow$1,
-  ox: ox$1,
-  oy: oy$1,
-  oz: oz$1,
-  "o ": 160218e-8,
-  pa: pa$1,
-  pb: pb$1,
-  pc: pc$1,
-  pd: pd$1,
-  pe: pe$1,
-  pf: pf$1,
-  pg: pg$1,
-  ph: ph$1,
-  pi: pi$1,
-  pj: pj$1,
-  pk: pk$1,
-  pl: pl$1,
-  pm: pm$1,
-  pn: pn$1,
-  po: po$1,
-  pp: pp$1,
-  pq: pq$1,
-  pr: pr$1,
-  ps: ps$1,
-  pt: pt$1,
-  pu: pu$1,
-  pv: pv$1,
-  pw: pw$1,
-  px: px$1,
-  py: py$1,
-  pz: pz$1,
-  "p ": 3427689e-10,
-  qa: qa$1,
-  qb: qb$1,
-  qc: qc$1,
-  qd: qd$1,
-  qe: qe$1,
-  qf: qf$1,
-  qg: qg$1,
-  qh: qh$1,
-  qi: qi$1,
-  qj: qj$1,
-  qk: qk$1,
-  ql: ql$1,
-  qm: qm$1,
-  qn: qn$1,
-  qo: qo$1,
-  qp: qp$1,
-  qq: qq$1,
-  qr: qr$1,
-  qs: qs$1,
-  qt: qt$1,
-  qu: qu$1,
-  qv: qv$1,
-  qw: qw$1,
-  qx: qx$1,
-  qy: qy$1,
-  qz: qz$1,
-  "q ": 8709192e-12,
-  ra: ra$1,
-  rb: rb$1,
-  rc: rc$1,
-  rd: rd$1,
-  re: re$1,
-  rf: rf$1,
-  rg: rg$1,
-  rh: rh$1,
-  ri: ri$1,
-  rj: rj$1,
-  rk: rk$1,
-  rl: rl$1,
-  rm: rm$1,
-  rn: rn$1,
-  ro: ro$1,
-  rp: rp$1,
-  rq: rq$1,
-  rr: rr$1,
-  rs: rs$1,
-  rt: rt$1,
-  ru: ru$1,
-  rv: rv$1,
-  rw: rw$1,
-  rx: rx$1,
-  ry: ry$1,
-  rz: rz$1,
-  "r ": 0.01928993,
-  sa: sa$1,
-  sb: sb$1,
-  sc: sc$1,
-  sd: sd$1,
-  se: se$1,
-  sf: sf$1,
-  sg: sg$1,
-  sh: sh$1,
-  si: si$1,
-  sj: sj$1,
-  sk: sk$1,
-  sl: sl$1,
-  sm: sm$1,
-  sn: sn$1,
-  so: so$1,
-  sp: sp$1,
-  sq: sq$1,
-  sr: sr$1,
-  ss: ss$1,
-  st: st$1,
-  su: su$1,
-  sv: sv$1,
-  sw: sw$1,
-  sx: sx$1,
-  sy: sy$1,
-  sz: sz$1,
-  "s ": 0.01196425,
-  ta: ta$1,
-  tb: tb$1,
-  tc: tc$1,
-  td: td$1,
-  te: te$1,
-  tf: tf$1,
-  tg: tg$1,
-  th: th$1,
-  ti: ti$1,
-  tj: tj$1,
-  tk: tk$1,
-  tl: tl$1,
-  tm: tm$1,
-  tn: tn$1,
-  to: to$1,
-  tp: tp$1,
-  tq: tq$1,
-  tr: tr$1,
-  ts: ts$1,
-  tt: tt$1,
-  tu: tu$1,
-  tv: tv$1,
-  tw: tw$1,
-  tx: tx$1,
-  ty: ty$1,
-  tz: tz$1,
-  "t ": 0.0151599,
-  ua: ua$1,
-  ub: ub$1,
-  uc: uc$1,
-  ud: ud$1,
-  ue: ue$1,
-  uf: uf$1,
-  ug: ug$1,
-  uh: uh$1,
-  ui: ui$1,
-  uj: uj$1,
-  uk: uk$1,
-  ul: ul$1,
-  um: um$1,
-  un: un$1,
-  uo: uo$1,
-  up: up$1,
-  uq: uq$1,
-  ur: ur$1,
-  us: us$1,
-  ut: ut$1,
-  uu: uu$1,
-  uv: uv$1,
-  uw: uw$1,
-  ux: ux$1,
-  uy: uy$1,
-  uz: uz$1,
-  "u ": 1907935e-9,
-  va: va$1,
-  vb: vb$1,
-  vc: vc$1,
-  vd: vd$1,
-  ve: ve$1,
-  vf: vf$1,
-  vg: vg$1,
-  vh: vh$1,
-  vi: vi$1,
-  vj: vj$1,
-  vk: vk$1,
-  vl: vl$1,
-  vm: vm$1,
-  vn: vn$1,
-  vo: vo$1,
-  vp: vp$1,
-  vq: vq$1,
-  vr: vr$1,
-  vs: vs$1,
-  vt: vt$1,
-  vu: vu$1,
-  vv: vv$1,
-  vw: vw$1,
-  vx: vx$1,
-  vy: vy$1,
-  vz: vz$1,
-  "v ": 1832041e-10,
-  wa: wa$1,
-  wb: wb$1,
-  wc: wc$1,
-  wd: wd$1,
-  we: we$1,
-  wf: wf$1,
-  wg: wg$1,
-  wh: wh$1,
-  wi: wi$1,
-  wj: wj$1,
-  wk: wk$1,
-  wl: wl$1,
-  wm: wm$1,
-  wn: wn$1,
-  wo: wo$1,
-  wp: wp$1,
-  wq: wq$1,
-  wr: wr$1,
-  ws: ws$1,
-  wt: wt$1,
-  wu: wu$1,
-  wv: wv$1,
-  ww: ww$1,
-  wx: wx$1,
-  wy: wy$1,
-  wz: wz$1,
-  "w ": 1819599e-10,
-  xa: xa$1,
-  xb: xb$1,
-  xc: xc$1,
-  xd: xd$1,
-  xe: xe$1,
-  xf: xf$1,
-  xg: xg$1,
-  xh: xh$1,
-  xi: xi$1,
-  xj: xj$1,
-  xk: xk$1,
-  xl: xl$1,
-  xm: xm$1,
-  xn: xn$1,
-  xo: xo$1,
-  xp: xp$1,
-  xq: xq$1,
-  xr: xr$1,
-  xs: xs$1,
-  xt: xt$1,
-  xu: xu$1,
-  xv: xv$1,
-  xw: xw$1,
-  xx: xx$1,
-  xy: xy$1,
-  xz: xz$1,
-  "x ": 1791605e-10,
-  ya: ya$1,
-  yb: yb$1,
-  yc: yc$1,
-  yd: yd$1,
-  ye: ye$1,
-  yf: yf$1,
-  yg: yg$1,
-  yh: yh$1,
-  yi: yi$1,
-  yj: yj$1,
-  yk: yk$1,
-  yl: yl$1,
-  ym: ym$1,
-  yn: yn$1,
-  yo: yo$1,
-  yp: yp$1,
-  yq: yq$1,
-  yr: yr$1,
-  ys: ys$1,
-  yt: yt$1,
-  yu: yu$1,
-  yv: yv$1,
-  yw: yw$1,
-  yx: yx$1,
-  yy: yy$1,
-  yz: yz$1,
-  "y ": 3461904e-10,
-  za: za$1,
-  zb: zb$1,
-  zc: zc$1,
-  zd: zd$1,
-  ze: ze$1,
-  zf: zf$1,
-  zg: zg$1,
-  zh: zh$1,
-  zi: zi$1,
-  zj: zj$1,
-  zk: zk$1,
-  zl: zl$1,
-  zm: zm$1,
-  zn: zn$1,
-  zo: zo$1,
-  zp: zp$1,
-  zq: zq$1,
-  zr: zr$1,
-  zs: zs$1,
-  zt: zt$1,
-  zu: zu$1,
-  zv: zv$1,
-  zw: zw$1,
-  zx: zx$1,
-  zy: zy$1,
-  zz: zz$1,
-  "z ": 8668756e-10,
-  " a": 0.01088276,
-  " b": 738384e-8,
-  " c": 9144652e-10,
-  " d": 0.01904296,
-  " e": 9995042e-9,
-  " f": 4981658e-9,
-  " g": 6080571e-9,
-  " h": 441836e-8,
-  " i": 7677464e-9,
-  " j": 1742149e-9,
-  " k": 4475281e-9,
-  " l": 275366e-8,
-  " m": 6746513e-9,
-  " n": 4926603e-9,
-  " o": 1444793e-9,
-  " p": 3161126e-9,
-  " q": 1452569e-10,
-  " r": 2570456e-9,
-  " s": 0.01287934,
-  " t": 2587252e-9,
-  " u": 5687102e-9,
-  " v": 5694878e-9,
-  " w": 7376064e-9,
-  " x": 4914473e-11,
-  " y": 7216188e-11,
-  " z": 4365171e-9,
-  "  ": 3705761e-9
-};
-const aa = 9695637e-11;
-const ab = 5657783e-10;
-const ac = 5605913e-10;
-const ad = 4649517e-9;
-const ae = 1743619e-10;
-const af = 7301652e-10;
-const ag = 4116057e-9;
-const ah = 2362065e-10;
-const ai = 2541613e-10;
-const aj = 1847358e-10;
-const ak = 1502624e-9;
-const al = 4762034e-9;
-const am = 285722e-8;
-const an = 0.01354157;
-const ao = 6463758e-11;
-const ap = 8797893e-10;
-const aq = 917694e-11;
-const ar = 0.01512559;
-const as = 336275e-8;
-const at = 953923e-8;
-const au = 2238375e-10;
-const av = 291707e-8;
-const aw = 2872781e-11;
-const ax = 1081283e-10;
-const ay = 917694e-10;
-const az = 6383958e-11;
-const ba = 1827408e-9;
-const bb = 6028851e-10;
-const bc = 6024861e-11;
-const bd = 1998977e-10;
-const be = 2898317e-9;
-const bf = 8777943e-12;
-const bg = 1755589e-11;
-const bh = 1236892e-11;
-const bi = 8889662e-10;
-const bj = 1867308e-10;
-const bk = 147629e-10;
-const bl = 1671799e-9;
-const bm = 1755589e-11;
-const bn = 3670776e-11;
-const bo = 1471502e-9;
-const bp = 1715689e-11;
-const bq = 0;
-const br = 1809852e-9;
-const bs = 2222416e-10;
-const bt = 2250345e-10;
-const bu = 4943578e-10;
-const bv = 1037393e-11;
-const bw = 4388971e-12;
-const bx = 0;
-const by = 4775999e-10;
-const bz = 7979948e-13;
-const ca = 3347588e-10;
-const cb = 9974935e-12;
-const cc = 6822856e-11;
-const cd = 1795488e-11;
-const ce = 8857742e-10;
-const cf = 4787969e-12;
-const cg = 2792982e-12;
-const ch = 5641424e-9;
-const ci = 4704179e-10;
-const cj = 0;
-const ck = 3182004e-9;
-const cl = 5745563e-11;
-const cm = 8777943e-12;
-const cn = 8378945e-12;
-const co = 1967057e-10;
-const cp = 3590977e-12;
-const cq = 2393984e-12;
-const cr = 5546064e-11;
-const cs = 4229372e-11;
-const ct = 5147066e-11;
-const cu = 7979948e-11;
-const cv = 4388971e-12;
-const cw = 7979948e-13;
-const cx = 3989974e-13;
-const cy = 5266766e-11;
-const cz = 2792982e-12;
-const da = 4295606e-9;
-const db = 1699729e-10;
-const dc = 3231879e-11;
-const dd = 8139547e-10;
-const de = 0.01679979;
-const df = 1779528e-10;
-const dg = 148427e-9;
-const dh = 1141133e-10;
-const di = 1768755e-9;
-const dj = 2593483e-10;
-const dk = 1232902e-10;
-const dl = 5988951e-10;
-const dm = 2294235e-10;
-const dn = 6248299e-10;
-const dp = 6822856e-11;
-const dq = 1675789e-11;
-const dr = 2353686e-9;
-const ds = 1242079e-9;
-const dt = 1611949e-10;
-const du = 6407898e-10;
-const dv = 2178526e-10;
-const dw = 159599e-10;
-const dx = 1196992e-12;
-const dy = 1189012e-10;
-const dz = 1994987e-12;
-const ea = 3766535e-10;
-const eb = 6683206e-10;
-const ec = 5873242e-10;
-const ed = 4803929e-9;
-const ee = 2006957e-10;
-const ef = 1345818e-9;
-const eg = 1059338e-9;
-const eh = 4125633e-10;
-const ei = 2421914e-10;
-const ej = 2421914e-10;
-const ek = 1202179e-9;
-const el = 4822283e-9;
-const em = 1888455e-9;
-const en = 0.02022478;
-const eo = 1408461e-10;
-const ep = 4337102e-10;
-const eq = 3590977e-12;
-const er = 0.01814082;
-const es = 3439358e-9;
-const et = 0.01231665;
-const eu = 300445e-9;
-const ev = 8019848e-10;
-const ew = 6503658e-11;
-const ex = 5809402e-10;
-const ey = 9695637e-11;
-const ez = 2154586e-11;
-const fa = 1414047e-9;
-const fb = 8378945e-12;
-const fc = 1037393e-11;
-const fd = 5027367e-11;
-const fe = 7165993e-10;
-const ff = 6020871e-10;
-const fg = 3152079e-11;
-const fh = 5984961e-12;
-const fi = 1369758e-9;
-const fj = 913704e-10;
-const fk = 4189473e-11;
-const fl = 9986905e-10;
-const fm = 1117193e-11;
-const fn = 1181032e-10;
-const fo = 1093652e-9;
-const fp = 2234385e-11;
-const fq = 0;
-const fr = 8522185e-9;
-const fs = 1236892e-10;
-const ft = 1618333e-9;
-const fu = 308026e-9;
-const fv = 8378945e-12;
-const fw = 7979948e-13;
-const fx = 0;
-const fy = 2397974e-10;
-const fz = 0;
-const ga = 4035061e-9;
-const gb = 1416441e-10;
-const gc = 7979948e-12;
-const gd = 3978004e-10;
-const ge = 6502062e-9;
-const gf = 8139547e-11;
-const gg = 762883e-9;
-const gh = 46563e-8;
-const gi = 9619827e-10;
-const gj = 2892731e-10;
-const gk = 6862755e-11;
-const gl = 5637833e-10;
-const gm = 1396491e-10;
-const gn = 9966955e-10;
-const go = 9332549e-10;
-const gp = 8618344e-11;
-const gq = 8777943e-12;
-const gr = 2539219e-9;
-const gs = 1493447e-9;
-const gt = 1742821e-9;
-const gu = 309622e-9;
-const gv = 1823418e-10;
-const gw = 9575938e-12;
-const gx = 3989974e-13;
-const gy = 6503658e-11;
-const gz = 7979948e-13;
-const ha = 5302276e-9;
-const hb = 1356591e-11;
-const hc = 2513684e-11;
-const hd = 1915188e-11;
-const he = 2569144e-9;
-const hf = 1675789e-11;
-const hg = 2808942e-10;
-const hh = 6782956e-12;
-const hi = 4807919e-10;
-const hj = 311218e-9;
-const hk = 4069773e-11;
-const hl = 6304159e-10;
-const hm = 6902655e-11;
-const hn = 2346105e-10;
-const ho = 1493447e-9;
-const hp = 8777943e-12;
-const hq = 1196992e-12;
-const hr = 8055757e-10;
-const hs = 1376541e-10;
-const ht = 4907668e-11;
-const hu = 8063737e-10;
-const hv = 1723669e-10;
-const hw = 151619e-10;
-const hx = 2792982e-12;
-const hy = 1189012e-10;
-const hz = 3989974e-13;
-const ia = 7377462e-10;
-const ib = 1855338e-10;
-const ic = 1048565e-9;
-const id = 2217229e-9;
-const ie = 1151107e-9;
-const ig = 5094399e-9;
-const ih = 1013453e-10;
-const ii = 462837e-10;
-const ij = 4189473e-11;
-const ik = 2252739e-9;
-const il = 522926e-8;
-const im = 5011407e-10;
-const io = 149624e-8;
-const ip = 2541613e-10;
-const iq = 6782956e-12;
-const ir = 9069211e-10;
-const is = 4089324e-9;
-const it = 296096e-8;
-const iu = 6304159e-11;
-const iv = 1356192e-9;
-const iw = 6782956e-12;
-const ix = 454857e-10;
-const iy = 3590977e-12;
-const iz = 3710676e-11;
-const ja = 1911996e-9;
-const jb = 1915188e-11;
-const jc = 6782956e-12;
-const jd = 1647859e-10;
-const je = 7912118e-10;
-const jf = 1077293e-11;
-const jg = 1037393e-11;
-const jh = 1236892e-11;
-const ji = 3590977e-11;
-const jj = 2792982e-12;
-const jk = 7940048e-11;
-const jl = 5506164e-10;
-const jm = 1232902e-10;
-const jn = 2868791e-10;
-const jo = 1104824e-9;
-const jp = 2952581e-11;
-const jq = 3989974e-13;
-const jr = 310021e-9;
-const js = 6623357e-11;
-const jt = 1304721e-10;
-const ju = 1179835e-9;
-const jv = 2154586e-11;
-const jw = 3989974e-13;
-const jx = 0;
-const jy = 7979948e-13;
-const jz = 0;
-const ka = 685677e-8;
-const kb = 5745563e-11;
-const kc = 917694e-11;
-const kd = 1280782e-10;
-const ke = 2985299e-9;
-const kf = 770065e-10;
-const kg = 4508671e-11;
-const kh = 300046e-9;
-const ki = 770863e-9;
-const kj = 6942555e-11;
-const kk = 9775436e-11;
-const kl = 1523771e-9;
-const km = 1013453e-10;
-const kn = 1228912e-9;
-const ko = 3388685e-9;
-const kp = 2709192e-10;
-const kq = 159599e-11;
-const kr = 1999775e-9;
-const ks = 9863216e-10;
-const kt = 2645353e-9;
-const ku = 122173e-8;
-const kv = 7114124e-10;
-const kw = 6782956e-12;
-const kx = 0;
-const ky = 2298225e-10;
-const kz = 1994987e-12;
-const la = 7141255e-9;
-const lb = 3283749e-10;
-const lc = 5346565e-11;
-const ld = 1554095e-9;
-const le = 4895698e-9;
-const lf = 308425e-9;
-const lg = 5945061e-10;
-const lh = 1232902e-10;
-const li = 562307e-8;
-const lj = 1104026e-9;
-const lk = 7050284e-10;
-const ll = 8415653e-9;
-const lm = 8115607e-10;
-const ln = 1153501e-9;
-const lo = 1124375e-9;
-const lp = 3191979e-10;
-const lq = 917694e-11;
-const lr = 3794465e-10;
-const ls = 1995785e-9;
-const lt = 1760377e-9;
-const lu = 1106819e-9;
-const lv = 7860249e-10;
-const lw = 5984961e-12;
-const lx = 3590977e-12;
-const ly = 5661773e-10;
-const lz = 6383958e-12;
-const ma = 4291217e-9;
-const mb = 3946084e-10;
-const mc = 3551077e-11;
-const md = 1791498e-10;
-const me = 6231142e-9;
-const mf = 2856821e-10;
-const mg = 158003e-9;
-const mh = 2214436e-10;
-const mi = 2395979e-9;
-const mj = 1951097e-10;
-const mk = 153614e-9;
-const ml = 7002404e-10;
-const mm = 2101918e-9;
-const mn = 1322676e-9;
-const mo = 1537337e-9;
-const mp = 5414395e-10;
-const mq = 9974935e-12;
-const mr = 4305182e-10;
-const ms = 8666224e-10;
-const mt = 7173973e-10;
-const mu = 4488721e-10;
-const mv = 7979948e-11;
-const mw = 7979948e-12;
-const mx = 9575938e-12;
-const my = 4077753e-10;
-const mz = 1196992e-12;
-const na = 6893877e-9;
-const nb = 3339608e-10;
-const nc = 2278275e-10;
-const nd = 7331178e-9;
-const ne = 3715065e-9;
-const nf = 6320119e-10;
-const ng = 7327986e-9;
-const nh = 4233362e-10;
-const ni = 3691524e-9;
-const nj = 2964551e-10;
-const nk = 1088864e-9;
-const nl = 7185943e-10;
-const nm = 4245332e-10;
-const nn = 3342002e-9;
-const no = 1793493e-9;
-const np = 149624e-9;
-const nq = 1117193e-11;
-const nr = 1051757e-9;
-const ns = 5852893e-9;
-const nt = 4601238e-9;
-const nu = 1017044e-9;
-const nv = 4680239e-10;
-const nw = 1037393e-11;
-const nx = 1196992e-12;
-const ny = 8454755e-10;
-const nz = 1795488e-11;
-const oa = 1336641e-10;
-const ob = 5741573e-10;
-const oc = 5861671e-9;
-const od = 7541051e-10;
-const oe = 1352601e-10;
-const of = 3914164e-10;
-const og = 7038314e-10;
-const oh = 2046857e-10;
-const oi = 5266766e-11;
-const oj = 1404471e-10;
-const ok = 5151056e-10;
-const ol = 2767845e-9;
-const om = 7606885e-9;
-const on = 5621075e-9;
-const oo = 1300732e-10;
-const op = 914901e-9;
-const oq = 2792982e-12;
-const or = 5674142e-9;
-const os = 1090859e-9;
-const ot = 2107105e-9;
-const ou = 2282265e-10;
-const ov = 4309172e-10;
-const ow = 6703156e-11;
-const ox = 4309172e-11;
-const oy = 2553583e-11;
-const oz = 1077293e-11;
-const pa = 1838181e-9;
-const pb = 3191979e-11;
-const pc = 2034887e-11;
-const pd = 8498645e-11;
-const pe = 2637373e-9;
-const pf = 8219346e-11;
-const pg = 2194486e-10;
-const ph = 1021433e-10;
-const pi = 3798455e-10;
-const pj = 1715689e-11;
-const pk = 3551077e-11;
-const pl = 9001381e-10;
-const pm = 9974935e-11;
-const pn = 1735639e-10;
-const po = 1215745e-9;
-const pp = 2289846e-9;
-const pq = 3989974e-13;
-const pr = 1896834e-9;
-const ps = 3782495e-10;
-const pt = 3682746e-10;
-const pu = 2210446e-10;
-const pv = 7780449e-11;
-const pw = 1196992e-12;
-const px = 0;
-const py = 159599e-10;
-const pz = 3989974e-13;
-const qa = 7979948e-12;
-const qb = 1994987e-12;
-const qc = 0;
-const qd = 0;
-const qe = 0;
-const qf = 3989974e-13;
-const qg = 0;
-const qh = 0;
-const qi = 3989974e-13;
-const qj = 3989974e-13;
-const qk = 0;
-const ql = 159599e-11;
-const qm = 0;
-const qn = 0;
-const qo = 3989974e-13;
-const qp = 0;
-const qq = 0;
-const qr = 3989974e-13;
-const qs = 2393984e-12;
-const qt = 159599e-11;
-const qu = 3590977e-11;
-const qv = 4827869e-11;
-const qw = 0;
-const qx = 3989974e-13;
-const qy = 0;
-const qz = 0;
-const ra = 9076792e-9;
-const rb = 1036196e-9;
-const rc = 1923167e-10;
-const rd = 2540416e-9;
-const re = 7825536e-9;
-const rf = 6048801e-10;
-const rg = 1362975e-9;
-const rh = 4700189e-10;
-const ri = 5159834e-9;
-const rj = 459645e-9;
-const rk = 1877682e-9;
-const rl = 1172653e-9;
-const rm = 1202977e-9;
-const rn = 4631562e-9;
-const ro = 3223899e-9;
-const rp = 2126656e-10;
-const rq = 1994987e-12;
-const rr = 9544018e-10;
-const rs = 3670776e-9;
-const rt = 3195171e-9;
-const ru = 11539e-7;
-const rv = 6974475e-10;
-const rw = 2952581e-11;
-const rx = 1994987e-12;
-const ry = 5653793e-10;
-const rz = 9974935e-12;
-const sa = 3486838e-9;
-const sb = 4289222e-10;
-const sc = 3606936e-10;
-const sd = 5897182e-10;
-const se = 4126431e-9;
-const sf = 3387488e-10;
-const sg = 1095248e-9;
-const sh = 453261e-9;
-const si = 2998864e-9;
-const sj = 6371988e-10;
-const sk = 6642509e-9;
-const sl = 1816236e-9;
-const sm = 8023838e-10;
-const sn = 7983938e-10;
-const so = 4893703e-9;
-const sp = 1646263e-9;
-const sq = 7580951e-12;
-const sr = 4173513e-10;
-const ss = 2897519e-9;
-const st = 0.01003319;
-const su = 6411888e-10;
-const sv = 1687759e-9;
-const sw = 2832882e-11;
-const sx = 7979948e-13;
-const sy = 4093713e-10;
-const sz = 1077293e-11;
-const ta = 7469231e-9;
-const tb = 3830375e-10;
-const tc = 3610926e-10;
-const td = 464832e-9;
-const te = 0.0101892;
-const tf = 4073763e-10;
-const tg = 1783518e-10;
-const th = 4133613e-10;
-const ti = 7455266e-9;
-const tj = 4281242e-10;
-const tk = 1867308e-10;
-const tl = 8797893e-10;
-const tm = 4329122e-10;
-const tn = 1119986e-9;
-const to = 2489345e-9;
-const tp = 146432e-9;
-const tq = 1196992e-12;
-const tr = 384833e-8;
-const ts = 282969e-8;
-const tt = 0.01059857;
-const tu = 8526574e-10;
-const tv = 116587e-8;
-const tw = 1436391e-11;
-const tx = 159599e-11;
-const ty = 76009e-8;
-const tz = 2912681e-11;
-const ua = 146033e-9;
-const ub = 3447338e-10;
-const uc = 1061333e-10;
-const ud = 5446315e-10;
-const ue = 1979027e-10;
-const uf = 9974935e-11;
-const ug = 1943117e-10;
-const uh = 2114686e-11;
-const ui = 6264259e-11;
-const uj = 9974935e-12;
-const uk = 5139087e-10;
-const ul = 1156294e-9;
-const um = 4835848e-10;
-const un = 283368e-8;
-const uo = 1675789e-11;
-const up = 1329858e-9;
-const uq = 3989974e-13;
-const ur = 1367763e-9;
-const us = 142881e-8;
-const ut = 2652136e-9;
-const uu = 5984961e-12;
-const uv = 1879278e-10;
-const uw = 159599e-11;
-const ux = 4428871e-11;
-const uy = 4787969e-12;
-const uz = 155609e-10;
-const va = 4302389e-9;
-const vb = 5386465e-11;
-const vc = 2792982e-11;
-const vd = 2597473e-10;
-const ve = 3719454e-9;
-const vf = 4189473e-11;
-const vg = 4225382e-10;
-const vh = 307228e-10;
-const vi = 4012318e-9;
-const vj = 4029874e-11;
-const vk = 7062254e-11;
-const vl = 7776459e-10;
-const vm = 1444371e-10;
-const vn = 62084e-8;
-const vo = 2090746e-10;
-const vp = 3351578e-11;
-const vq = 0;
-const vr = 1051358e-9;
-const vs = 5721623e-10;
-const vt = 2733132e-10;
-const vu = 1783518e-10;
-const vv = 4907668e-11;
-const vw = 159599e-11;
-const vx = 9376439e-11;
-const vy = 5585964e-12;
-const vz = 0;
-const wa = 150821e-9;
-const wb = 159599e-11;
-const wc = 7979948e-13;
-const wd = 2792982e-12;
-const we = 1356591e-10;
-const wf = 159599e-11;
-const wg = 1196992e-12;
-const wh = 159599e-10;
-const wi = 1133153e-10;
-const wj = 0;
-const wk = 3989974e-12;
-const wl = 7181953e-12;
-const wm = 4388971e-12;
-const wn = 1117193e-11;
-const wo = 3790475e-11;
-const wp = 7979948e-13;
-const wq = 0;
-const wr = 1077293e-11;
-const ws = 2912681e-11;
-const wt = 2393984e-12;
-const wu = 1196992e-12;
-const wv = 3989974e-13;
-const ww = 5984961e-12;
-const wx = 0;
-const wy = 1196992e-12;
-const wz = 0;
-const xa = 9815336e-11;
-const xb = 1077293e-11;
-const xc = 7181953e-12;
-const xd = 7979948e-12;
-const xe = 153215e-9;
-const xf = 7181953e-12;
-const xg = 159599e-11;
-const xh = 4787969e-12;
-const xi = 6503658e-11;
-const xj = 9575938e-12;
-const xk = 1276792e-11;
-const xl = 1955087e-11;
-const xm = 5186966e-12;
-const xn = 2154586e-11;
-const xo = 1316691e-11;
-const xp = 1232902e-10;
-const xq = 0;
-const xr = 159599e-11;
-const xs = 9974935e-12;
-const xt = 1611949e-10;
-const xu = 2513684e-11;
-const xv = 7181953e-12;
-const xw = 3989974e-13;
-const xx = 2393984e-12;
-const xy = 3989974e-13;
-const xz = 0;
-const ya = 3403448e-10;
-const yb = 3870275e-11;
-const yc = 7154023e-10;
-const yd = 3203949e-10;
-const ye = 466827e-10;
-const yf = 8219346e-11;
-const yg = 5143076e-10;
-const yh = 774055e-10;
-const yi = 917694e-11;
-const yj = 4787969e-12;
-const yk = 158801e-9;
-const yl = 2302215e-10;
-const ym = 1667809e-10;
-const yn = 307228e-9;
-const yo = 5625863e-11;
-const yp = 8059747e-11;
-const yq = 3989974e-13;
-const yr = 5949051e-10;
-const ys = 4827869e-10;
-const yt = 5015397e-10;
-const yu = 1196992e-11;
-const yv = 3630876e-11;
-const yw = 9974935e-12;
-const yx = 155609e-10;
-const yy = 159599e-11;
-const yz = 7979948e-13;
-const za = 5226866e-11;
-const zb = 9575938e-12;
-const zc = 1994987e-12;
-const zd = 1196992e-12;
-const ze = 4069773e-11;
-const zf = 1196992e-12;
-const zg = 7979948e-13;
-const zh = 5585964e-12;
-const zi = 458847e-10;
-const zj = 2792982e-12;
-const zk = 2393984e-12;
-const zl = 3471277e-11;
-const zm = 1196992e-12;
-const zn = 6383958e-12;
-const zo = 2753082e-11;
-const zp = 1994987e-12;
-const zq = 3989974e-13;
-const zr = 3191979e-12;
-const zs = 2393984e-12;
-const zt = 2792982e-12;
-const zu = 7580951e-12;
-const zv = 2393984e-12;
-const zw = 7979948e-13;
-const zx = 0;
-const zy = 7580951e-12;
-const zz = 151619e-10;
-const bigram_swedish = {
-  aa,
-  ab,
-  ac,
-  ad,
-  ae,
-  af,
-  ag,
-  ah,
-  ai,
-  aj,
-  ak,
-  al,
-  am,
-  an,
-  ao,
-  ap,
-  aq,
-  ar,
-  as,
-  at,
-  au,
-  av,
-  aw,
-  ax,
-  ay,
-  az,
-  "a ": 0.01702123,
-  ba,
-  bb,
-  bc,
-  bd,
-  be,
-  bf,
-  bg,
-  bh,
-  bi,
-  bj,
-  bk,
-  bl,
-  bm,
-  bn,
-  bo,
-  bp,
-  bq,
-  br,
-  bs,
-  bt,
-  bu,
-  bv,
-  bw,
-  bx,
-  by,
-  bz,
-  "b ": 1787508e-10,
-  ca,
-  cb,
-  cc,
-  cd,
-  ce,
-  cf,
-  cg,
-  ch,
-  ci,
-  cj,
-  ck,
-  cl,
-  cm,
-  cn,
-  co,
-  cp,
-  cq,
-  cr,
-  cs,
-  ct,
-  cu,
-  cv,
-  cw,
-  cx,
-  cy,
-  cz,
-  "c ": 1272802e-10,
-  da,
-  db,
-  dc,
-  dd,
-  de,
-  df,
-  dg,
-  dh,
-  di,
-  dj,
-  dk,
-  dl,
-  dm,
-  dn,
-  "do": 8263236e-10,
-  dp,
-  dq,
-  dr,
-  ds,
-  dt,
-  du,
-  dv,
-  dw,
-  dx,
-  dy,
-  dz,
-  "d ": 5852893e-9,
-  ea,
-  eb,
-  ec,
-  ed,
-  ee,
-  ef,
-  eg,
-  eh,
-  ei,
-  ej,
-  ek,
-  el,
-  em,
-  en,
-  eo,
-  ep,
-  eq,
-  er,
-  es,
-  et,
-  eu,
-  ev,
-  ew,
-  ex,
-  ey,
-  ez,
-  "e ": 0.01230269,
-  fa,
-  fb,
-  fc,
-  fd,
-  fe,
-  ff,
-  fg,
-  fh,
-  fi,
-  fj,
-  fk,
-  fl,
-  fm,
-  fn,
-  fo,
-  fp,
-  fq,
-  fr,
-  fs,
-  ft,
-  fu,
-  fv,
-  fw,
-  fx,
-  fy,
-  fz,
-  "f ": 5949051e-10,
-  ga,
-  gb,
-  gc,
-  gd,
-  ge,
-  gf,
-  gg,
-  gh,
-  gi,
-  gj,
-  gk,
-  gl,
-  gm,
-  gn,
-  go,
-  gp,
-  gq,
-  gr,
-  gs,
-  gt,
-  gu,
-  gv,
-  gw,
-  gx,
-  gy,
-  gz,
-  "g ": 553968e-8,
-  ha,
-  hb,
-  hc,
-  hd,
-  he,
-  hf,
-  hg,
-  hh,
-  hi,
-  hj,
-  hk,
-  hl,
-  hm,
-  hn,
-  ho,
-  hp,
-  hq,
-  hr,
-  hs,
-  ht,
-  hu,
-  hv,
-  hw,
-  hx,
-  hy,
-  hz,
-  "h ": 493879e-8,
-  ia,
-  ib,
-  ic,
-  id,
-  ie,
-  "if": 5438335e-10,
-  ig,
-  ih,
-  ii,
-  ij,
-  ik,
-  il,
-  im,
-  "in": 0.01156534,
-  io,
-  ip,
-  iq,
-  ir,
-  is,
-  it,
-  iu,
-  iv,
-  iw,
-  ix,
-  iy,
-  iz,
-  "i ": 6931782e-9,
-  ja,
-  jb,
-  jc,
-  jd,
-  je,
-  jf,
-  jg,
-  jh,
-  ji,
-  jj,
-  jk,
-  jl,
-  jm,
-  jn,
-  jo,
-  jp,
-  jq,
-  jr,
-  js,
-  jt,
-  ju,
-  jv,
-  jw,
-  jx,
-  jy,
-  jz,
-  "j ": 2006957e-10,
-  ka,
-  kb,
-  kc,
-  kd,
-  ke,
-  kf,
-  kg,
-  kh,
-  ki,
-  kj,
-  kk,
-  kl,
-  km,
-  kn,
-  ko,
-  kp,
-  kq,
-  kr,
-  ks,
-  kt,
-  ku,
-  kv,
-  kw,
-  kx,
-  ky,
-  kz,
-  "k ": 1864116e-9,
-  la,
-  lb,
-  lc,
-  ld,
-  le,
-  lf,
-  lg,
-  lh,
-  li,
-  lj,
-  lk,
-  ll,
-  lm,
-  ln,
-  lo,
-  lp,
-  lq,
-  lr,
-  ls,
-  lt,
-  lu,
-  lv,
-  lw,
-  lx,
-  ly,
-  lz,
-  "l ": 4543383e-9,
-  ma,
-  mb,
-  mc,
-  md,
-  me,
-  mf,
-  mg,
-  mh,
-  mi,
-  mj,
-  mk,
-  ml,
-  mm,
-  mn,
-  mo,
-  mp,
-  mq,
-  mr,
-  ms,
-  mt,
-  mu,
-  mv,
-  mw,
-  mx,
-  my,
-  mz,
-  "m ": 6523208e-9,
-  na,
-  nb,
-  nc,
-  nd,
-  ne,
-  nf,
-  ng,
-  nh,
-  ni,
-  nj,
-  nk,
-  nl,
-  nm,
-  nn,
-  no,
-  np,
-  nq,
-  nr,
-  ns,
-  nt,
-  nu,
-  nv,
-  nw,
-  nx,
-  ny,
-  nz,
-  "n ": 0.02317137,
-  oa,
-  ob,
-  oc,
-  od,
-  oe,
-  of,
-  og,
-  oh,
-  oi,
-  oj,
-  ok,
-  ol,
-  om,
-  on,
-  oo,
-  op,
-  oq,
-  or,
-  os,
-  ot,
-  ou,
-  ov,
-  ow,
-  ox,
-  oy,
-  oz,
-  "o ": 6910635e-10,
-  pa,
-  pb,
-  pc,
-  pd,
-  pe,
-  pf,
-  pg,
-  ph,
-  pi,
-  pj,
-  pk,
-  pl,
-  pm,
-  pn,
-  po,
-  pp,
-  pq,
-  pr,
-  ps,
-  pt,
-  pu,
-  pv,
-  pw,
-  px,
-  py,
-  pz,
-  "p ": 3976408e-9,
-  qa,
-  qb,
-  qc,
-  qd,
-  qe,
-  qf,
-  qg,
-  qh,
-  qi,
-  qj,
-  qk,
-  ql,
-  qm,
-  qn,
-  qo,
-  qp,
-  qq,
-  qr,
-  qs,
-  qt,
-  qu,
-  qv,
-  qw,
-  qx,
-  qy,
-  qz,
-  "q ": 1157092e-11,
-  ra,
-  rb,
-  rc,
-  rd,
-  re,
-  rf,
-  rg,
-  rh,
-  ri,
-  rj,
-  rk,
-  rl,
-  rm,
-  rn,
-  ro,
-  rp,
-  rq,
-  rr,
-  rs,
-  rt,
-  ru,
-  rv,
-  rw,
-  rx,
-  ry,
-  rz,
-  "r ": 0.02598111,
-  sa,
-  sb,
-  sc,
-  sd,
-  se,
-  sf,
-  sg,
-  sh,
-  si,
-  sj,
-  sk,
-  sl,
-  sm,
-  sn,
-  so,
-  sp,
-  sq,
-  sr,
-  ss,
-  st,
-  su,
-  sv,
-  sw,
-  sx,
-  sy,
-  sz,
-  "s ": 9192102e-9,
-  ta,
-  tb,
-  tc,
-  td,
-  te,
-  tf,
-  tg,
-  th,
-  ti,
-  tj,
-  tk,
-  tl,
-  tm,
-  tn,
-  to,
-  tp,
-  tq,
-  tr,
-  ts,
-  tt,
-  tu,
-  tv,
-  tw,
-  tx,
-  ty,
-  tz,
-  "t ": 0.02350653,
-  ua,
-  ub,
-  uc,
-  ud,
-  ue,
-  uf,
-  ug,
-  uh,
-  ui,
-  uj,
-  uk,
-  ul,
-  um,
-  un,
-  uo,
-  up,
-  uq,
-  ur,
-  us,
-  ut,
-  uu,
-  uv,
-  uw,
-  ux,
-  uy,
-  uz,
-  "u ": 1230109e-9,
-  va,
-  vb,
-  vc,
-  vd,
-  ve,
-  vf,
-  vg,
-  vh,
-  vi,
-  vj,
-  vk,
-  vl,
-  vm,
-  vn,
-  vo,
-  vp,
-  vq,
-  vr,
-  vs,
-  vt,
-  vu,
-  vv,
-  vw,
-  vx,
-  vy,
-  vz,
-  "v ": 3036769e-9,
-  wa,
-  wb,
-  wc,
-  wd,
-  we,
-  wf,
-  wg,
-  wh,
-  wi,
-  wj,
-  wk,
-  wl,
-  wm,
-  wn,
-  wo,
-  wp,
-  wq,
-  wr,
-  ws,
-  wt,
-  wu,
-  wv,
-  ww,
-  wx,
-  wy,
-  wz,
-  "w ": 7261753e-11,
-  xa,
-  xb,
-  xc,
-  xd,
-  xe,
-  xf,
-  xg,
-  xh,
-  xi,
-  xj,
-  xk,
-  xl,
-  xm,
-  xn,
-  xo,
-  xp,
-  xq,
-  xr,
-  xs,
-  xt,
-  xu,
-  xv,
-  xw,
-  xx,
-  xy,
-  xz,
-  "x ": 2110696e-10,
-  ya,
-  yb,
-  yc,
-  yd,
-  ye,
-  yf,
-  yg,
-  yh,
-  yi,
-  yj,
-  yk,
-  yl,
-  ym,
-  yn,
-  yo,
-  yp,
-  yq,
-  yr,
-  ys,
-  yt,
-  yu,
-  yv,
-  yw,
-  yx,
-  yy,
-  yz,
-  "y ": 4959538e-10,
-  za,
-  zb,
-  zc,
-  zd,
-  ze,
-  zf,
-  zg,
-  zh,
-  zi,
-  zj,
-  zk,
-  zl,
-  zm,
-  zn,
-  zo,
-  zp,
-  zq,
-  zr,
-  zs,
-  zt,
-  zu,
-  zv,
-  zw,
-  zx,
-  zy,
-  zz,
-  "z ": 5186966e-11,
-  " a": 0.01104943,
-  " b": 6940959e-9,
-  " c": 923679e-9,
-  " d": 9576736e-9,
-  " e": 6998015e-9,
-  " f": 0.01111806,
-  " g": 3981196e-9,
-  " h": 8675001e-9,
-  " i": 9518482e-9,
-  " j": 2026109e-9,
-  " k": 7005995e-9,
-  " l": 4411315e-9,
-  " m": 0.01001244,
-  " n": 460842e-8,
-  " o": 7900149e-9,
-  " p": 7199908e-9,
-  " q": 1755589e-11,
-  " r": 705986e-8,
-  " s": 0.01912594,
-  " t": 8196205e-9,
-  " u": 3436964e-9,
-  " v": 7900149e-9,
-  " w": 2733132e-10,
-  " x": 2274285e-11,
-  " y": 1883268e-10,
-  " z": 8099647e-11,
-  "  ": 2851235e-9
-};
 const nlp = {
   sanitize: (str) => {
     return str.toLowerCase().replace(/[^a-z ]/ig, "");
@@ -13107,6 +6131,96 @@ const nlp = {
     return p2;
   }
 };
+const total_count$e = 180659;
+const probabilities$e = { "cc": 72e-6, "cp": 6e-6, "cv": 0, "cd": 22e-6, "ch": 1273e-6, "ck": 565e-6, "ca": 819e-6, "cs": 11e-6, "cw": 0, "cu": 116e-6, "cz": 22e-6, "ct": 66e-6, "ce": 1234e-6, "cr": 116e-6, "cl": 177e-6, "cj": 0, "cb": 17e-6, "cx": 0, "ci": 476e-6, "cq": 6e-6, "cf": 22e-6, "cg": 6e-6, "cm": 33e-6, "cn": 6e-6, "c ": 271e-6, "cy": 138e-6, "co": 592e-6, "pc": 28e-6, "pp": 498e-6, "pv": 17e-6, "pd": 133e-6, "ph": 26e-5, "pk": 39e-6, "pa": 1245e-6, "ps": 232e-6, "pw": 6e-6, "pu": 365e-6, "pz": 0, "pt": 271e-6, "pe": 1644e-6, "pr": 1854e-6, "pl": 531e-6, "pj": 11e-6, "pb": 55e-6, "px": 0, "pi": 2009e-6, "pq": 0, "pf": 194e-6, "pg": 22e-6, "pm": 17e-6, "pn": 72e-6, "p ": 2768e-6, "py": 33e-6, "po": 1306e-6, "vc": 6e-6, "vp": 22e-6, "vv": 39e-6, "vd": 249e-6, "vh": 11e-6, "vk": 77e-6, "va": 3581e-6, "vs": 443e-6, "vw": 0, "vu": 55e-6, "vz": 0, "vt": 1e-4, "ve": 5912e-6, "vr": 786e-6, "vl": 83e-6, "vj": 11e-6, "vb": 83e-6, "vx": 0, "vi": 2469e-6, "vq": 0, "vf": 33e-6, "vg": 77e-6, "vm": 17e-6, "vn": 83e-5, "v ": 1777e-6, "vy": 28e-6, "vo": 841e-6, "dc": 39e-6, "dp": 44e-6, "dv": 664e-6, "dd": 769e-6, "dh": 199e-6, "dk": 293e-6, "da": 3072e-6, "ds": 3603e-6, "dw": 61e-6, "du": 371e-6, "dz": 6e-6, "dt": 2109e-6, "de": 0.020198, "dr": 1423e-6, "dl": 1262e-6, "dj": 83e-6, "db": 1461e-6, "dx": 0, "di": 1666e-6, "dq": 0, "df": 194e-6, "dg": 459e-6, "dm": 299e-6, "dn": 249e-6, "d ": 7954e-6, "dy": 266e-6, "do": 659e-6, "hc": 33e-6, "hp": 0, "hv": 775e-6, "hd": 22e-6, "hh": 6e-6, "hk": 28e-6, "ha": 4722e-6, "hs": 39e-6, "hw": 5e-5, "hu": 1068e-6, "hz": 6e-6, "ht": 83e-6, "he": 2247e-6, "hr": 653e-6, "hl": 133e-6, "hj": 625e-6, "hb": 11e-6, "hx": 0, "hi": 637e-6, "hq": 0, "hf": 22e-6, "hg": 5e-5, "hm": 105e-6, "hn": 354e-6, "h ": 587e-6, "hy": 127e-6, "ho": 2103e-6, "kc": 6e-6, "kp": 33e-6, "kv": 304e-6, "kd": 89e-6, "kh": 116e-6, "kk": 974e-6, "ka": 3105e-6, "ks": 88e-5, "kw": 0, "ku": 1146e-6, "kz": 6e-6, "kt": 1107e-6, "ke": 5735e-6, "kr": 1572e-6, "kl": 98e-5, "kj": 94e-6, "kb": 376e-6, "kx": 0, "ki": 1627e-6, "kq": 0, "kf": 5e-5, "kg": 55e-6, "km": 52e-5, "kn": 393e-6, "k ": 4622e-6, "ky": 199e-6, "ko": 3072e-6, "ac": 515e-6, "ap": 509e-6, "av": 1749e-6, "ad": 1876e-6, "ah": 183e-6, "ak": 836e-6, "aa": 41e-5, "as": 1904e-6, "aw": 122e-6, "au": 736e-6, "az": 94e-6, "at": 4439e-6, "ae": 205e-6, "ar": 8331e-6, "al": 4755e-6, "aj": 232e-6, "ab": 803e-6, "ax": 77e-6, "ai": 288e-6, "aq": 6e-6, "af": 4113e-6, "ag": 2175e-6, "am": 2851e-6, "an": 0.013678, "a ": 4196e-6, "ay": 166e-6, "ao": 33e-6, "sc": 537e-6, "sp": 2474e-6, "sv": 103e-5, "sd": 232e-6, "sh": 697e-6, "sk": 7605e-6, "sa": 2198e-6, "ss": 1616e-6, "sw": 33e-6, "su": 548e-6, "sz": 33e-6, "st": 0.012117, "se": 522e-5, "sr": 36e-5, "sl": 1157e-6, "sj": 271e-6, "sb": 819e-6, "sx": 0, "si": 3476e-6, "sq": 17e-6, "sf": 155e-6, "sg": 188e-6, "sm": 609e-6, "sn": 509e-6, "s ": 7727e-6, "sy": 1113e-6, "so": 393e-5, "wc": 0, "wp": 0, "wv": 0, "wd": 6e-6, "wh": 28e-6, "wk": 11e-6, "wa": 316e-6, "ws": 44e-6, "ww": 6e-6, "wu": 11e-6, "wz": 6e-6, "wt": 17e-6, "we": 271e-6, "wr": 17e-6, "wl": 6e-6, "wj": 0, "wb": 0, "wx": 0, "wi": 282e-6, "wq": 0, "wf": 6e-6, "wg": 0, "wm": 6e-6, "wn": 28e-6, "w ": 149e-6, "wy": 6e-6, "wo": 133e-6, "uc": 249e-6, "up": 686e-6, "uv": 161e-6, "ud": 191e-5, "uh": 22e-6, "uk": 31e-5, "ua": 194e-6, "us": 1965e-6, "uw": 11e-6, "uu": 22e-6, "uz": 28e-6, "ut": 515e-6, "ue": 841e-6, "ur": 1395e-6, "ul": 935e-6, "uj": 0, "ub": 531e-6, "ux": 22e-6, "ui": 244e-6, "uq": 6e-6, "uf": 127e-6, "ug": 969e-6, "um": 913e-6, "un": 4068e-6, "u ": 371e-6, "uy": 11e-6, "uo": 44e-6, "zc": 6e-6, "zp": 6e-6, "zv": 0, "zd": 0, "zh": 17e-6, "zk": 0, "za": 122e-6, "zs": 11e-6, "zw": 17e-6, "zu": 0, "zz": 61e-6, "zt": 11e-6, "ze": 116e-6, "zr": 6e-6, "zl": 11e-6, "zj": 11e-6, "zb": 6e-6, "zx": 6e-6, "zi": 83e-6, "zq": 0, "zf": 0, "zg": 0, "zm": 22e-6, "zn": 0, "z ": 155e-6, "zy": 28e-6, "zo": 105e-6, "tc": 55e-6, "tp": 33e-6, "tv": 41e-5, "td": 5e-5, "th": 792e-6, "tk": 83e-6, "ta": 3471e-6, "ts": 1046e-6, "tw": 55e-6, "tu": 952e-6, "tz": 77e-6, "tt": 1439e-6, "te": 0.010119, "tr": 388e-5, "tl": 675e-6, "tj": 343e-6, "tb": 221e-6, "tx": 6e-6, "ti": 786e-5, "tq": 0, "tf": 188e-6, "tg": 55e-6, "tm": 194e-6, "tn": 603e-6, "t ": 0.016888, "ty": 98e-5, "to": 243e-5, "ec": 244e-6, "ep": 57e-5, "ev": 1943e-6, "ed": 7096e-6, "eh": 36e-5, "ek": 1107e-6, "ea": 858e-6, "es": 6133e-6, "ew": 1e-4, "eu": 493e-6, "ez": 55e-6, "et": 0.010827, "ee": 232e-6, "er": 0.031097, "el": 6963e-6, "ej": 1124e-6, "eb": 88e-5, "ex": 122e-6, "ei": 57e-5, "eq": 0, "ef": 963e-6, "eg": 1572e-6, "em": 2546e-6, "en": 0.024577, "e ": 0.02259, "ey": 327e-6, "eo": 238e-6, "rc": 188e-6, "rp": 199e-6, "rv": 504e-6, "rd": 3216e-6, "rh": 531e-6, "rk": 2347e-6, "ra": 4766e-6, "rs": 3133e-6, "rw": 11e-6, "ru": 2142e-6, "rz": 44e-6, "rt": 2552e-6, "re": 0.010273, "rr": 119e-5, "rl": 736e-6, "rj": 72e-6, "rb": 88e-5, "rx": 17e-6, "ri": 636e-5, "rq": 0, "rf": 592e-6, "rg": 1744e-6, "rm": 1113e-6, "rn": 243e-5, "r ": 0.02792, "ry": 426e-6, "ro": 3122e-6, "lc": 44e-6, "lp": 172e-6, "lv": 498e-6, "ld": 2419e-6, "lh": 221e-6, "lk": 554e-6, "la": 4926e-6, "ls": 2319e-6, "lw": 22e-6, "lu": 958e-6, "lz": 22e-6, "lt": 1002e-6, "le": 9908e-6, "lr": 238e-6, "ll": 5812e-6, "lj": 161e-6, "lb": 792e-6, "lx": 0, "li": 6327e-6, "lq": 0, "lf": 188e-6, "lg": 692e-6, "lm": 958e-6, "ln": 216e-6, "l ": 5259e-6, "ly": 415e-6, "lo": 1821e-6, "jc": 11e-6, "jp": 0, "jv": 33e-6, "jd": 321e-6, "jh": 28e-6, "jk": 6e-6, "ja": 67e-5, "js": 199e-6, "jw": 0, "ju": 443e-6, "jz": 0, "jt": 39e-6, "je": 1793e-6, "jr": 205e-6, "jl": 382e-6, "jj": 6e-6, "jb": 33e-6, "jx": 0, "ji": 77e-6, "jq": 0, "jf": 17e-6, "jg": 22e-6, "jm": 5e-5, "jn": 83e-6, "j ": 493e-6, "jy": 216e-6, "jo": 637e-6, "bc": 11e-6, "bp": 6e-6, "bv": 0, "bd": 155e-6, "bh": 17e-6, "bk": 127e-6, "ba": 1948e-6, "bs": 194e-6, "bw": 0, "bu": 637e-6, "bz": 0, "bt": 111e-6, "be": 4129e-6, "br": 1777e-6, "bl": 233e-5, "bj": 349e-6, "bb": 244e-6, "bx": 0, "bi": 875e-6, "bq": 0, "bf": 0, "bg": 28e-6, "bm": 5e-5, "bn": 138e-6, "b ": 47e-5, "by": 2469e-6, "bo": 1766e-6, "xc": 0, "xp": 0, "xv": 0, "xd": 0, "xh": 0, "xk": 0, "xa": 5e-5, "xs": 6e-6, "xw": 0, "xu": 0, "xz": 0, "xt": 11e-6, "xe": 66e-6, "xr": 0, "xl": 6e-6, "xj": 0, "xb": 0, "xx": 0, "xi": 5e-5, "xq": 0, "xf": 11e-6, "xg": 0, "xm": 6e-6, "xn": 6e-6, "x ": 205e-6, "xy": 6e-6, "xo": 28e-6, "ic": 808e-6, "ip": 194e-6, "iv": 1257e-6, "id": 2662e-6, "ih": 77e-6, "ik": 2817e-6, "ia": 1013e-6, "is": 4478e-6, "iw": 11e-6, "iu": 232e-6, "iz": 66e-6, "it": 2026e-6, "ie": 2292e-6, "ir": 1312e-6, "il": 7107e-6, "ij": 44e-6, "ib": 393e-6, "ix": 55e-6, "ii": 72e-6, "iq": 17e-6, "if": 448e-6, "ig": 5286e-6, "im": 509e-6, "in": 8657e-6, "i ": 967e-5, "iy": 17e-6, "io": 2352e-6, "qc": 0, "qp": 0, "qv": 6e-6, "qd": 0, "qh": 0, "qk": 0, "qa": 17e-6, "qs": 0, "qw": 0, "qu": 77e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 22e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 6e-6, "qy": 0, "qo": 0, "fc": 122e-6, "fp": 0, "fv": 28e-6, "fd": 172e-6, "fh": 72e-6, "fk": 28e-6, "fa": 991e-6, "fs": 1e-4, "fw": 0, "fu": 349e-6, "fz": 0, "ft": 952e-6, "fe": 841e-6, "fr": 336e-5, "fl": 919e-6, "fj": 288e-6, "fb": 17e-6, "fx": 22e-6, "fi": 1334e-6, "fq": 0, "ff": 404e-6, "fg": 28e-6, "fm": 39e-6, "fn": 22e-6, "f ": 377e-5, "fy": 282e-6, "fo": 5292e-6, "gc": 28e-6, "gp": 17e-6, "gv": 61e-6, "gd": 149e-6, "gh": 371e-6, "gk": 5e-5, "ga": 1367e-6, "gs": 1478e-6, "gw": 11e-6, "gu": 709e-6, "gz": 6e-6, "gt": 1461e-6, "ge": 8773e-6, "gr": 1832e-6, "gl": 769e-6, "gj": 83e-6, "gb": 149e-6, "gx": 0, "gi": 1162e-6, "gq": 6e-6, "gf": 61e-6, "gg": 2026e-6, "gm": 72e-6, "gn": 1328e-6, "g ": 0.010788, "gy": 161e-6, "go": 542e-6, "mc": 17e-6, "mp": 493e-6, "mv": 28e-6, "md": 55e-6, "mh": 61e-6, "mk": 266e-6, "ma": 3498e-6, "ms": 548e-6, "mw": 33e-6, "mu": 1439e-6, "mz": 6e-6, "mt": 531e-6, "me": 7057e-6, "mr": 664e-6, "ml": 62e-5, "mj": 22e-6, "mb": 531e-6, "mx": 0, "mi": 1959e-6, "mq": 0, "mf": 227e-6, "mg": 44e-6, "mm": 2159e-6, "mn": 31e-5, "m ": 5242e-6, "my": 105e-6, "mo": 145e-5, "nc": 316e-6, "np": 77e-6, "nv": 26e-5, "nd": 0.011137, "nh": 421e-6, "nk": 648e-6, "na": 2048e-6, "ns": 6033e-6, "nw": 22e-6, "nu": 498e-6, "nz": 66e-6, "nt": 2679e-6, "ne": 7628e-6, "nr": 581e-6, "nl": 371e-6, "nj": 105e-6, "nb": 41e-5, "nx": 22e-6, "ni": 3011e-6, "nq": 0, "nf": 216e-6, "ng": 5569e-6, "nm": 432e-6, "nn": 1362e-6, "n ": 0.022329, "ny": 465e-6, "no": 1854e-6, " c": 2281e-6, " p": 5784e-6, " v": 6067e-6, " d": 0.011392, " h": 8458e-6, " k": 7329e-6, " a": 9654e-6, " s": 0.01613, " w": 625e-6, " u": 2386e-6, " z": 172e-6, " t": 7445e-6, " e": 0.015842, " r": 3786e-6, " l": 4522e-6, " j": 1793e-6, " b": 8491e-6, " x": 17e-6, " i": 0.010855, " q": 61e-6, " f": 0.01044, " g": 3421e-6, " m": 8137e-6, " n": 3714e-6, "  ": 6914e-6, " y": 249e-6, " o": 0.010157, "yc": 22e-6, "yp": 116e-6, "yv": 39e-6, "yd": 1201e-6, "yh": 22e-6, "yk": 31e-5, "ya": 155e-6, "ys": 958e-6, "yw": 17e-6, "yu": 17e-6, "yz": 6e-6, "yt": 304e-6, "ye": 736e-6, "yr": 454e-6, "yl": 448e-6, "yj": 0, "yb": 111e-6, "yx": 0, "yi": 22e-6, "yq": 0, "yf": 22e-6, "yg": 963e-6, "ym": 221e-6, "yn": 393e-6, "y ": 16e-4, "yy": 0, "yo": 21e-5, "oc": 432e-6, "op": 1666e-6, "ov": 1661e-6, "od": 207e-5, "oh": 244e-6, "ok": 653e-6, "oa": 66e-6, "os": 1168e-6, "ow": 133e-6, "ou": 78e-5, "oz": 17e-6, "ot": 692e-6, "oe": 271e-6, "or": 9626e-6, "ol": 4251e-6, "oj": 33e-6, "ob": 515e-6, "ox": 83e-6, "oi": 61e-6, "oq": 11e-6, "of": 736e-6, "og": 801e-5, "om": 5491e-6, "on": 4533e-6, "o ": 14e-4, "oy": 116e-6, "oo": 205e-6 };
+const bigram_da = {
+  total_count: total_count$e,
+  probabilities: probabilities$e
+};
+const total_count$d = 174931;
+const probabilities$d = { "cc": 366e-6, "cp": 11e-6, "cv": 0, "cd": 11e-6, "ch": 4144e-6, "ck": 1138e-6, "ca": 4265e-6, "cs": 297e-6, "cw": 17e-6, "cu": 777e-6, "cz": 29e-6, "ct": 243e-5, "ce": 3939e-6, "cr": 897e-6, "cl": 909e-6, "cj": 0, "cb": 34e-6, "cx": 0, "ci": 2367e-6, "cq": 6e-6, "cf": 17e-6, "cg": 0, "cm": 29e-6, "cn": 4e-5, "c ": 1732e-6, "cy": 24e-5, "co": 5231e-6, "pc": 17e-6, "pp": 589e-6, "pv": 6e-6, "pd": 17e-6, "ph": 697e-6, "pk": 29e-6, "pa": 2853e-6, "ps": 32e-5, "pw": 17e-6, "pu": 886e-6, "pz": 0, "pt": 463e-6, "pe": 2675e-6, "pr": 2612e-6, "pl": 1475e-6, "pj": 0, "pb": 23e-6, "px": 0, "pi": 1246e-6, "pq": 0, "pf": 6e-6, "pg": 17e-6, "pm": 29e-6, "pn": 23e-6, "p ": 903e-6, "py": 63e-6, "po": 1835e-6, "vc": 17e-6, "vp": 0, "vv": 6e-6, "vd": 0, "vh": 0, "vk": 6e-6, "va": 955e-6, "vs": 23e-6, "vw": 0, "vu": 17e-6, "vz": 0, "vt": 0, "ve": 3784e-6, "vr": 4e-5, "vl": 29e-6, "vj": 0, "vb": 0, "vx": 0, "vi": 2269e-6, "vq": 0, "vf": 0, "vg": 23e-6, "vm": 0, "vn": 23e-6, "v ": 177e-6, "vy": 91e-6, "vo": 389e-6, "dc": 86e-6, "dp": 34e-6, "dv": 103e-6, "dd": 246e-6, "dh": 57e-6, "dk": 17e-6, "da": 1435e-6, "ds": 692e-6, "dw": 86e-6, "du": 938e-6, "dz": 17e-6, "dt": 57e-6, "de": 4962e-6, "dr": 492e-6, "dl": 154e-6, "dj": 29e-6, "db": 109e-6, "dx": 0, "di": 3401e-6, "dq": 46e-6, "df": 17e-6, "dg": 183e-6, "dm": 194e-6, "dn": 63e-6, "d ": 0.016298, "dy": 28e-5, "do": 932e-6, "hc": 17e-6, "hp": 57e-6, "hv": 17e-6, "hd": 46e-6, "hh": 29e-6, "hk": 57e-6, "ha": 3413e-6, "hs": 114e-6, "hw": 263e-6, "hu": 646e-6, "hz": 0, "ht": 514e-6, "he": 0.017538, "hr": 463e-6, "hl": 223e-6, "hj": 0, "hb": 86e-6, "hx": 0, "hi": 3699e-6, "hq": 34e-6, "hf": 34e-6, "hg": 17e-6, "hm": 63e-6, "hn": 274e-6, "h ": 4756e-6, "hy": 28e-5, "ho": 3013e-6, "kc": 11e-6, "kp": 0, "kv": 0, "kd": 23e-6, "kh": 194e-6, "kk": 23e-6, "ka": 537e-6, "ks": 274e-6, "kw": 34e-6, "ku": 154e-6, "kz": 0, "kt": 51e-6, "ke": 1115e-6, "kr": 91e-6, "kl": 131e-6, "kj": 6e-6, "kb": 29e-6, "kx": 0, "ki": 749e-6, "kq": 0, "kf": 23e-6, "kg": 17e-6, "km": 149e-6, "kn": 446e-6, "k ": 1732e-6, "ky": 166e-6, "ko": 423e-6, "ac": 2624e-6, "ap": 1166e-6, "av": 646e-6, "ad": 2252e-6, "ah": 229e-6, "ak": 783e-6, "aa": 234e-6, "as": 8683e-6, "aw": 343e-6, "au": 875e-6, "az": 303e-6, "at": 8483e-6, "ae": 474e-6, "ar": 8152e-6, "al": 8443e-6, "aj": 263e-6, "ab": 1092e-6, "ax": 8e-5, "ai": 1972e-6, "aq": 4e-5, "af": 537e-6, "ag": 1361e-6, "am": 383e-5, "an": 0.015766, "a ": 9347e-6, "ay": 1561e-6, "ao": 51e-6, "sc": 1212e-6, "sp": 1035e-6, "sv": 69e-6, "sd": 97e-6, "sh": 2847e-6, "sk": 326e-6, "sa": 1383e-6, "ss": 1966e-6, "sw": 189e-6, "su": 1366e-6, "sz": 34e-6, "st": 8712e-6, "se": 5448e-6, "sr": 8e-5, "sl": 514e-6, "sj": 11e-6, "sb": 74e-6, "sx": 0, "si": 4116e-6, "sq": 109e-6, "sf": 51e-6, "sg": 6e-6, "sm": 372e-6, "sn": 63e-6, "s ": 0.023489, "sy": 292e-6, "so": 279e-5, "wc": 29e-6, "wp": 6e-6, "wv": 0, "wd": 11e-6, "wh": 1343e-6, "wk": 6e-6, "wa": 3893e-6, "ws": 177e-6, "ww": 11e-6, "wu": 6e-6, "wz": 0, "wt": 23e-6, "we": 1778e-6, "wr": 326e-6, "wl": 86e-6, "wj": 0, "wb": 11e-6, "wx": 0, "wi": 1749e-6, "wq": 0, "wf": 23e-6, "wg": 0, "wm": 6e-6, "wn": 96e-5, "w ": 886e-6, "wy": 29e-6, "wo": 1166e-6, "uc": 903e-6, "up": 492e-6, "uv": 86e-6, "ud": 857e-6, "uh": 34e-6, "uk": 223e-6, "ua": 823e-6, "us": 2984e-6, "uw": 17e-6, "uu": 17e-6, "uz": 74e-6, "ut": 1869e-6, "ue": 955e-6, "ur": 2801e-6, "ul": 1332e-6, "uj": 4e-5, "ub": 955e-6, "ux": 29e-6, "ui": 806e-6, "uq": 46e-6, "uf": 8e-5, "ug": 577e-6, "um": 1303e-6, "un": 3636e-6, "u ": 383e-6, "uy": 23e-6, "uo": 63e-6, "zc": 23e-6, "zp": 0, "zv": 6e-6, "zd": 6e-6, "zh": 63e-6, "zk": 6e-6, "za": 212e-6, "zs": 23e-6, "zw": 11e-6, "zu": 46e-6, "zz": 8e-5, "zt": 0, "ze": 412e-6, "zr": 0, "zl": 23e-6, "zj": 0, "zb": 11e-6, "zx": 0, "zi": 194e-6, "zq": 6e-6, "zf": 0, "zg": 6e-6, "zm": 0, "zn": 6e-6, "z ": 229e-6, "zy": 63e-6, "zo": 183e-6, "tc": 309e-6, "tp": 17e-6, "tv": 63e-6, "td": 29e-6, "th": 0.018899, "tk": 29e-6, "ta": 4087e-6, "ts": 1721e-6, "tw": 68e-5, "tu": 1669e-6, "tz": 57e-6, "tt": 1075e-6, "te": 85e-4, "tr": 3281e-6, "tl": 743e-6, "tj": 6e-6, "tb": 383e-6, "tx": 6e-6, "ti": 6808e-6, "tq": 0, "tf": 29e-6, "tg": 23e-6, "tm": 171e-6, "tn": 91e-6, "t ": 0.01109, "ty": 1978e-6, "to": 5265e-6, "ec": 2675e-6, "ep": 1195e-6, "ev": 1321e-6, "ed": 8603e-6, "eh": 166e-6, "ek": 257e-6, "ea": 4265e-6, "es": 8152e-6, "ew": 692e-6, "eu": 274e-6, "ez": 103e-6, "et": 2412e-6, "ee": 1601e-6, "er": 0.013154, "el": 379e-5, "ej": 51e-6, "eb": 452e-6, "ex": 835e-6, "ei": 932e-6, "eq": 8e-5, "ef": 589e-6, "eg": 983e-6, "em": 2155e-6, "en": 8169e-6, "e ": 0.028154, "ey": 732e-6, "eo": 577e-6, "rc": 732e-6, "rp": 349e-6, "rv": 572e-6, "rd": 1412e-6, "rh": 12e-5, "rk": 772e-6, "ra": 5362e-6, "rs": 239e-5, "rw": 166e-6, "ru": 926e-6, "rz": 8e-5, "rt": 2881e-6, "re": 9249e-6, "rr": 835e-6, "rl": 737e-6, "rj": 29e-6, "rb": 349e-6, "rx": 46e-6, "ri": 6746e-6, "rq": 11e-6, "rf": 263e-6, "rg": 726e-6, "rm": 1281e-6, "rn": 1458e-6, "r ": 9049e-6, "ry": 1532e-6, "ro": 5231e-6, "lc": 8e-5, "lp": 149e-6, "lv": 126e-6, "ld": 1155e-6, "lh": 69e-6, "lk": 12e-5, "la": 5202e-6, "ls": 1029e-6, "lw": 149e-6, "lu": 96e-5, "lz": 11e-6, "lt": 72e-5, "le": 5476e-6, "lr": 4e-5, "ll": 3882e-6, "lj": 6e-6, "lb": 537e-6, "lx": 6e-6, "li": 4676e-6, "lq": 0, "lf": 206e-6, "lg": 114e-6, "lm": 686e-6, "ln": 29e-6, "l ": 5962e-6, "ly": 2367e-6, "lo": 259e-5, "jc": 6e-6, "jp": 6e-6, "jv": 0, "jd": 6e-6, "jh": 4e-5, "jk": 6e-6, "ja": 709e-6, "js": 0, "jw": 6e-6, "ju": 412e-6, "jz": 0, "jt": 0, "je": 229e-6, "jr": 23e-6, "jl": 6e-6, "jj": 0, "jb": 0, "jx": 0, "ji": 131e-6, "jq": 0, "jf": 0, "jg": 6e-6, "jm": 0, "jn": 6e-6, "j ": 74e-6, "jy": 6e-6, "jo": 709e-6, "bc": 86e-6, "bp": 23e-6, "bv": 6e-6, "bd": 29e-6, "bh": 57e-6, "bk": 0, "ba": 2275e-6, "bs": 24e-5, "bw": 17e-6, "bu": 1623e-6, "bz": 0, "bt": 29e-6, "be": 3138e-6, "br": 1195e-6, "bl": 1143e-6, "bj": 4e-5, "bb": 12e-5, "bx": 0, "bi": 1012e-6, "bq": 0, "bf": 6e-6, "bg": 0, "bm": 4e-5, "bn": 46e-6, "b ": 394e-6, "by": 2172e-6, "bo": 1246e-6, "xc": 8e-5, "xp": 126e-6, "xv": 11e-6, "xd": 0, "xh": 34e-6, "xk": 0, "xa": 131e-6, "xs": 17e-6, "xw": 0, "xu": 17e-6, "xz": 0, "xt": 189e-6, "xe": 109e-6, "xr": 6e-6, "xl": 6e-6, "xj": 0, "xb": 6e-6, "xx": 11e-6, "xi": 303e-6, "xq": 0, "xf": 11e-6, "xg": 0, "xm": 0, "xn": 0, "x ": 32e-5, "xy": 29e-6, "xo": 74e-6, "ic": 5711e-6, "ip": 1046e-6, "iv": 1801e-6, "id": 1383e-6, "ih": 4e-5, "ik": 246e-6, "ia": 3544e-6, "is": 0.010313, "iw": 63e-6, "iu": 194e-6, "iz": 343e-6, "it": 7769e-6, "ie": 2532e-6, "ir": 2281e-6, "il": 3944e-6, "ij": 8e-5, "ib": 652e-6, "ix": 143e-6, "ii": 183e-6, "iq": 91e-6, "if": 657e-6, "ig": 1641e-6, "im": 1155e-6, "in": 0.016578, "i ": 1406e-6, "iy": 57e-6, "io": 5088e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 6e-6, "qa": 23e-6, "qs": 0, "qw": 0, "qu": 64e-5, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 17e-6, "qq": 6e-6, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 34e-6, "qy": 0, "qo": 0, "fc": 57e-6, "fp": 0, "fv": 0, "fd": 11e-6, "fh": 0, "fk": 0, "fa": 1012e-6, "fs": 6e-6, "fw": 0, "fu": 206e-6, "fz": 0, "ft": 446e-6, "fe": 1441e-6, "fr": 1509e-6, "fl": 343e-6, "fj": 0, "fb": 17e-6, "fx": 0, "fi": 2195e-6, "fq": 0, "ff": 537e-6, "fg": 11e-6, "fm": 17e-6, "fn": 0, "f ": 6866e-6, "fy": 6e-6, "fo": 2915e-6, "gc": 23e-6, "gp": 6e-6, "gv": 0, "gd": 57e-6, "gh": 1018e-6, "gk": 0, "ga": 1572e-6, "gs": 286e-6, "gw": 57e-6, "gu": 823e-6, "gz": 6e-6, "gt": 74e-6, "ge": 2875e-6, "gr": 1e-3, "gl": 726e-6, "gj": 0, "gb": 74e-6, "gx": 0, "gi": 1389e-6, "gq": 0, "gf": 11e-6, "gg": 12e-5, "gm": 97e-6, "gn": 337e-6, "g ": 371e-5, "gy": 183e-6, "go": 697e-6, "mc": 46e-6, "mp": 1429e-6, "mv": 0, "md": 11e-6, "mh": 6e-6, "mk": 11e-6, "ma": 4402e-6, "ms": 383e-6, "mw": 17e-6, "mu": 1138e-6, "mz": 6e-6, "mt": 6e-6, "me": 5556e-6, "mr": 11e-6, "ml": 86e-6, "mj": 0, "mb": 112e-5, "mx": 17e-6, "mi": 2475e-6, "mq": 0, "mf": 23e-6, "mg": 17e-6, "mm": 817e-6, "mn": 74e-6, "m ": 3281e-6, "my": 343e-6, "mo": 2138e-6, "nc": 2367e-6, "np": 23e-6, "nv": 12e-5, "nd": 8855e-6, "nh": 97e-6, "nk": 292e-6, "na": 4465e-6, "ns": 2904e-6, "nw": 103e-6, "nu": 737e-6, "nz": 114e-6, "nt": 5734e-6, "ne": 4407e-6, "nr": 86e-6, "nl": 354e-6, "nj": 109e-6, "nb": 166e-6, "nx": 23e-6, "ni": 3384e-6, "nq": 11e-6, "nf": 32e-5, "ng": 5488e-6, "nm": 217e-6, "nn": 766e-6, "n ": 0.019831, "ny": 583e-6, "no": 2487e-6, " c": 9375e-6, " p": 7323e-6, " v": 1549e-6, " d": 4539e-6, " h": 5151e-6, " k": 1623e-6, " a": 0.021506, " s": 0.011587, " w": 7763e-6, " u": 1812e-6, " z": 28e-5, " t": 0.021271, " e": 3378e-6, " r": 5591e-6, " l": 4156e-6, " j": 1629e-6, " b": 8055e-6, " x": 8e-5, " i": 0.015538, " q": 234e-6, " f": 6986e-6, " g": 3041e-6, " m": 6791e-6, " n": 375e-5, "  ": 6465e-6, " y": 743e-6, " o": 0.011496, "yc": 217e-6, "yp": 177e-6, "yv": 0, "yd": 143e-6, "yh": 11e-6, "yk": 23e-6, "ya": 52e-5, "ys": 497e-6, "yw": 69e-6, "yu": 57e-6, "yz": 6e-6, "yt": 8e-5, "ye": 726e-6, "yr": 223e-6, "yl": 32e-5, "yj": 0, "yb": 69e-6, "yx": 11e-6, "yi": 126e-6, "yq": 0, "yf": 11e-6, "yg": 6e-6, "ym": 252e-6, "yn": 189e-6, "y ": 9804e-6, "yy": 6e-6, "yo": 423e-6, "oc": 1858e-6, "op": 1543e-6, "ov": 1343e-6, "od": 1126e-6, "oh": 309e-6, "ok": 383e-6, "oa": 514e-6, "os": 1572e-6, "ow": 1755e-6, "ou": 419e-5, "oz": 63e-6, "ot": 1721e-6, "oe": 69e-6, "or": 8112e-6, "ol": 279e-5, "oj": 8e-5, "ob": 509e-6, "ox": 194e-6, "oi": 457e-6, "oq": 6e-6, "of": 7157e-6, "og": 76e-5, "om": 3761e-6, "on": 0.01125, "o ": 5345e-6, "oy": 143e-6, "oo": 1309e-6 };
+const bigram_en = {
+  total_count: total_count$d,
+  probabilities: probabilities$d
+};
+const total_count$c = 168515;
+const probabilities$c = { "cc": 398e-6, "cp": 6e-6, "cv": 12e-6, "cd": 83e-6, "ch": 3614e-6, "ck": 451e-6, "ca": 2967e-6, "cs": 172e-6, "cw": 0, "cu": 843e-6, "cz": 47e-6, "ct": 1846e-6, "ce": 3934e-6, "cr": 1062e-6, "cl": 884e-6, "cj": 0, "cb": 0, "cx": 0, "ci": 2581e-6, "cq": 3e-5, "cf": 18e-6, "cg": 6e-6, "cm": 6e-6, "cn": 131e-6, "c ": 1175e-6, "cy": 119e-6, "co": 5768e-6, "pc": 498e-6, "pp": 742e-6, "pv": 18e-6, "pd": 53e-6, "ph": 813e-6, "pk": 12e-6, "pa": 4836e-6, "ps": 267e-6, "pw": 0, "pu": 1092e-6, "pz": 6e-6, "pt": 926e-6, "pe": 2403e-6, "pr": 2967e-6, "pl": 1418e-6, "pj": 12e-6, "pb": 18e-6, "px": 0, "pi": 1169e-6, "pq": 0, "pf": 18e-6, "pg": 0, "pm": 18e-6, "pn": 59e-6, "p ": 231e-6, "py": 42e-6, "po": 3958e-6, "vc": 36e-6, "vp": 0, "vv": 0, "vd": 6e-6, "vh": 18e-6, "vk": 12e-6, "va": 14e-4, "vs": 24e-6, "vw": 0, "vu": 36e-6, "vz": 6e-6, "vt": 24e-6, "ve": 3074e-6, "vr": 694e-6, "vl": 3e-5, "vj": 0, "vb": 0, "vx": 0, "vi": 3394e-6, "vq": 47e-6, "vf": 6e-6, "vg": 3e-5, "vm": 6e-6, "vn": 59e-6, "v ": 285e-6, "vy": 47e-6, "vo": 1056e-6, "dc": 404e-6, "dp": 641e-6, "dv": 107e-6, "dd": 113e-6, "dh": 231e-6, "dk": 0, "da": 5388e-6, "ds": 386e-6, "dw": 47e-6, "du": 4065e-6, "dz": 24e-6, "dt": 255e-6, "de": 0.018592, "dr": 872e-6, "dl": 125e-6, "dj": 71e-6, "db": 136e-6, "dx": 6e-6, "di": 2825e-6, "dq": 6e-6, "df": 95e-6, "dg": 77e-6, "dm": 344e-6, "dn": 65e-6, "d ": 2249e-6, "dy": 83e-6, "do": 184e-5, "hc": 12e-6, "hp": 0, "hv": 6e-6, "hd": 47e-6, "hh": 0, "hk": 18e-6, "ha": 254e-5, "hs": 53e-6, "hw": 65e-6, "hu": 51e-5, "hz": 0, "ht": 368e-6, "he": 178e-5, "hr": 386e-6, "hl": 125e-6, "hj": 12e-6, "hb": 12e-6, "hx": 0, "hi": 1851e-6, "hq": 83e-6, "hf": 12e-6, "hg": 0, "hm": 166e-6, "hn": 261e-6, "h ": 593e-6, "hy": 107e-6, "ho": 1543e-6, "kc": 0, "kp": 6e-6, "kv": 0, "kd": 6e-6, "kh": 101e-6, "kk": 3e-5, "ka": 463e-6, "ks": 89e-6, "kw": 6e-6, "ku": 119e-6, "kz": 0, "kt": 36e-6, "ke": 493e-6, "kr": 107e-6, "kl": 119e-6, "kj": 0, "kb": 0, "kx": 12e-6, "ki": 409e-6, "kq": 0, "kf": 18e-6, "kg": 12e-6, "km": 267e-6, "kn": 24e-6, "k ": 564e-6, "ky": 59e-6, "ko": 362e-6, "ac": 1851e-6, "ap": 1395e-6, "av": 146e-5, "ad": 1169e-6, "ah": 202e-6, "ak": 285e-6, "aa": 119e-6, "as": 2308e-6, "aw": 131e-6, "au": 4706e-6, "az": 267e-6, "at": 5157e-6, "ae": 617e-6, "ar": 7619e-6, "al": 6308e-6, "aj": 113e-6, "ab": 1169e-6, "ax": 119e-6, "ai": 6177e-6, "aq": 231e-6, "af": 415e-6, "ag": 1751e-6, "am": 2558e-6, "an": 0.013269, "a ": 0.010444, "ay": 546e-6, "ao": 368e-6, "sc": 1027e-6, "sp": 1193e-6, "sv": 53e-6, "sd": 178e-6, "sh": 593e-6, "sk": 32e-5, "sa": 257e-5, "ss": 2795e-6, "sw": 59e-6, "su": 2397e-6, "sz": 107e-6, "st": 0.011779, "se": 6142e-6, "sr": 16e-5, "sl": 386e-6, "sj": 6e-6, "sb": 166e-6, "sx": 6e-6, "si": 4546e-6, "sq": 225e-6, "sf": 95e-6, "sg": 53e-6, "sm": 279e-6, "sn": 142e-6, "s ": 0.021725, "sy": 243e-6, "so": 2759e-6, "wc": 6e-6, "wp": 0, "wv": 0, "wd": 0, "wh": 12e-6, "wk": 12e-6, "wa": 54e-5, "ws": 47e-6, "ww": 0, "wu": 24e-6, "wz": 6e-6, "wt": 24e-6, "we": 255e-6, "wr": 6e-6, "wl": 0, "wj": 0, "wb": 6e-6, "wx": 0, "wi": 522e-6, "wq": 0, "wf": 6e-6, "wg": 12e-6, "wm": 0, "wn": 119e-6, "w ": 338e-6, "wy": 6e-6, "wo": 184e-6, "uc": 635e-6, "up": 665e-6, "uv": 938e-6, "ud": 991e-6, "uh": 59e-6, "uk": 101e-6, "ua": 855e-6, "us": 308e-5, "uw": 12e-6, "uu": 36e-6, "uz": 83e-6, "ut": 1899e-6, "ue": 6077e-6, "ur": 6261e-6, "ul": 1638e-6, "uj": 65e-6, "ub": 712e-6, "ux": 1217e-6, "ui": 2908e-6, "uq": 24e-6, "uf": 113e-6, "ug": 487e-6, "um": 742e-6, "un": 9127e-6, "u ": 7026e-6, "uy": 71e-6, "uo": 77e-6, "zc": 18e-6, "zp": 0, "zv": 6e-6, "zd": 6e-6, "zh": 24e-6, "zk": 18e-6, "za": 249e-6, "zs": 18e-6, "zw": 65e-6, "zu": 77e-6, "zz": 71e-6, "zt": 6e-6, "ze": 237e-6, "zr": 6e-6, "zl": 77e-6, "zj": 0, "zb": 36e-6, "zx": 0, "zi": 178e-6, "zq": 0, "zf": 0, "zg": 18e-6, "zm": 6e-6, "zn": 36e-6, "z ": 261e-6, "zy": 83e-6, "zo": 291e-6, "tc": 267e-6, "tp": 95e-6, "tv": 24e-6, "td": 18e-6, "th": 1086e-6, "tk": 12e-6, "ta": 4985e-6, "ts": 1679e-6, "tw": 6e-6, "tu": 2694e-6, "tz": 59e-6, "tt": 1027e-6, "te": 8302e-6, "tr": 4332e-6, "tl": 291e-6, "tj": 36e-6, "tb": 297e-6, "tx": 0, "ti": 6195e-6, "tq": 18e-6, "tf": 47e-6, "tg": 142e-6, "tm": 172e-6, "tn": 89e-6, "t ": 0.023025, "ty": 32e-5, "to": 267e-5, "ec": 1721e-6, "ep": 1003e-6, "ev": 57e-5, "ed": 582e-6, "eh": 101e-6, "ek": 77e-6, "ea": 1211e-6, "es": 0.019256, "ew": 279e-6, "eu": 375e-5, "ez": 172e-6, "et": 5845e-6, "ee": 279e-6, "er": 7216e-6, "el": 4006e-6, "ej": 83e-6, "eb": 22e-5, "ex": 576e-6, "ei": 985e-6, "eq": 59e-6, "ef": 392e-6, "eg": 344e-6, "em": 4225e-6, "en": 0.013263, "e ": 0.056968, "ey": 356e-6, "eo": 196e-6, "rc": 1104e-6, "rp": 433e-6, "rv": 404e-6, "rd": 1205e-6, "rh": 166e-6, "rk": 279e-6, "ra": 6124e-6, "rs": 2807e-6, "rw": 12e-6, "ru": 938e-6, "rz": 107e-6, "rt": 4059e-6, "re": 0.010278, "rr": 146e-5, "rl": 593e-6, "rj": 24e-6, "rb": 225e-6, "rx": 0, "ri": 629e-5, "rq": 178e-6, "rf": 243e-6, "rg": 1573e-6, "rm": 979e-6, "rn": 1015e-6, "r ": 7596e-6, "ry": 255e-6, "ro": 489e-5, "lc": 237e-6, "lp": 285e-6, "lv": 225e-6, "ld": 285e-6, "lh": 38e-5, "lk": 77e-6, "la": 0.011032, "ls": 528e-6, "lw": 12e-6, "lu": 2059e-6, "lz": 3e-5, "lt": 843e-6, "le": 0.016319, "lr": 77e-6, "ll": 597e-5, "lj": 6e-6, "lb": 237e-6, "lx": 0, "li": 5626e-6, "lq": 59e-6, "lf": 119e-6, "lg": 516e-6, "lm": 427e-6, "ln": 16e-5, "l ": 4379e-6, "ly": 433e-6, "lo": 3104e-6, "jc": 3e-5, "jp": 0, "jv": 6e-6, "jd": 6e-6, "jh": 0, "jk": 0, "ja": 766e-6, "js": 18e-6, "jw": 0, "ju": 676e-6, "jz": 12e-6, "jt": 0, "je": 498e-6, "jr": 42e-6, "jl": 12e-6, "jj": 0, "jb": 0, "jx": 0, "ji": 89e-6, "jq": 0, "jf": 0, "jg": 0, "jm": 0, "jn": 3e-5, "j ": 71e-6, "jy": 6e-6, "jo": 872e-6, "bc": 42e-6, "bp": 6e-6, "bv": 0, "bd": 59e-6, "bh": 18e-6, "bk": 6e-6, "ba": 1846e-6, "bs": 125e-6, "bw": 3e-5, "bu": 611e-6, "bz": 18e-6, "bt": 89e-6, "be": 1145e-6, "br": 219e-5, "bl": 866e-6, "bj": 47e-6, "bb": 77e-6, "bx": 0, "bi": 1038e-6, "bq": 0, "bf": 6e-6, "bg": 6e-6, "bm": 6e-6, "bn": 47e-6, "b ": 202e-6, "by": 113e-6, "bo": 1015e-6, "xc": 47e-6, "xp": 166e-6, "xv": 65e-6, "xd": 0, "xh": 0, "xk": 0, "xa": 59e-6, "xs": 6e-6, "xw": 0, "xu": 3e-5, "xz": 0, "xt": 113e-6, "xe": 237e-6, "xr": 6e-6, "xl": 0, "xj": 0, "xb": 6e-6, "xx": 18e-6, "xi": 398e-6, "xq": 0, "xf": 12e-6, "xg": 6e-6, "xm": 6e-6, "xn": 18e-6, "x ": 1406e-6, "xy": 42e-6, "xo": 12e-6, "ic": 3394e-6, "ip": 92e-5, "iv": 1311e-6, "id": 1264e-6, "ih": 3e-5, "ik": 196e-6, "ia": 1555e-6, "is": 7952e-6, "iw": 3e-5, "iu": 184e-6, "iz": 89e-6, "it": 7109e-6, "ie": 6759e-6, "ir": 311e-5, "il": 5976e-6, "ij": 42e-6, "ib": 32e-5, "ix": 291e-6, "ii": 225e-6, "iq": 2237e-6, "if": 694e-6, "ig": 1264e-6, "im": 1234e-6, "in": 8189e-6, "i ": 3044e-6, "iy": 3e-5, "io": 3869e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 12e-6, "qs": 0, "qw": 0, "qu": 5003e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 6e-6, "ql": 6e-6, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 3e-5, "qy": 0, "qo": 12e-6, "fc": 36e-6, "fp": 12e-6, "fv": 172e-6, "fd": 24e-6, "fh": 6e-6, "fk": 0, "fa": 1145e-6, "fs": 42e-6, "fw": 6e-6, "fu": 32e-5, "fz": 0, "ft": 24e-6, "fe": 706e-6, "fr": 2024e-6, "fl": 487e-6, "fj": 0, "fb": 6e-6, "fx": 0, "fi": 997e-6, "fq": 0, "ff": 593e-6, "fg": 24e-6, "fm": 77e-6, "fn": 12e-6, "f ": 504e-6, "fy": 0, "fo": 143e-5, "gc": 59e-6, "gp": 12e-6, "gv": 6e-6, "gd": 53e-6, "gh": 231e-6, "gk": 6e-6, "ga": 13e-4, "gs": 107e-6, "gw": 6e-6, "gu": 105e-5, "gz": 0, "gt": 208e-6, "ge": 2249e-6, "gr": 1377e-6, "gl": 593e-6, "gj": 0, "gb": 83e-6, "gx": 6e-6, "gi": 1662e-6, "gq": 0, "gf": 12e-6, "gg": 53e-6, "gm": 131e-6, "gn": 1484e-6, "g ": 736e-6, "gy": 89e-6, "go": 635e-6, "mc": 65e-6, "mp": 1418e-6, "mv": 6e-6, "md": 19e-5, "mh": 0, "mk": 12e-6, "ma": 3816e-6, "ms": 243e-6, "mw": 3e-5, "mu": 1584e-6, "mz": 0, "mt": 564e-6, "me": 5726e-6, "mr": 724e-6, "ml": 77e-6, "mj": 0, "mb": 1454e-6, "mx": 0, "mi": 2801e-6, "mq": 0, "mf": 0, "mg": 53e-6, "mm": 2213e-6, "mn": 166e-6, "m ": 1389e-6, "my": 125e-6, "mo": 2273e-6, "nc": 2267e-6, "np": 24e-6, "nv": 623e-6, "nd": 3744e-6, "nh": 142e-6, "nk": 125e-6, "na": 4623e-6, "ns": 5382e-6, "nw": 3e-5, "nu": 593e-6, "nz": 208e-6, "nt": 9412e-6, "ne": 9946e-6, "nr": 475e-6, "nl": 113e-6, "nj": 89e-6, "nb": 16e-5, "nx": 12e-6, "ni": 3276e-6, "nq": 65e-6, "nf": 309e-6, "ng": 1739e-6, "nm": 119e-6, "nn": 251e-5, "n ": 0.016829, "ny": 178e-6, "no": 2854e-6, " c": 0.010468, " p": 0.011061, " v": 3026e-6, " d": 0.028075, " h": 248e-5, " k": 1056e-6, " a": 9785e-6, " s": 0.010705, " w": 831e-6, " u": 6896e-6, " z": 368e-6, " t": 4623e-6, " e": 0.017387, " r": 4712e-6, " l": 0.020384, " j": 2469e-6, " b": 3483e-6, " x": 261e-6, " i": 2961e-6, " q": 1703e-6, " f": 5056e-6, " g": 3204e-6, " m": 6332e-6, " n": 4219e-6, "  ": 0.014183, " y": 291e-6, " o": 2083e-6, "yc": 131e-6, "yp": 231e-6, "yv": 3e-5, "yd": 83e-6, "yh": 6e-6, "yk": 24e-6, "ya": 315e-6, "ys": 427e-6, "yw": 18e-6, "yu": 3e-5, "yz": 6e-6, "yt": 71e-6, "ye": 208e-6, "yr": 148e-6, "yl": 16e-5, "yj": 0, "yb": 47e-6, "yx": 6e-6, "yi": 36e-6, "yq": 0, "yf": 0, "yg": 53e-6, "ym": 285e-6, "yn": 16e-5, "y ": 1222e-6, "yy": 0, "yo": 243e-6, "oc": 14e-4, "op": 1264e-6, "ov": 1222e-6, "od": 807e-6, "oh": 237e-6, "ok": 172e-6, "oa": 255e-6, "os": 1495e-6, "ow": 451e-6, "ou": 5572e-6, "oz": 101e-6, "ot": 1584e-6, "oe": 83e-6, "or": 5198e-6, "ol": 2783e-6, "oj": 59e-6, "ob": 736e-6, "ox": 125e-6, "oi": 2178e-6, "oq": 101e-6, "of": 368e-6, "og": 724e-6, "om": 4332e-6, "on": 0.011192, "o ": 1626e-6, "oy": 297e-6, "oo": 481e-6 };
+const bigram_fr = {
+  total_count: total_count$c,
+  probabilities: probabilities$c
+};
+const total_count$b = 208397;
+const probabilities$b = { "cc": 72e-6, "cp": 1e-5, "cv": 5e-6, "cd": 24e-6, "ch": 0.018772, "ck": 1224e-6, "ca": 888e-6, "cs": 14e-6, "cw": 5e-6, "cu": 168e-6, "cz": 14e-6, "ct": 144e-6, "ce": 523e-6, "cr": 139e-6, "cl": 168e-6, "cj": 5e-6, "cb": 24e-6, "cx": 0, "ci": 336e-6, "cq": 19e-6, "cf": 0, "cg": 5e-6, "cm": 0, "cn": 19e-6, "c ": 427e-6, "cy": 91e-6, "co": 893e-6, "pc": 19e-6, "pp": 326e-6, "pv": 0, "pd": 43e-6, "ph": 528e-6, "pk": 0, "pa": 1468e-6, "ps": 101e-6, "pw": 0, "pu": 384e-6, "pz": 24e-6, "pt": 489e-6, "pe": 1084e-6, "pr": 1679e-6, "pl": 398e-6, "pj": 0, "pb": 5e-6, "px": 0, "pi": 1243e-6, "pq": 0, "pf": 624e-6, "pg": 1e-5, "pm": 38e-6, "pn": 24e-6, "p ": 278e-6, "py": 24e-6, "po": 1204e-6, "vc": 19e-6, "vp": 5e-6, "vv": 0, "vd": 1e-5, "vh": 0, "vk": 5e-6, "va": 595e-6, "vs": 14e-6, "vw": 5e-6, "vu": 19e-6, "vz": 19e-6, "vt": 14e-6, "ve": 2706e-6, "vr": 14e-6, "vl": 72e-6, "vj": 5e-6, "vb": 0, "vx": 0, "vi": 1017e-6, "vq": 0, "vf": 0, "vg": 1e-5, "vm": 5e-6, "vn": 0, "v ": 173e-6, "vy": 14e-6, "vo": 3354e-6, "dc": 24e-6, "dp": 178e-6, "dv": 43e-6, "dd": 53e-6, "dh": 202e-6, "dk": 393e-6, "da": 261e-5, "ds": 648e-6, "dw": 274e-6, "du": 96e-5, "dz": 24e-6, "dt": 1147e-6, "de": 0.021589, "dr": 768e-6, "dl": 437e-6, "dj": 19e-6, "db": 139e-6, "dx": 0, "di": 5869e-6, "dq": 5e-6, "df": 106e-6, "dg": 91e-6, "dm": 96e-6, "dn": 24e-5, "d ": 7327e-6, "dy": 101e-6, "do": 1132e-6, "hc": 72e-6, "hp": 38e-6, "hv": 24e-6, "hd": 43e-6, "hh": 144e-6, "hk": 139e-6, "ha": 3877e-6, "hs": 955e-6, "hw": 696e-6, "hu": 1022e-6, "hz": 19e-6, "ht": 2087e-6, "he": 9952e-6, "hr": 3138e-6, "hl": 1344e-6, "hj": 19e-6, "hb": 154e-6, "hx": 0, "hi": 1953e-6, "hq": 0, "hf": 178e-6, "hg": 149e-6, "hm": 59e-5, "hn": 202e-5, "h ": 3858e-6, "hy": 12e-5, "ho": 1617e-6, "kc": 0, "kp": 43e-6, "kv": 19e-6, "kd": 1e-5, "kh": 72e-6, "kk": 91e-6, "ka": 2303e-6, "ks": 389e-6, "kw": 38e-6, "ku": 595e-6, "kz": 48e-6, "kt": 1012e-6, "ke": 2111e-6, "kr": 1219e-6, "kl": 691e-6, "kj": 24e-6, "kb": 53e-6, "kx": 0, "ki": 1075e-6, "kq": 0, "kf": 82e-6, "kg": 106e-6, "km": 633e-6, "kn": 269e-6, "k ": 1099e-6, "ky": 77e-6, "ko": 1065e-6, "ac": 1843e-6, "ap": 566e-6, "av": 302e-6, "ad": 2284e-6, "ah": 1852e-6, "ak": 557e-6, "aa": 533e-6, "as": 333e-5, "aw": 12e-5, "au": 5897e-6, "az": 197e-6, "at": 3738e-6, "ae": 571e-6, "ar": 6785e-6, "al": 6689e-6, "aj": 72e-6, "ab": 1084e-6, "ax": 173e-6, "ai": 854e-6, "aq": 91e-6, "af": 984e-6, "ag": 1089e-6, "am": 3196e-6, "an": 9348e-6, "a ": 3253e-6, "ay": 509e-6, "ao": 48e-6, "sc": 964e-5, "sp": 1943e-6, "sv": 101e-6, "sd": 686e-6, "sh": 523e-6, "sk": 6e-4, "sa": 1867e-6, "ss": 2802e-6, "sw": 269e-6, "su": 542e-6, "sz": 168e-6, "st": 0.014703, "se": 5096e-6, "sr": 226e-6, "sl": 437e-6, "sj": 19e-6, "sb": 59e-5, "sx": 0, "si": 4266e-6, "sq": 19e-6, "sf": 163e-6, "sg": 413e-6, "sm": 36e-5, "sn": 149e-6, "s ": 0.01178, "sy": 202e-6, "so": 1387e-6, "wc": 82e-6, "wp": 0, "wv": 0, "wd": 14e-6, "wh": 12e-5, "wk": 19e-6, "wa": 3258e-6, "ws": 12e-5, "ww": 14e-6, "wu": 95e-5, "wz": 0, "wt": 0, "we": 3244e-6, "wr": 206e-6, "wl": 77e-6, "wj": 19e-6, "wb": 19e-6, "wx": 0, "wi": 2068e-6, "wq": 0, "wf": 5e-6, "wg": 0, "wm": 0, "wn": 48e-6, "w ": 298e-6, "wy": 24e-6, "wo": 988e-6, "uc": 883e-6, "up": 576e-6, "uv": 13e-5, "ud": 672e-6, "uh": 101e-6, "uk": 278e-6, "ua": 389e-6, "us": 3608e-6, "uw": 115e-6, "uu": 29e-6, "uz": 139e-6, "ut": 2284e-6, "ue": 888e-6, "ur": 4223e-6, "ul": 835e-6, "uj": 34e-6, "ub": 734e-6, "ux": 96e-6, "ui": 341e-6, "uq": 0, "uf": 1689e-6, "ug": 696e-6, "um": 1579e-6, "un": 9779e-6, "u ": 1008e-6, "uy": 1e-5, "uo": 24e-6, "zc": 14e-6, "zp": 5e-6, "zv": 0, "zd": 19e-6, "zh": 13e-5, "zk": 43e-6, "za": 322e-6, "zs": 355e-6, "zw": 6e-4, "zu": 178e-5, "zz": 82e-6, "zt": 494e-6, "ze": 1843e-6, "zr": 38e-6, "zl": 115e-6, "zj": 1e-5, "zb": 96e-6, "zx": 0, "zi": 835e-6, "zq": 14e-6, "zf": 14e-6, "zg": 13e-5, "zm": 34e-6, "zn": 1e-5, "z ": 1262e-6, "zy": 53e-6, "zo": 24e-5, "tc": 91e-6, "tp": 115e-6, "tv": 77e-6, "td": 139e-6, "th": 1488e-6, "tk": 178e-6, "ta": 4026e-6, "ts": 2721e-6, "tw": 393e-6, "tu": 1675e-6, "tz": 1531e-6, "tt": 2231e-6, "te": 0.012817, "tr": 2716e-6, "tl": 1032e-6, "tj": 106e-6, "tb": 245e-6, "tx": 5e-6, "ti": 382e-5, "tq": 5e-6, "tf": 317e-6, "tg": 384e-6, "tm": 221e-6, "tn": 216e-6, "t ": 0.01559, "ty": 379e-6, "to": 1795e-6, "ec": 1017e-6, "ep": 451e-6, "ev": 331e-6, "ed": 1751e-6, "eh": 2207e-6, "ek": 686e-6, "ea": 845e-6, "es": 8033e-6, "ew": 662e-6, "eu": 2068e-6, "ez": 576e-6, "et": 3599e-6, "ee": 705e-6, "er": 0.031953, "el": 548e-5, "ej": 43e-6, "eb": 1555e-6, "ex": 206e-6, "ei": 0.015922, "eq": 24e-6, "ef": 729e-6, "eg": 2265e-6, "em": 4347e-6, "en": 0.022975, "e ": 0.021742, "ey": 293e-6, "eo": 379e-6, "rc": 1392e-6, "rp": 264e-6, "rv": 178e-6, "rd": 2975e-6, "rh": 974e-6, "rk": 1305e-6, "ra": 4635e-6, "rs": 2788e-6, "rw": 518e-6, "ru": 1641e-6, "rz": 648e-6, "rt": 4482e-6, "re": 7515e-6, "rr": 1166e-6, "rl": 931e-6, "rj": 38e-6, "rb": 1228e-6, "rx": 0, "ri": 5619e-6, "rq": 14e-6, "rf": 988e-6, "rg": 1972e-6, "rm": 1171e-6, "rn": 238e-5, "r ": 0.022016, "ry": 139e-6, "ro": 3076e-6, "lc": 288e-6, "lp": 182e-6, "lv": 154e-6, "ld": 883e-6, "lh": 125e-6, "lk": 317e-6, "la": 4098e-6, "ls": 237e-5, "lw": 106e-6, "lu": 1176e-6, "lz": 23e-5, "lt": 2015e-6, "le": 5326e-6, "lr": 178e-6, "ll": 3033e-6, "lj": 19e-6, "lb": 619e-6, "lx": 0, "li": 6046e-6, "lq": 5e-6, "lf": 384e-6, "lg": 585e-6, "lm": 475e-6, "ln": 509e-6, "l ": 3119e-6, "ly": 158e-6, "lo": 1516e-6, "jc": 0, "jp": 0, "jv": 5e-6, "jd": 53e-6, "jh": 58e-6, "jk": 5e-6, "ja": 1142e-6, "js": 1e-5, "jw": 5e-6, "ju": 384e-6, "jz": 0, "jt": 14e-6, "je": 355e-6, "jr": 53e-6, "jl": 0, "jj": 0, "jb": 0, "jx": 0, "ji": 48e-6, "jq": 0, "jf": 0, "jg": 0, "jm": 5e-6, "jn": 53e-6, "j ": 58e-6, "jy": 24e-6, "jo": 374e-6, "bc": 53e-6, "bp": 1e-5, "bv": 14e-6, "bd": 34e-6, "bh": 173e-6, "bk": 38e-6, "ba": 3018e-6, "bs": 211e-6, "bw": 72e-6, "bu": 1569e-6, "bz": 58e-6, "bt": 259e-6, "be": 6267e-6, "br": 1281e-6, "bl": 542e-6, "bj": 29e-6, "bb": 101e-6, "bx": 0, "bi": 1915e-6, "bq": 0, "bf": 19e-6, "bg": 125e-6, "bm": 5e-6, "bn": 58e-6, "b ": 533e-6, "by": 43e-6, "bo": 657e-6, "xc": 5e-6, "xp": 19e-6, "xv": 0, "xd": 0, "xh": 24e-6, "xk": 0, "xa": 62e-6, "xs": 1e-5, "xw": 0, "xu": 19e-6, "xz": 5e-6, "xt": 53e-6, "xe": 96e-6, "xr": 0, "xl": 0, "xj": 0, "xb": 0, "xx": 0, "xi": 168e-6, "xq": 0, "xf": 19e-6, "xg": 5e-6, "xm": 5e-6, "xn": 0, "x ": 13e-5, "xy": 1e-5, "xo": 24e-6, "ic": 4736e-6, "ip": 307e-6, "iv": 571e-6, "id": 854e-6, "ih": 441e-6, "ik": 1521e-6, "ia": 107e-5, "is": 0.01333, "iw": 62e-6, "iu": 216e-6, "iz": 437e-6, "it": 523e-5, "ie": 0.012049, "ir": 1737e-6, "il": 3239e-6, "ij": 48e-6, "ib": 384e-6, "ix": 58e-6, "ii": 163e-6, "iq": 34e-6, "if": 552e-6, "ig": 2438e-6, "im": 3498e-6, "in": 0.018551, "i ": 1876e-6, "iy": 1e-5, "io": 1943e-6, "qc": 5e-6, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 0, "qs": 1e-5, "qw": 5e-6, "qu": 393e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 5e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 1e-5, "qy": 0, "qo": 0, "fc": 62e-6, "fp": 1e-5, "fv": 5e-6, "fd": 29e-6, "fh": 393e-6, "fk": 72e-6, "fa": 1416e-6, "fs": 221e-6, "fw": 14e-6, "fu": 48e-5, "fz": 5e-6, "ft": 119e-5, "fe": 1723e-6, "fr": 2107e-6, "fl": 849e-6, "fj": 14e-6, "fb": 67e-6, "fx": 0, "fi": 969e-6, "fq": 0, "ff": 624e-6, "fg": 25e-5, "fm": 43e-6, "fn": 12e-5, "f ": 1785e-6, "fy": 19e-6, "fo": 84e-5, "gc": 11e-5, "gp": 19e-6, "gv": 24e-6, "gd": 34e-6, "gh": 226e-6, "gk": 139e-6, "ga": 1286e-6, "gs": 998e-6, "gw": 72e-6, "gu": 528e-6, "gz": 43e-6, "gt": 84e-5, "ge": 952e-5, "gr": 1967e-6, "gl": 941e-6, "gj": 14e-6, "gb": 77e-6, "gx": 0, "gi": 1507e-6, "gq": 5e-6, "gf": 62e-6, "gg": 106e-6, "gm": 62e-6, "gn": 317e-6, "g ": 3508e-6, "gy": 82e-6, "go": 47e-5, "mc": 62e-6, "mp": 475e-6, "mv": 1e-5, "md": 43e-6, "mh": 11e-5, "mk": 24e-6, "ma": 3397e-6, "ms": 326e-6, "mw": 19e-6, "mu": 686e-6, "mz": 1e-5, "mt": 451e-6, "me": 5019e-6, "mr": 115e-6, "ml": 163e-6, "mj": 1e-5, "mb": 619e-6, "mx": 0, "mi": 3138e-6, "mq": 0, "mf": 11e-5, "mg": 86e-6, "mm": 893e-6, "mn": 24e-5, "m ": 7279e-6, "my": 11e-5, "mo": 936e-6, "nc": 509e-6, "np": 154e-6, "nv": 13e-5, "nd": 0.011896, "nh": 648e-6, "nk": 1233e-6, "na": 3685e-6, "ns": 2908e-6, "nw": 653e-6, "nu": 691e-6, "nz": 132e-5, "nt": 4597e-6, "ne": 8114e-6, "nr": 446e-6, "nl": 432e-6, "nj": 48e-6, "nb": 792e-6, "nx": 0, "ni": 3561e-6, "nq": 1e-5, "nf": 451e-6, "ng": 5274e-6, "nm": 206e-6, "nn": 1852e-6, "n ": 0.028167, "ny": 91e-6, "no": 1416e-6, " c": 2313e-6, " p": 3412e-6, " v": 5384e-6, " d": 0.02096, " h": 3916e-6, " k": 3772e-6, " a": 8911e-6, " s": 0.011157, " w": 6094e-6, " u": 642e-5, " z": 2764e-6, " t": 226e-5, " e": 0.011094, " r": 3081e-6, " l": 3599e-6, " j": 1987e-6, " b": 7764e-6, " x": 34e-6, " i": 0.012327, " q": 149e-6, " f": 4405e-6, " g": 6041e-6, " m": 5163e-6, " n": 3393e-6, "  ": 5365e-6, " y": 125e-6, " o": 2217e-6, "yc": 72e-6, "yp": 154e-6, "yv": 29e-6, "yd": 48e-6, "yh": 5e-6, "yk": 34e-6, "ya": 101e-6, "ys": 221e-6, "yw": 5e-6, "yu": 19e-6, "yz": 0, "yt": 62e-6, "ye": 36e-5, "yr": 173e-6, "yl": 144e-6, "yj": 0, "yb": 14e-6, "yx": 0, "yi": 38e-6, "yq": 0, "yf": 14e-6, "yg": 14e-6, "ym": 134e-6, "yn": 125e-6, "y ": 931e-6, "yy": 0, "yo": 67e-6, "oc": 605e-6, "op": 734e-6, "ov": 542e-6, "od": 912e-6, "oh": 979e-6, "ok": 451e-6, "oa": 163e-6, "os": 13e-4, "ow": 758e-6, "ou": 825e-6, "oz": 178e-6, "ot": 917e-6, "oe": 278e-6, "or": 4645e-6, "ol": 227e-5, "oj": 62e-6, "ob": 72e-5, "ox": 82e-6, "oi": 254e-6, "oq": 34e-6, "of": 787e-6, "og": 715e-6, "om": 1574e-6, "on": 6588e-6, "o ": 1233e-6, "oy": 58e-6, "oo": 274e-6 };
+const bigram_de = {
+  total_count: total_count$b,
+  probabilities: probabilities$b
+};
+const total_count$a = 176196;
+const probabilities$a = { "cc": 85e-6, "cp": 11e-6, "cv": 0, "cd": 11e-6, "ch": 6686e-6, "ck": 1674e-6, "ca": 1181e-6, "cs": 74e-6, "cw": 0, "cu": 131e-6, "cz": 0, "ct": 102e-6, "ce": 143e-5, "cr": 119e-6, "cl": 96e-6, "cj": 0, "cb": 4e-5, "cx": 0, "ci": 1061e-6, "cq": 11e-6, "cf": 0, "cg": 6e-6, "cm": 23e-6, "cn": 45e-6, "c ": 324e-6, "cy": 91e-6, "co": 1254e-6, "pc": 11e-6, "pp": 942e-6, "pv": 4e-5, "pd": 45e-6, "ph": 142e-6, "pk": 45e-6, "pa": 1799e-6, "ps": 306e-6, "pw": 6e-6, "pu": 335e-6, "pz": 0, "pt": 363e-6, "pe": 2514e-6, "pr": 1884e-6, "pl": 397e-6, "pj": 0, "pb": 23e-6, "px": 0, "pi": 607e-6, "pq": 6e-6, "pf": 114e-6, "pg": 74e-6, "pm": 28e-6, "pn": 4e-5, "p ": 151e-5, "py": 51e-6, "po": 902e-6, "vc": 28e-6, "vp": 34e-6, "vv": 68e-6, "vd": 68e-6, "vh": 23e-6, "vk": 17e-6, "va": 3627e-6, "vs": 2236e-6, "vw": 0, "vu": 1754e-6, "vz": 0, "vt": 136e-6, "ve": 4342e-6, "vr": 732e-6, "vl": 142e-6, "vj": 68e-6, "vb": 45e-6, "vx": 204e-6, "vi": 3019e-6, "vq": 0, "vf": 28e-6, "vg": 278e-6, "vm": 68e-6, "vn": 1425e-6, "v ": 3717e-6, "vy": 23e-6, "vo": 369e-6, "dc": 11e-6, "dp": 34e-6, "dv": 936e-6, "dd": 2128e-6, "dh": 85e-6, "dk": 79e-6, "da": 2514e-6, "ds": 3695e-6, "dw": 68e-6, "du": 295e-6, "dz": 23e-6, "dt": 79e-6, "de": 0.017412, "dr": 1839e-6, "dl": 414e-6, "dj": 176e-6, "db": 204e-6, "dx": 6e-6, "di": 1839e-6, "dq": 6e-6, "df": 57e-6, "dg": 79e-6, "dm": 306e-6, "dn": 17e-5, "d ": 727e-5, "dy": 142e-6, "do": 164e-5, "hc": 4e-5, "hp": 11e-6, "hv": 45e-6, "hd": 17e-6, "hh": 6e-6, "hk": 28e-6, "ha": 4257e-6, "hs": 91e-6, "hw": 79e-6, "hu": 2089e-6, "hz": 0, "ht": 165e-6, "he": 1924e-6, "hr": 602e-6, "hl": 358e-6, "hj": 165e-6, "hb": 28e-6, "hx": 0, "hi": 783e-6, "hq": 0, "hf": 51e-6, "hg": 182e-6, "hm": 51e-6, "hn": 221e-6, "h ": 5789e-6, "hy": 176e-6, "ho": 1254e-6, "kc": 4e-5, "kp": 102e-6, "kv": 403e-6, "kd": 318e-6, "kh": 414e-6, "kk": 187e-6, "ka": 5545e-6, "ks": 658e-6, "kw": 6e-6, "ku": 533e-6, "kz": 0, "kt": 2089e-6, "ke": 2514e-6, "kr": 1816e-6, "kl": 692e-6, "kj": 68e-6, "kb": 68e-6, "kx": 0, "ki": 1731e-6, "kq": 0, "kf": 57e-6, "kg": 28e-6, "km": 1311e-6, "kn": 795e-6, "k ": 3116e-6, "ky": 38e-5, "ko": 4347e-6, "ac": 857e-6, "ap": 1322e-6, "av": 5108e-6, "ad": 5176e-6, "ah": 289e-6, "ak": 829e-6, "aa": 295e-6, "as": 2707e-6, "aw": 119e-6, "au": 1056e-6, "az": 91e-6, "at": 4489e-6, "ae": 227e-6, "ar": 0.012872, "al": 5329e-6, "aj": 38e-5, "ab": 431e-6, "ax": 244e-6, "ai": 675e-6, "aq": 34e-6, "af": 477e-6, "ag": 1425e-6, "am": 332e-5, "an": 0.014166, "a ": 0.012957, "ay": 369e-6, "ao": 51e-6, "sc": 568e-6, "sp": 1521e-6, "sv": 126e-5, "sd": 953e-6, "sh": 846e-6, "sk": 6232e-6, "sa": 3252e-6, "ss": 1969e-6, "sw": 34e-6, "su": 528e-6, "sz": 23e-6, "st": 0.012543, "se": 3343e-6, "sr": 284e-6, "sl": 1175e-6, "sj": 101e-5, "sb": 403e-6, "sx": 6e-6, "si": 2577e-6, "sq": 6e-6, "sf": 21e-5, "sg": 193e-6, "sm": 63e-5, "sn": 528e-6, "s ": 8542e-6, "sy": 1328e-6, "so": 3734e-6, "wc": 0, "wp": 6e-6, "wv": 0, "wd": 0, "wh": 28e-6, "wk": 0, "wa": 42e-5, "ws": 28e-6, "ww": 0, "wu": 0, "wz": 0, "wt": 17e-6, "we": 25e-5, "wr": 0, "wl": 11e-6, "wj": 0, "wb": 0, "wx": 0, "wi": 443e-6, "wq": 0, "wf": 0, "wg": 0, "wm": 0, "wn": 57e-6, "w ": 199e-6, "wy": 6e-6, "wo": 125e-6, "uc": 255e-6, "up": 749e-6, "uv": 1822e-6, "ud": 2015e-6, "uh": 17e-6, "uk": 25e-5, "ua": 602e-6, "us": 202e-5, "uw": 6e-6, "uu": 28e-6, "uz": 119e-6, "ut": 971e-6, "ue": 585e-6, "ur": 1663e-6, "ul": 1061e-6, "uj": 51e-6, "ub": 426e-6, "ux": 136e-6, "ui": 38e-5, "uq": 17e-6, "uf": 57e-6, "ug": 375e-6, "um": 568e-6, "un": 5011e-6, "u ": 42e-5, "uy": 34e-6, "uo": 96e-6, "zc": 23e-6, "zp": 0, "zv": 0, "zd": 0, "zh": 34e-6, "zk": 11e-6, "za": 153e-6, "zs": 6e-6, "zw": 17e-6, "zu": 34e-6, "zz": 28e-6, "zt": 0, "ze": 148e-6, "zr": 17e-6, "zl": 0, "zj": 57e-6, "zb": 17e-6, "zx": 0, "zi": 79e-6, "zq": 11e-6, "zf": 0, "zg": 0, "zm": 0, "zn": 6e-6, "z ": 238e-6, "zy": 0, "zo": 148e-6, "tc": 74e-6, "tp": 68e-6, "tv": 488e-6, "td": 4e-5, "th": 704e-6, "tk": 272e-6, "ta": 8173e-6, "ts": 1061e-6, "tw": 0, "tu": 783e-6, "tz": 45e-6, "tt": 37e-4, "te": 9682e-6, "tr": 4211e-6, "tl": 851e-6, "tj": 358e-6, "tb": 295e-6, "tx": 0, "ti": 5097e-6, "tq": 0, "tf": 102e-6, "tg": 199e-6, "tm": 125e-6, "tn": 817e-6, "t ": 0.014189, "ty": 999e-6, "to": 3127e-6, "ec": 698e-6, "ep": 846e-6, "ev": 738e-6, "ed": 2361e-6, "eh": 199e-6, "ek": 1095e-6, "ea": 105e-5, "es": 3837e-6, "ew": 233e-6, "eu": 369e-6, "ez": 119e-6, "et": 0.010749, "ee": 255e-6, "er": 0.017197, "el": 6935e-6, "ej": 142e-6, "eb": 755e-6, "ex": 647e-6, "ei": 545e-6, "eq": 11e-6, "ef": 755e-6, "eg": 1555e-6, "em": 1981e-6, "en": 0.026981, "e ": 0.010437, "ey": 363e-6, "eo": 329e-6, "rc": 284e-6, "rp": 159e-6, "rv": 709e-6, "rd": 2866e-6, "rh": 221e-6, "rk": 1833e-6, "ra": 8343e-6, "rs": 3394e-6, "rw": 17e-6, "ru": 1322e-6, "rz": 34e-6, "rt": 357e-5, "re": 7889e-6, "rr": 1913e-6, "rl": 823e-6, "rj": 165e-6, "rb": 63e-5, "rx": 11e-6, "ri": 6646e-6, "rq": 23e-6, "rf": 329e-6, "rg": 1487e-6, "rm": 812e-6, "rn": 2747e-6, "r ": 0.02365, "ry": 42e-5, "ro": 3178e-6, "lc": 91e-6, "lp": 289e-6, "lv": 511e-6, "ld": 936e-6, "lh": 482e-6, "lk": 868e-6, "la": 8456e-6, "ls": 2162e-6, "lw": 6e-6, "lu": 806e-6, "lz": 23e-6, "lt": 726e-6, "le": 5721e-6, "lr": 176e-6, "ll": 4926e-6, "lj": 647e-6, "lb": 255e-6, "lx": 6e-6, "li": 7395e-6, "lq": 6e-6, "lf": 17e-5, "lg": 409e-6, "lm": 931e-6, "ln": 976e-6, "l ": 3371e-6, "ly": 312e-6, "lo": 2548e-6, "jc": 11e-6, "jp": 0, "jv": 23e-6, "jd": 62e-6, "jh": 6e-6, "jk": 17e-6, "ja": 936e-6, "js": 85e-6, "jw": 0, "ju": 812e-6, "jz": 0, "jt": 45e-6, "je": 942e-6, "jr": 619e-6, "jl": 131e-6, "jj": 0, "jb": 23e-6, "jx": 0, "ji": 114e-6, "jq": 0, "jf": 11e-6, "jg": 23e-6, "jm": 91e-6, "jn": 516e-6, "j ": 539e-6, "jy": 11e-6, "jo": 874e-6, "bc": 51e-6, "bp": 0, "bv": 11e-6, "bd": 91e-6, "bh": 6e-6, "bk": 28e-6, "ba": 1339e-6, "bs": 108e-6, "bw": 0, "bu": 84e-5, "bz": 0, "bt": 23e-6, "be": 2741e-6, "br": 1629e-6, "bl": 851e-6, "bj": 51e-6, "bb": 255e-6, "bx": 0, "bi": 533e-6, "bq": 0, "bf": 6e-6, "bg": 0, "bm": 6e-6, "bn": 45e-6, "b ": 238e-6, "by": 653e-6, "bo": 1532e-6, "xc": 11e-6, "xp": 28e-6, "xv": 6e-6, "xd": 0, "xh": 6e-6, "xk": 0, "xa": 51e-6, "xs": 6e-6, "xw": 0, "xu": 11e-6, "xz": 0, "xt": 221e-6, "xe": 165e-6, "xr": 6e-6, "xl": 0, "xj": 11e-6, "xb": 0, "xx": 6e-6, "xi": 539e-6, "xq": 0, "xf": 11e-6, "xg": 0, "xm": 17e-6, "xn": 28e-6, "x ": 306e-6, "xy": 0, "xo": 23e-6, "ic": 1328e-6, "ip": 261e-6, "iv": 1203e-6, "id": 1737e-6, "ih": 114e-6, "ik": 3235e-6, "ia": 1487e-6, "is": 4478e-6, "iw": 6e-6, "iu": 284e-6, "iz": 153e-6, "it": 2588e-6, "ie": 2282e-6, "ir": 1022e-6, "il": 4955e-6, "ij": 74e-6, "ib": 21e-5, "ix": 102e-6, "ii": 159e-6, "iq": 62e-6, "if": 59e-5, "ig": 4887e-6, "im": 641e-6, "in": 0.010976, "i ": 0.014762, "iy": 17e-6, "io": 2253e-6, "qc": 0, "qp": 0, "qv": 6e-6, "qd": 0, "qh": 0, "qk": 0, "qa": 11e-6, "qs": 0, "qw": 0, "qu": 261e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 6e-6, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 28e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 0, "qy": 0, "qo": 0, "fc": 4e-5, "fp": 11e-6, "fv": 11e-6, "fd": 1215e-6, "fh": 6e-6, "fk": 57e-6, "fa": 999e-6, "fs": 74e-6, "fw": 0, "fu": 114e-6, "fz": 0, "ft": 88e-5, "fe": 692e-6, "fr": 4211e-6, "fl": 647e-6, "fj": 79e-6, "fb": 6e-6, "fx": 0, "fi": 1697e-6, "fq": 0, "ff": 238e-6, "fg": 131e-6, "fm": 6e-6, "fn": 4e-5, "f ": 42e-5, "fy": 176e-6, "fo": 1447e-6, "gc": 6e-6, "gp": 28e-6, "gv": 79e-6, "gd": 409e-6, "gh": 278e-6, "gk": 17e-6, "ga": 2168e-6, "gs": 1181e-6, "gw": 6e-6, "gu": 942e-6, "gz": 11e-6, "gt": 613e-6, "ge": 5806e-6, "gr": 2003e-6, "gl": 585e-6, "gj": 102e-6, "gb": 62e-6, "gx": 0, "gi": 1691e-6, "gq": 11e-6, "gf": 426e-6, "gg": 3218e-6, "gm": 51e-6, "gn": 556e-6, "g ": 378e-5, "gy": 102e-6, "go": 647e-6, "mc": 51e-6, "mp": 437e-6, "mv": 23e-6, "md": 51e-6, "mh": 79e-6, "mk": 414e-6, "ma": 3349e-6, "ms": 772e-6, "mw": 0, "mu": 2667e-6, "mz": 6e-6, "mt": 261e-6, "me": 6113e-6, "mr": 636e-6, "ml": 573e-6, "mj": 62e-6, "mb": 919e-6, "mx": 0, "mi": 2128e-6, "mq": 0, "mf": 136e-6, "mg": 131e-6, "mm": 2974e-6, "mn": 812e-6, "m ": 6822e-6, "my": 204e-6, "mo": 993e-6, "nc": 545e-6, "np": 23e-6, "nv": 1447e-6, "nd": 8099e-6, "nh": 187e-6, "nk": 755e-6, "na": 5534e-6, "ns": 5335e-6, "nw": 68e-6, "nu": 573e-6, "nz": 68e-6, "nt": 4609e-6, "ne": 5034e-6, "nr": 431e-6, "nl": 936e-6, "nj": 267e-6, "nb": 278e-6, "nx": 0, "ni": 3439e-6, "nq": 11e-6, "nf": 176e-6, "ng": 6107e-6, "nm": 221e-6, "nn": 1952e-6, "n ": 0.030631, "ny": 358e-6, "no": 3456e-6, " c": 3076e-6, " p": 4728e-6, " v": 622e-5, " d": 0.011232, " h": 7185e-6, " k": 8695e-6, " a": 9325e-6, " s": 0.015534, " w": 743e-6, " u": 214e-5, " z": 165e-6, " t": 4648e-6, " e": 8865e-6, " r": 0.010057, " l": 8195e-6, " j": 181e-5, " b": 5159e-6, " x": 51e-6, " i": 0.016351, " q": 96e-6, " f": 8474e-6, " g": 3002e-6, " m": 655e-5, " n": 4569e-6, "  ": 0.013388, " y": 284e-6, " o": 9807e-6, "yc": 91e-6, "yp": 119e-6, "yv": 51e-6, "yd": 1078e-6, "yh": 28e-6, "yk": 114e-6, "ya": 25e-5, "ys": 675e-6, "yw": 17e-6, "yu": 62e-6, "yz": 0, "yt": 38e-5, "ye": 204e-6, "yr": 641e-6, "yl": 278e-6, "yj": 0, "yb": 74e-6, "yx": 0, "yi": 11e-6, "yq": 0, "yf": 204e-6, "yg": 386e-6, "ym": 159e-6, "yn": 289e-6, "y ": 1294e-6, "yy": 6e-6, "yo": 165e-6, "oc": 6181e-6, "op": 454e-6, "ov": 1243e-6, "od": 602e-6, "oh": 341e-6, "ok": 465e-6, "oa": 182e-6, "os": 1203e-6, "ow": 159e-6, "ou": 965e-6, "oz": 119e-6, "ot": 1493e-6, "oe": 102e-6, "or": 6896e-6, "ol": 2843e-6, "oj": 148e-6, "ob": 431e-6, "ox": 34e-6, "oi": 289e-6, "oq": 0, "of": 516e-6, "og": 607e-6, "om": 9745e-6, "on": 6771e-6, "o ": 244e-5, "oy": 74e-6, "oo": 176e-6 };
+const bigram_sv = {
+  total_count: total_count$a,
+  probabilities: probabilities$a
+};
+const total_count$9 = 173161;
+const probabilities$9 = { "cc": 508e-6, "cp": 4e-5, "cv": 6e-6, "cd": 29e-6, "ch": 1802e-6, "ck": 398e-6, "ca": 7063e-6, "cs": 139e-6, "cw": 0, "cu": 2281e-6, "cz": 6e-6, "ct": 1767e-6, "ce": 2755e-6, "cr": 1161e-6, "cl": 624e-6, "cj": 0, "cb": 0, "cx": 0, "ci": 965e-5, "cq": 6e-6, "cf": 12e-6, "cg": 17e-6, "cm": 92e-6, "cn": 162e-6, "c ": 462e-6, "cy": 17e-6, "co": 9581e-6, "pc": 87e-6, "pp": 35e-6, "pv": 6e-6, "pd": 6e-6, "ph": 173e-6, "pk": 0, "pa": 451e-5, "ps": 162e-6, "pw": 0, "pu": 1011e-6, "pz": 6e-6, "pt": 41e-5, "pe": 365e-5, "pr": 3378e-6, "pl": 612e-6, "pj": 0, "pb": 208e-6, "px": 0, "pi": 2125e-6, "pq": 6e-6, "pf": 0, "pg": 17e-6, "pm": 12e-6, "pn": 52e-6, "p ": 162e-6, "py": 35e-6, "po": 5053e-6, "vc": 29e-6, "vp": 0, "vv": 12e-6, "vd": 17e-6, "vh": 0, "vk": 0, "va": 1617e-6, "vs": 4e-5, "vw": 0, "vu": 58e-6, "vz": 0, "vt": 0, "ve": 1646e-6, "vr": 46e-6, "vl": 23e-6, "vj": 0, "vb": 6e-6, "vx": 0, "vi": 2553e-6, "vq": 0, "vf": 0, "vg": 6e-6, "vm": 0, "vn": 64e-6, "v ": 121e-6, "vy": 35e-6, "vo": 774e-6, "dc": 98e-6, "dp": 23e-6, "dv": 12e-6, "dd": 87e-6, "dh": 4e-5, "dk": 0, "da": 6312e-6, "ds": 69e-6, "dw": 4e-5, "du": 855e-6, "dz": 4e-5, "dt": 0, "de": 0.025664, "dr": 693e-6, "dl": 69e-6, "dj": 23e-6, "db": 12e-6, "dx": 12e-6, "di": 3361e-6, "dq": 0, "df": 6e-6, "dg": 35e-6, "dm": 162e-6, "dn": 81e-6, "d ": 2345e-6, "dy": 75e-6, "do": 8195e-6, "hc": 23e-6, "hp": 6e-6, "hv": 0, "hd": 23e-6, "hh": 6e-6, "hk": 12e-6, "ha": 2229e-6, "hs": 29e-6, "hw": 17e-6, "hu": 462e-6, "hz": 17e-6, "ht": 11e-5, "he": 964e-6, "hr": 127e-6, "hl": 69e-6, "hj": 0, "hb": 4e-5, "hx": 0, "hi": 964e-6, "hq": 0, "hf": 6e-6, "hg": 6e-6, "hm": 46e-6, "hn": 127e-6, "h ": 445e-6, "hy": 58e-6, "ho": 901e-6, "kc": 0, "kp": 12e-6, "kv": 0, "kd": 6e-6, "kh": 35e-6, "kk": 6e-6, "ka": 214e-6, "ks": 98e-6, "kw": 6e-6, "ku": 133e-6, "kz": 0, "kt": 17e-6, "ke": 214e-6, "kr": 75e-6, "kl": 17e-6, "kj": 6e-6, "kb": 12e-6, "kx": 6e-6, "ki": 208e-6, "kq": 0, "kf": 0, "kg": 23e-6, "km": 427e-6, "kn": 29e-6, "k ": 508e-6, "ky": 52e-6, "ko": 115e-6, "ac": 4383e-6, "ap": 959e-6, "av": 739e-6, "ad": 8882e-6, "ah": 15e-5, "ak": 144e-6, "aa": 474e-6, "as": 6849e-6, "aw": 52e-6, "au": 1132e-6, "az": 491e-6, "at": 2691e-6, "ae": 681e-6, "ar": 8813e-6, "al": 9084e-6, "aj": 595e-6, "ab": 1871e-6, "ax": 69e-6, "ai": 583e-6, "aq": 115e-6, "af": 352e-6, "ag": 936e-6, "am": 3604e-6, "an": 9182e-6, "a ": 0.033934, "ay": 664e-6, "ao": 1028e-6, "sc": 1386e-6, "sp": 1629e-6, "sv": 35e-6, "sd": 358e-6, "sh": 283e-6, "sk": 139e-6, "sa": 2581e-6, "ss": 364e-6, "sw": 23e-6, "su": 2732e-6, "sz": 12e-6, "st": 8027e-6, "se": 4949e-6, "sr": 121e-6, "sl": 416e-6, "sj": 12e-6, "sb": 75e-6, "sx": 0, "si": 4279e-6, "sq": 139e-6, "sf": 98e-6, "sg": 6e-6, "sm": 45e-5, "sn": 162e-6, "s ": 0.022557, "sy": 23e-6, "so": 2119e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 0, "wh": 6e-6, "wk": 0, "wa": 231e-6, "ws": 17e-6, "ww": 0, "wu": 0, "wz": 0, "wt": 12e-6, "we": 156e-6, "wr": 4e-5, "wl": 17e-6, "wj": 0, "wb": 0, "wx": 0, "wi": 214e-6, "wq": 0, "wf": 0, "wg": 0, "wm": 6e-6, "wn": 29e-6, "w ": 139e-6, "wy": 17e-6, "wo": 69e-6, "uc": 964e-6, "up": 456e-6, "uv": 196e-6, "ud": 1011e-6, "uh": 35e-6, "uk": 35e-6, "ua": 1923e-6, "us": 149e-5, "uw": 0, "uu": 12e-6, "uz": 64e-6, "ut": 982e-6, "ue": 6907e-6, "ur": 2714e-6, "ul": 1588e-6, "uj": 139e-6, "ub": 1022e-6, "ux": 29e-6, "ui": 1172e-6, "uq": 46e-6, "uf": 58e-6, "ug": 618e-6, "um": 785e-6, "un": 9904e-6, "u ": 138e-5, "uy": 329e-6, "uo": 104e-6, "zc": 29e-6, "zp": 6e-6, "zv": 0, "zd": 12e-6, "zh": 29e-6, "zk": 0, "za": 138e-5, "zs": 0, "zw": 0, "zu": 98e-6, "zz": 12e-6, "zt": 12e-6, "ze": 15e-5, "zr": 12e-6, "zl": 6e-6, "zj": 0, "zb": 12e-6, "zx": 0, "zi": 69e-6, "zq": 29e-6, "zf": 6e-6, "zg": 6e-6, "zm": 6e-6, "zn": 17e-6, "z ": 837e-6, "zy": 17e-6, "zo": 41e-5, "tc": 139e-6, "tp": 46e-6, "tv": 35e-6, "td": 12e-6, "th": 549e-6, "tk": 0, "ta": 8732e-6, "ts": 289e-6, "tw": 29e-6, "tu": 2212e-6, "tz": 29e-6, "tt": 231e-6, "te": 9067e-6, "tr": 5174e-6, "tl": 295e-6, "tj": 12e-6, "tb": 289e-6, "tx": 0, "ti": 5186e-6, "tq": 0, "tf": 115e-6, "tg": 23e-6, "tm": 133e-6, "tn": 676e-6, "t ": 1265e-6, "ty": 144e-6, "to": 5717e-6, "ec": 3378e-6, "ep": 1207e-6, "ev": 855e-6, "ed": 175e-5, "eh": 81e-6, "ek": 81e-6, "ea": 1738e-6, "es": 0.016915, "ew": 58e-6, "eu": 312e-6, "ez": 508e-6, "et": 149e-5, "ee": 231e-6, "er": 0.010314, "el": 0.011925, "ej": 52e-5, "eb": 572e-6, "ex": 808e-6, "ei": 485e-6, "eq": 231e-6, "ef": 387e-6, "eg": 1842e-6, "em": 2183e-6, "en": 0.018024, "e ": 0.033247, "ey": 422e-6, "eo": 86e-5, "rc": 1097e-6, "rp": 266e-6, "rv": 271e-6, "rd": 901e-6, "rh": 46e-6, "rk": 179e-6, "ra": 9823e-6, "rs": 1016e-6, "rw": 12e-6, "ru": 1219e-6, "rz": 196e-6, "rt": 3552e-6, "re": 8431e-6, "rr": 1784e-6, "rl": 289e-6, "rj": 35e-6, "rb": 254e-6, "rx": 17e-6, "ri": 6976e-6, "rq": 375e-6, "rf": 312e-6, "rg": 123e-5, "rm": 1224e-6, "rn": 1011e-6, "r ": 6786e-6, "ry": 196e-6, "ro": 6843e-6, "lc": 393e-6, "lp": 173e-6, "lv": 329e-6, "ld": 352e-6, "lh": 58e-6, "lk": 35e-6, "la": 0.013127, "ls": 318e-6, "lw": 6e-6, "lu": 918e-6, "lz": 35e-6, "lt": 1039e-6, "le": 4164e-6, "lr": 52e-6, "ll": 2108e-6, "lj": 6e-6, "lb": 271e-6, "lx": 0, "li": 4268e-6, "lq": 52e-6, "lf": 139e-6, "lg": 295e-6, "lm": 716e-6, "ln": 243e-6, "l ": 0.014287, "ly": 144e-6, "lo": 4995e-6, "jc": 0, "jp": 6e-6, "jv": 6e-6, "jd": 6e-6, "jh": 0, "jk": 12e-6, "ja": 722e-6, "js": 12e-6, "jw": 0, "ju": 878e-6, "jz": 0, "jt": 29e-6, "je": 52e-5, "jr": 46e-6, "jl": 0, "jj": 0, "jb": 0, "jx": 0, "ji": 133e-6, "jq": 0, "jf": 0, "jg": 0, "jm": 0, "jn": 12e-6, "j ": 115e-6, "jy": 0, "jo": 832e-6, "bc": 4e-5, "bp": 12e-6, "bv": 0, "bd": 17e-6, "bh": 12e-6, "bk": 29e-6, "ba": 2327e-6, "bs": 81e-6, "bw": 0, "bu": 762e-6, "bz": 0, "bt": 75e-6, "be": 1149e-6, "br": 1981e-6, "bl": 1617e-6, "bj": 52e-6, "bb": 46e-6, "bx": 0, "bi": 2333e-6, "bq": 0, "bf": 23e-6, "bg": 0, "bm": 23e-6, "bn": 35e-6, "b ": 173e-6, "by": 46e-6, "bo": 112e-5, "xc": 69e-6, "xp": 115e-6, "xv": 46e-6, "xd": 0, "xh": 0, "xk": 0, "xa": 75e-6, "xs": 0, "xw": 0, "xu": 12e-6, "xz": 0, "xt": 295e-6, "xe": 46e-6, "xr": 0, "xl": 6e-6, "xj": 35e-6, "xb": 6e-6, "xx": 92e-6, "xi": 433e-6, "xq": 0, "xf": 52e-6, "xg": 0, "xm": 23e-6, "xn": 0, "x ": 306e-6, "xy": 0, "xo": 29e-6, "ic": 6503e-6, "ip": 1473e-6, "iv": 1242e-6, "id": 4955e-6, "ih": 46e-6, "ik": 115e-6, "ia": 5273e-6, "is": 4741e-6, "iw": 6e-6, "iu": 537e-6, "iz": 993e-6, "it": 3927e-6, "ie": 3863e-6, "ir": 1386e-6, "il": 287e-5, "ij": 115e-6, "ib": 739e-6, "ix": 127e-6, "ii": 335e-6, "iq": 92e-6, "if": 526e-6, "ig": 1438e-6, "im": 1727e-6, "in": 9633e-6, "i ": 1294e-6, "iy": 46e-6, "io": 4614e-6, "qc": 6e-6, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 12e-6, "qs": 0, "qw": 0, "qu": 35e-4, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 6e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 6e-6, "qy": 0, "qo": 0, "fc": 35e-6, "fp": 6e-6, "fv": 6e-6, "fd": 12e-6, "fh": 0, "fk": 6e-6, "fa": 93e-5, "fs": 52e-6, "fw": 0, "fu": 2252e-6, "fz": 0, "ft": 127e-6, "fe": 1034e-6, "fr": 1057e-6, "fl": 318e-6, "fj": 17e-6, "fb": 0, "fx": 0, "fi": 1426e-6, "fq": 0, "ff": 115e-6, "fg": 17e-6, "fm": 29e-6, "fn": 23e-6, "f ": 185e-6, "fy": 0, "fo": 947e-6, "gc": 29e-6, "gp": 6e-6, "gv": 0, "gd": 29e-6, "gh": 127e-6, "gk": 17e-6, "ga": 2108e-6, "gs": 4e-5, "gw": 0, "gu": 1617e-6, "gz": 6e-6, "gt": 46e-6, "ge": 1426e-6, "gr": 153e-5, "gl": 543e-6, "gj": 0, "gb": 6e-6, "gx": 0, "gi": 1363e-6, "gq": 0, "gf": 17e-6, "gg": 35e-6, "gm": 81e-6, "gn": 664e-6, "g ": 346e-6, "gy": 29e-6, "go": 1265e-6, "mc": 58e-6, "mp": 1681e-6, "mv": 35e-6, "md": 35e-6, "mh": 12e-6, "mk": 0, "ma": 4389e-6, "ms": 826e-6, "mw": 6e-6, "mu": 1883e-6, "mz": 0, "mt": 162e-6, "me": 4187e-6, "mr": 185e-6, "ml": 58e-6, "mj": 0, "mb": 149e-5, "mx": 115e-6, "mi": 3067e-6, "mq": 6e-6, "mf": 6e-6, "mg": 17e-6, "mm": 139e-6, "mn": 266e-6, "m ": 1057e-6, "my": 133e-6, "mo": 3072e-6, "nc": 3309e-6, "np": 12e-6, "nv": 202e-6, "nd": 3159e-6, "nh": 52e-6, "nk": 46e-6, "na": 8847e-6, "ns": 2466e-6, "nw": 35e-6, "nu": 526e-6, "nz": 387e-6, "nt": 9454e-6, "ne": 3892e-6, "nr": 115e-6, "nl": 92e-6, "nj": 115e-6, "nb": 81e-6, "nx": 0, "ni": 4406e-6, "nq": 121e-6, "nf": 335e-6, "ng": 982e-6, "nm": 219e-6, "nn": 329e-6, "n ": 0.018815, "ny": 69e-6, "no": 4522e-6, " c": 0.013589, " p": 0.012503, " v": 1906e-6, " d": 0.0256, " h": 2991e-6, " k": 872e-6, " a": 0.011134, " s": 9078e-6, " w": 474e-6, " u": 764e-5, " z": 219e-6, " t": 477e-5, " e": 0.023914, " r": 4418e-6, " l": 0.012999, " j": 149e-5, " b": 3269e-6, " x": 271e-6, " i": 2778e-6, " q": 2183e-6, " f": 5527e-6, " g": 3194e-6, " m": 6728e-6, " n": 3009e-6, "  ": 5007e-6, " y": 5197e-6, " o": 2674e-6, "yc": 46e-6, "yp": 52e-6, "yv": 17e-6, "yd": 29e-6, "yh": 0, "yk": 6e-6, "ya": 41e-5, "ys": 139e-6, "yw": 6e-6, "yu": 104e-6, "yz": 12e-6, "yt": 4e-5, "ye": 358e-6, "yr": 92e-6, "yl": 144e-6, "yj": 6e-6, "yb": 0, "yx": 0, "yi": 12e-6, "yq": 0, "yf": 0, "yg": 0, "ym": 29e-6, "yn": 69e-6, "y ": 6029e-6, "yy": 0, "yo": 37e-5, "oc": 2374e-6, "op": 993e-6, "ov": 1091e-6, "od": 1022e-6, "oh": 156e-6, "ok": 87e-6, "oa": 277e-6, "os": 7744e-6, "ow": 185e-6, "ou": 82e-5, "oz": 121e-6, "ot": 1132e-6, "oe": 404e-6, "or": 9026e-6, "ol": 2737e-6, "oj": 15e-5, "ob": 1675e-6, "ox": 92e-6, "oi": 231e-6, "oq": 127e-6, "of": 502e-6, "og": 589e-6, "om": 4037e-6, "on": 879e-5, "o ": 0.021627, "oy": 219e-6, "oo": 196e-6 };
+const bigram_es = {
+  total_count: total_count$9,
+  probabilities: probabilities$9
+};
+const total_count$8 = 184902;
+const probabilities$8 = { "cc": 1357e-6, "cp": 11e-6, "cv": 5e-6, "cd": 38e-6, "ch": 3699e-6, "ck": 427e-6, "ca": 7198e-6, "cs": 59e-6, "cw": 0, "cu": 827e-6, "cz": 32e-6, "ct": 233e-6, "ce": 391e-5, "cr": 984e-6, "cl": 573e-6, "cj": 0, "cb": 11e-6, "cx": 0, "ci": 5452e-6, "cq": 124e-6, "cf": 5e-6, "cg": 11e-6, "cm": 27e-6, "cn": 38e-6, "c ": 341e-6, "cy": 43e-6, "co": 0.010362, "pc": 32e-6, "pp": 1184e-6, "pv": 0, "pd": 0, "ph": 206e-6, "pk": 5e-6, "pa": 3688e-6, "ps": 173e-6, "pw": 5e-6, "pu": 838e-6, "pz": 0, "pt": 65e-6, "pe": 3131e-6, "pr": 3515e-6, "pl": 465e-6, "pj": 0, "pb": 5e-6, "px": 0, "pi": 2353e-6, "pq": 0, "pf": 11e-6, "pg": 0, "pm": 11e-6, "pn": 5e-6, "p ": 2e-4, "py": 5e-6, "po": 3542e-6, "vc": 27e-6, "vp": 0, "vv": 151e-6, "vd": 27e-6, "vh": 11e-6, "vk": 5e-6, "va": 219e-5, "vs": 32e-6, "vw": 0, "vu": 76e-6, "vz": 0, "vt": 0, "ve": 2764e-6, "vr": 119e-6, "vl": 32e-6, "vj": 0, "vb": 0, "vx": 0, "vi": 3413e-6, "vq": 0, "vf": 0, "vg": 27e-6, "vm": 0, "vn": 32e-6, "v ": 292e-6, "vy": 81e-6, "vo": 1374e-6, "dc": 22e-6, "dp": 22e-6, "dv": 27e-6, "dd": 92e-6, "dh": 16e-6, "dk": 11e-6, "da": 4754e-6, "ds": 114e-6, "dw": 49e-6, "du": 865e-6, "dz": 5e-6, "dt": 49e-6, "de": 0.012066, "dr": 644e-6, "dl": 11e-6, "dj": 16e-6, "db": 11e-6, "dx": 0, "di": 0.013229, "dq": 0, "df": 11e-6, "dg": 59e-6, "dm": 43e-6, "dn": 59e-6, "d ": 1779e-6, "dy": 49e-6, "do": 2244e-6, "hc": 11e-6, "hp": 0, "hv": 5e-6, "hd": 5e-6, "hh": 5e-6, "hk": 11e-6, "ha": 1287e-6, "hs": 54e-6, "hw": 0, "hu": 254e-6, "hz": 16e-6, "ht": 49e-6, "he": 2791e-6, "hr": 141e-6, "hl": 65e-6, "hj": 5e-6, "hb": 11e-6, "hx": 0, "hi": 1466e-6, "hq": 5e-6, "hf": 5e-6, "hg": 0, "hm": 32e-6, "hn": 114e-6, "h ": 427e-6, "hy": 43e-6, "ho": 671e-6, "kc": 0, "kp": 11e-6, "kv": 11e-6, "kd": 5e-6, "kh": 114e-6, "kk": 11e-6, "ka": 368e-6, "ks": 141e-6, "kw": 16e-6, "ku": 146e-6, "kz": 0, "kt": 49e-6, "ke": 373e-6, "kr": 65e-6, "kl": 27e-6, "kj": 0, "kb": 11e-6, "kx": 0, "ki": 362e-6, "kq": 0, "kf": 11e-6, "kg": 0, "km": 206e-6, "kn": 27e-6, "k ": 552e-6, "ky": 65e-6, "ko": 308e-6, "ac": 1898e-6, "ap": 1385e-6, "av": 1195e-6, "ad": 1525e-6, "ah": 157e-6, "ak": 211e-6, "aa": 92e-6, "as": 285e-5, "aw": 146e-6, "au": 979e-6, "az": 1801e-6, "at": 0.011228, "ae": 627e-6, "ar": 7545e-6, "al": 0.01179, "aj": 141e-6, "ab": 1769e-6, "ax": 54e-6, "ai": 1163e-6, "aq": 97e-6, "af": 671e-6, "ag": 2104e-6, "am": 3002e-6, "an": 0.01205, "a ": 0.033791, "ay": 324e-6, "ao": 119e-6, "sc": 2288e-6, "sp": 1276e-6, "sv": 438e-6, "sd": 7e-5, "sh": 416e-6, "sk": 243e-6, "sa": 2504e-6, "ss": 2655e-6, "sw": 49e-6, "su": 2223e-6, "sz": 32e-6, "st": 9632e-6, "se": 5533e-6, "sr": 54e-6, "sl": 297e-6, "sj": 0, "sb": 7e-5, "sx": 5e-6, "si": 5657e-6, "sq": 43e-6, "sf": 13e-5, "sg": 27e-6, "sm": 184e-6, "sn": 76e-6, "s ": 2461e-6, "sy": 108e-6, "so": 3304e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 5e-6, "wh": 16e-6, "wk": 11e-6, "wa": 406e-6, "ws": 54e-6, "ww": 0, "wu": 22e-6, "wz": 0, "wt": 16e-6, "we": 151e-6, "wr": 97e-6, "wl": 22e-6, "wj": 0, "wb": 0, "wx": 0, "wi": 26e-5, "wq": 0, "wf": 5e-6, "wg": 0, "wm": 0, "wn": 43e-6, "w ": 184e-6, "wy": 16e-6, "wo": 103e-6, "uc": 644e-6, "up": 535e-6, "uv": 76e-6, "ud": 644e-6, "uh": 32e-6, "uk": 97e-6, "ua": 219e-5, "us": 1655e-6, "uw": 11e-6, "uu": 5e-6, "uz": 319e-6, "ut": 1606e-6, "ue": 1238e-6, "ur": 1877e-6, "ul": 1168e-6, "uj": 27e-6, "ub": 746e-6, "ux": 59e-6, "ui": 1147e-6, "uq": 0, "uf": 157e-6, "ug": 438e-6, "um": 833e-6, "un": 0.010692, "u ": 941e-6, "uy": 27e-6, "uo": 1109e-6, "zc": 5e-6, "zp": 16e-6, "zv": 0, "zd": 5e-6, "zh": 43e-6, "zk": 0, "za": 1287e-6, "zs": 11e-6, "zw": 11e-6, "zu": 81e-6, "zz": 1082e-6, "zt": 5e-6, "ze": 443e-6, "zr": 11e-6, "zl": 27e-6, "zj": 0, "zb": 11e-6, "zx": 0, "zi": 271e-5, "zq": 0, "zf": 0, "zg": 5e-6, "zm": 0, "zn": 16e-6, "z ": 206e-6, "zy": 27e-6, "zo": 611e-6, "tc": 81e-6, "tp": 16e-6, "tv": 22e-6, "td": 16e-6, "th": 649e-6, "tk": 27e-6, "ta": 0.012855, "ts": 146e-6, "tw": 49e-6, "tu": 265e-5, "tz": 87e-6, "tt": 5949e-6, "te": 9102e-6, "tr": 5003e-6, "tl": 206e-6, "tj": 27e-6, "tb": 227e-6, "tx": 0, "ti": 8248e-6, "tq": 0, "tf": 16e-6, "tg": 65e-6, "tm": 43e-6, "tn": 76e-6, "t ": 2472e-6, "ty": 97e-6, "to": 0.012791, "ec": 1547e-6, "ep": 59e-5, "ev": 752e-6, "ed": 2142e-6, "eh": 59e-6, "ek": 124e-6, "ea": 1666e-6, "es": 6187e-6, "ew": 162e-6, "eu": 411e-6, "ez": 433e-6, "et": 3743e-6, "ee": 33e-5, "er": 0.010643, "el": 0.014013, "ej": 38e-6, "eb": 357e-6, "ex": 471e-6, "ei": 1206e-6, "eq": 7e-5, "ef": 254e-6, "eg": 2553e-6, "em": 1752e-6, "en": 9443e-6, "e ": 0.0314, "ey": 222e-6, "eo": 784e-6, "rc": 1071e-6, "rp": 211e-6, "rv": 352e-6, "rd": 99e-5, "rh": 38e-6, "rk": 168e-6, "ra": 9129e-6, "rs": 1033e-6, "rw": 16e-6, "ru": 1287e-6, "rz": 222e-6, "rt": 3131e-6, "re": 9827e-6, "rr": 1449e-6, "rl": 362e-6, "rj": 5e-6, "rb": 319e-6, "rx": 0, "ri": 8761e-6, "rq": 22e-6, "rf": 206e-6, "rg": 757e-6, "rm": 1076e-6, "rn": 1022e-6, "r ": 2585e-6, "ry": 26e-5, "ro": 5949e-6, "lc": 698e-6, "lp": 178e-6, "lv": 254e-6, "ld": 297e-6, "lh": 103e-6, "lk": 59e-6, "la": 0.01259, "ls": 254e-6, "lw": 5e-6, "lu": 1585e-6, "lz": 27e-6, "lt": 133e-5, "le": 7161e-6, "lr": 32e-6, "ll": 0.011206, "lj": 22e-6, "lb": 276e-6, "lx": 5e-6, "li": 8702e-6, "lq": 0, "lf": 124e-6, "lg": 195e-6, "lm": 817e-6, "ln": 54e-6, "l ": 0.010557, "ly": 135e-6, "lo": 4245e-6, "jc": 5e-6, "jp": 11e-6, "jv": 0, "jd": 16e-6, "jh": 16e-6, "jk": 11e-6, "ja": 324e-6, "js": 16e-6, "jw": 0, "ju": 151e-6, "jz": 5e-6, "jt": 5e-6, "je": 103e-6, "jr": 38e-6, "jl": 5e-6, "jj": 5e-6, "jb": 5e-6, "jx": 0, "ji": 65e-6, "jq": 0, "jf": 0, "jg": 0, "jm": 0, "jn": 16e-6, "j ": 146e-6, "jy": 0, "jo": 346e-6, "bc": 22e-6, "bp": 0, "bv": 0, "bd": 32e-6, "bh": 27e-6, "bk": 16e-6, "ba": 1698e-6, "bs": 32e-6, "bw": 0, "bu": 546e-6, "bz": 0, "bt": 22e-6, "be": 1168e-6, "br": 1282e-6, "bl": 66e-5, "bj": 5e-6, "bb": 703e-6, "bx": 0, "bi": 2261e-6, "bq": 0, "bf": 5e-6, "bg": 5e-6, "bm": 5e-6, "bn": 22e-6, "b ": 157e-6, "by": 76e-6, "bo": 741e-6, "xc": 0, "xp": 5e-6, "xv": 65e-6, "xd": 0, "xh": 0, "xk": 0, "xa": 87e-6, "xs": 22e-6, "xw": 0, "xu": 0, "xz": 0, "xt": 22e-6, "xe": 16e-6, "xr": 0, "xl": 0, "xj": 0, "xb": 11e-6, "xx": 49e-6, "xi": 124e-6, "xq": 0, "xf": 16e-6, "xg": 0, "xm": 0, "xn": 0, "x ": 573e-6, "xy": 11e-6, "xo": 16e-6, "ic": 6668e-6, "ip": 1271e-6, "iv": 2034e-6, "id": 1412e-6, "ih": 43e-6, "ik": 151e-6, "ia": 8248e-6, "is": 5024e-6, "iw": 27e-6, "iu": 514e-6, "iz": 1244e-6, "it": 8523e-6, "ie": 3018e-6, "ir": 1558e-6, "il": 5533e-6, "ij": 114e-6, "ib": 525e-6, "ix": 97e-6, "ii": 33e-5, "iq": 32e-6, "if": 752e-6, "ig": 1574e-6, "im": 2704e-6, "in": 9957e-6, "i ": 0.020779, "iy": 16e-6, "io": 7566e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 0, "qh": 5e-6, "qk": 0, "qa": 11e-6, "qs": 0, "qw": 0, "qu": 1282e-6, "qz": 0, "qt": 11e-6, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 5e-6, "qg": 0, "qm": 0, "qn": 0, "q ": 43e-6, "qy": 0, "qo": 0, "fc": 22e-6, "fp": 0, "fv": 0, "fd": 11e-6, "fh": 0, "fk": 0, "fa": 1168e-6, "fs": 11e-6, "fw": 0, "fu": 687e-6, "fz": 0, "ft": 76e-6, "fe": 1244e-6, "fr": 1514e-6, "fl": 211e-6, "fj": 5e-6, "fb": 11e-6, "fx": 0, "fi": 1963e-6, "fq": 0, "ff": 465e-6, "fg": 16e-6, "fm": 5e-6, "fn": 11e-6, "f ": 287e-6, "fy": 0, "fo": 1439e-6, "gc": 16e-6, "gp": 11e-6, "gv": 0, "gd": 0, "gh": 422e-6, "gk": 16e-6, "ga": 1347e-6, "gs": 65e-6, "gw": 22e-6, "gu": 1082e-6, "gz": 5e-6, "gt": 38e-6, "ge": 1801e-6, "gr": 1168e-6, "gl": 1812e-6, "gj": 0, "gb": 32e-6, "gx": 5e-6, "gi": 3602e-6, "gq": 0, "gf": 5e-6, "gg": 898e-6, "gm": 38e-6, "gn": 1141e-6, "g ": 525e-6, "gy": 16e-6, "go": 1422e-6, "mc": 22e-6, "mp": 1309e-6, "mv": 0, "md": 11e-6, "mh": 5e-6, "mk": 16e-6, "ma": 4808e-6, "ms": 114e-6, "mw": 22e-6, "mu": 2023e-6, "mz": 16e-6, "mt": 22e-6, "me": 5381e-6, "mr": 43e-6, "ml": 27e-6, "mj": 16e-6, "mb": 736e-6, "mx": 0, "mi": 272e-5, "mq": 0, "mf": 16e-6, "mg": 0, "mm": 671e-6, "mn": 38e-6, "m ": 1184e-6, "my": 76e-6, "mo": 2704e-6, "nc": 2699e-6, "np": 32e-6, "nv": 178e-6, "nd": 3169e-6, "nh": 65e-6, "nk": 168e-6, "na": 7615e-6, "ns": 1936e-6, "nw": 32e-6, "nu": 698e-6, "nz": 903e-6, "nt": 8745e-6, "ne": 0.01166, "nr": 92e-6, "nl": 59e-6, "nj": 22e-6, "nb": 92e-6, "nx": 0, "ni": 5635e-6, "nq": 119e-6, "nf": 395e-6, "ng": 1714e-6, "nm": 54e-6, "nn": 1433e-6, "n ": 0.010508, "ny": 146e-6, "no": 6382e-6, " c": 0.014597, " p": 9762e-6, " v": 2948e-6, " d": 0.024635, " h": 1195e-6, " k": 909e-6, " a": 0.010854, " s": 0.014527, " w": 622e-6, " u": 8502e-6, " z": 26e-5, " t": 4343e-6, " e": 7134e-6, " r": 4738e-6, " l": 7025e-6, " j": 806e-6, " b": 3007e-6, " x": 216e-6, " i": 8372e-6, " q": 822e-6, " f": 5484e-6, " g": 3791e-6, " m": 5987e-6, " n": 6349e-6, "  ": 0.012931, " y": 173e-6, " o": 2315e-6, "yc": 7e-5, "yp": 49e-6, "yv": 0, "yd": 22e-6, "yh": 5e-6, "yk": 43e-6, "ya": 119e-6, "ys": 13e-5, "yw": 11e-6, "yu": 27e-6, "yz": 5e-6, "yt": 27e-6, "ye": 146e-6, "yr": 32e-6, "yl": 97e-6, "yj": 27e-6, "yb": 22e-6, "yx": 11e-6, "yi": 16e-6, "yq": 0, "yf": 0, "yg": 16e-6, "ym": 16e-6, "yn": 7e-5, "y ": 1006e-6, "yy": 5e-6, "yo": 103e-6, "oc": 1969e-6, "op": 1558e-6, "ov": 2142e-6, "od": 1076e-6, "oh": 124e-6, "ok": 135e-6, "oa": 233e-6, "os": 2482e-6, "ow": 157e-6, "ou": 514e-6, "oz": 119e-6, "ot": 2001e-6, "oe": 233e-6, "or": 7604e-6, "ol": 5219e-6, "oj": 11e-6, "ob": 519e-6, "ox": 43e-6, "oi": 492e-6, "oq": 22e-6, "of": 395e-6, "og": 1233e-6, "om": 4473e-6, "on": 0.011768, "o ": 0.025976, "oy": 54e-6, "oo": 352e-6 };
+const bigram_it = {
+  total_count: total_count$8,
+  probabilities: probabilities$8
+};
+const total_count$7 = 187162;
+const probabilities$7 = { "cc": 96e-6, "cp": 5e-6, "cv": 0, "cd": 16e-6, "ch": 7079e-6, "ck": 315e-6, "ca": 1138e-6, "cs": 11e-6, "cw": 16e-6, "cu": 449e-6, "cz": 43e-6, "ct": 1256e-6, "ce": 1603e-6, "cr": 294e-6, "cl": 246e-6, "cj": 5e-6, "cb": 0, "cx": 5e-6, "ci": 1159e-6, "cq": 27e-6, "cf": 11e-6, "cg": 5e-6, "cm": 16e-6, "cn": 11e-6, "c ": 283e-6, "cy": 118e-6, "co": 1565e-6, "pc": 11e-6, "pp": 1074e-6, "pv": 43e-6, "pd": 16e-6, "ph": 459e-6, "pk": 48e-6, "pa": 1886e-6, "ps": 305e-6, "pw": 0, "pu": 94e-5, "pz": 21e-6, "pt": 31e-5, "pe": 3297e-6, "pr": 1421e-6, "pl": 125e-5, "pj": 16e-6, "pb": 48e-6, "px": 0, "pi": 1127e-6, "pq": 0, "pf": 11e-6, "pg": 176e-6, "pm": 37e-6, "pn": 11e-6, "p ": 2084e-6, "py": 48e-6, "po": 133e-5, "vc": 21e-6, "vp": 5e-6, "vv": 11e-6, "vd": 11e-6, "vh": 0, "vk": 11e-6, "va": 8437e-6, "vs": 43e-6, "vw": 27e-6, "vu": 69e-6, "vz": 0, "vt": 0, "ve": 4146e-6, "vr": 289e-6, "vl": 978e-6, "vj": 21e-6, "vb": 11e-6, "vx": 0, "vi": 187e-5, "vq": 0, "vf": 0, "vg": 0, "vm": 0, "vn": 37e-6, "v ": 16e-5, "vy": 27e-6, "vo": 3468e-6, "dc": 37e-6, "dp": 118e-6, "dv": 48e-6, "dd": 278e-6, "dh": 176e-6, "dk": 182e-6, "da": 2885e-6, "ds": 1736e-6, "dw": 246e-6, "du": 834e-6, "dz": 53e-6, "dt": 657e-6, "de": 0.022948, "dr": 101e-5, "dl": 96e-6, "dj": 48e-6, "db": 112e-6, "dx": 0, "di": 4579e-6, "dq": 5e-6, "df": 21e-6, "dg": 64e-6, "dm": 75e-6, "dn": 8e-5, "d ": 6609e-6, "dy": 107e-6, "do": 2725e-6, "hc": 0, "hp": 11e-6, "hv": 37e-6, "hd": 5e-6, "hh": 11e-6, "hk": 16e-6, "ha": 3136e-6, "hs": 32e-6, "hw": 32e-6, "hu": 63e-5, "hz": 27e-6, "ht": 1843e-6, "he": 9751e-6, "hr": 609e-6, "hl": 64e-6, "hj": 5e-6, "hb": 21e-6, "hx": 0, "hi": 2404e-6, "hq": 0, "hf": 5e-6, "hg": 11e-6, "hm": 37e-6, "hn": 144e-6, "h ": 962e-6, "hy": 182e-6, "ho": 1988e-6, "kc": 16e-6, "kp": 32e-6, "kv": 27e-6, "kd": 48e-6, "kh": 155e-6, "kk": 369e-6, "ka": 1731e-6, "ks": 54e-5, "kw": 112e-6, "ku": 401e-6, "kz": 27e-6, "kt": 1218e-6, "ke": 3687e-6, "kr": 486e-6, "kl": 54e-5, "kj": 27e-6, "kb": 59e-6, "kx": 0, "ki": 732e-6, "kq": 0, "kf": 32e-6, "kg": 96e-6, "km": 337e-6, "kn": 176e-6, "k ": 3078e-6, "ky": 75e-6, "ko": 1047e-6, "ac": 1736e-6, "ap": 1549e-6, "av": 582e-6, "ad": 1817e-6, "ah": 91e-6, "ak": 1619e-6, "aa": 8629e-6, "as": 3329e-6, "aw": 75e-6, "au": 972e-6, "az": 278e-6, "at": 4777e-6, "ae": 1411e-6, "ar": 6465e-6, "al": 5696e-6, "aj": 134e-6, "ab": 609e-6, "ax": 112e-6, "ai": 823e-6, "aq": 37e-6, "af": 759e-6, "ag": 1085e-6, "am": 4312e-6, "an": 0.016937, "a ": 3703e-6, "ay": 23e-5, "ao": 96e-6, "sc": 3959e-6, "sp": 1817e-6, "sv": 23e-5, "sd": 337e-6, "sh": 395e-6, "sk": 609e-6, "sa": 1272e-6, "ss": 1886e-6, "sw": 118e-6, "su": 502e-6, "sz": 85e-6, "st": 9388e-6, "se": 5295e-6, "sr": 128e-6, "sl": 1101e-6, "sj": 23e-5, "sb": 342e-6, "sx": 0, "si": 1651e-6, "sq": 11e-6, "sf": 8e-5, "sg": 102e-6, "sm": 251e-6, "sn": 246e-6, "s ": 0.01675, "sy": 198e-6, "so": 2078e-6, "wc": 5e-6, "wp": 5e-6, "wv": 0, "wd": 91e-6, "wh": 27e-6, "wk": 21e-6, "wa": 2869e-6, "ws": 91e-6, "ww": 32e-6, "wu": 16e-6, "wz": 27e-6, "wt": 21e-6, "we": 4082e-6, "wr": 59e-6, "wl": 16e-6, "wj": 0, "wb": 11e-6, "wx": 0, "wi": 1127e-6, "wq": 0, "wf": 27e-6, "wg": 5e-6, "wm": 11e-6, "wn": 48e-6, "w ": 395e-6, "wy": 43e-6, "wo": 2046e-6, "uc": 545e-6, "up": 182e-6, "uv": 85e-6, "ud": 55e-5, "uh": 11e-6, "uk": 144e-6, "ua": 417e-6, "us": 2137e-6, "uw": 85e-5, "uu": 545e-6, "uz": 224e-6, "ut": 801e-6, "ue": 294e-6, "ur": 2281e-6, "ul": 844e-6, "uj": 16e-6, "ub": 1047e-6, "ux": 85e-6, "ui": 4408e-6, "uq": 16e-6, "uf": 64e-6, "ug": 443e-6, "um": 834e-6, "un": 1133e-6, "u ": 422e-6, "uy": 53e-6, "uo": 48e-6, "zc": 5e-6, "zp": 5e-6, "zv": 0, "zd": 0, "zh": 11e-6, "zk": 5e-6, "za": 556e-6, "zs": 21e-6, "zw": 23e-5, "zu": 47e-5, "zz": 75e-6, "zt": 21e-6, "ze": 1309e-6, "zr": 48e-6, "zl": 21e-6, "zj": 69e-6, "zb": 21e-6, "zx": 0, "zi": 172e-5, "zq": 0, "zf": 0, "zg": 11e-6, "zm": 11e-6, "zn": 27e-6, "z ": 192e-6, "zy": 37e-6, "zo": 646e-6, "tc": 75e-6, "tp": 123e-6, "tv": 182e-6, "td": 118e-6, "th": 1453e-6, "tk": 8e-5, "ta": 3836e-6, "ts": 2517e-6, "tw": 614e-6, "tu": 1277e-6, "tz": 75e-6, "tt": 705e-6, "te": 0.011461, "tr": 2468e-6, "tl": 267e-6, "tj": 176e-6, "tb": 465e-6, "tx": 0, "ti": 3884e-6, "tq": 5e-6, "tf": 53e-6, "tg": 315e-6, "tm": 182e-6, "tn": 64e-6, "t ": 0.021078, "ty": 219e-6, "to": 28e-4, "ec": 1224e-6, "ep": 1726e-6, "ev": 1822e-6, "ed": 265e-5, "eh": 449e-6, "ek": 1758e-6, "ea": 663e-6, "es": 4606e-6, "ew": 369e-6, "eu": 1539e-6, "ez": 695e-6, "et": 0.01013, "ee": 0.015083, "er": 0.019566, "el": 9901e-6, "ej": 69e-6, "eb": 1069e-6, "ex": 203e-6, "ei": 2308e-6, "eq": 27e-6, "ef": 994e-6, "eg": 2009e-6, "em": 3371e-6, "en": 0.028975, "e ": 0.032982, "ey": 15e-5, "eo": 534e-6, "rc": 331e-6, "rp": 502e-6, "rv": 7e-4, "rd": 4654e-6, "rh": 31e-5, "rk": 1175e-6, "ra": 4365e-6, "rs": 3751e-6, "rw": 315e-6, "ru": 1309e-6, "rz": 251e-6, "rt": 3313e-6, "re": 4996e-6, "rr": 908e-6, "rl": 1405e-6, "rj": 48e-6, "rb": 598e-6, "rx": 0, "ri": 5631e-6, "rq": 21e-6, "rf": 208e-6, "rg": 1325e-6, "rm": 1069e-6, "rn": 93e-5, "r ": 9735e-6, "ry": 214e-6, "ro": 4643e-6, "lc": 102e-6, "lp": 128e-6, "lv": 294e-6, "ld": 2356e-6, "lh": 123e-6, "lk": 502e-6, "la": 5712e-6, "ls": 1838e-6, "lw": 91e-6, "lu": 967e-6, "lz": 59e-6, "lt": 1127e-6, "le": 4899e-6, "lr": 107e-6, "ll": 2287e-6, "lj": 75e-6, "lb": 24e-5, "lx": 0, "li": 7982e-6, "lq": 0, "lf": 443e-6, "lg": 417e-6, "lm": 374e-6, "ln": 75e-6, "l ": 3772e-6, "ly": 315e-6, "lo": 2159e-6, "jc": 0, "jp": 11e-6, "jv": 112e-6, "jd": 524e-6, "jh": 32e-6, "jk": 2057e-6, "ja": 1042e-6, "js": 283e-6, "jw": 21e-6, "ju": 23e-5, "jz": 69e-6, "jt": 21e-6, "je": 689e-6, "jr": 32e-6, "jl": 48e-6, "jj": 0, "jb": 11e-6, "jx": 0, "ji": 59e-6, "jq": 0, "jf": 155e-6, "jg": 27e-6, "jm": 16e-6, "jn": 1149e-6, "j ": 1923e-6, "jy": 16e-6, "jo": 534e-6, "bc": 5e-6, "bp": 16e-6, "bv": 11e-6, "bd": 48e-6, "bh": 16e-6, "bk": 11e-6, "ba": 1619e-6, "bs": 91e-6, "bw": 0, "bu": 775e-6, "bz": 5e-6, "bt": 27e-6, "be": 4146e-6, "br": 1224e-6, "bl": 109e-5, "bj": 64e-6, "bb": 208e-6, "bx": 0, "bi": 1897e-6, "bq": 0, "bf": 0, "bg": 0, "bm": 43e-6, "bn": 43e-6, "b ": 219e-6, "by": 139e-6, "bo": 1224e-6, "xc": 11e-6, "xp": 37e-6, "xv": 32e-6, "xd": 0, "xh": 16e-6, "xk": 0, "xa": 53e-6, "xs": 11e-6, "xw": 0, "xu": 0, "xz": 0, "xt": 32e-6, "xe": 85e-6, "xr": 0, "xl": 5e-6, "xj": 0, "xb": 0, "xx": 0, "xi": 96e-6, "xq": 0, "xf": 5e-6, "xg": 0, "xm": 0, "xn": 0, "x ": 176e-6, "xy": 5e-6, "xo": 48e-6, "ic": 288e-5, "ip": 39e-5, "iv": 593e-6, "id": 2671e-6, "ih": 21e-6, "ik": 956e-6, "ia": 1341e-6, "is": 0.010568, "iw": 75e-6, "iu": 267e-6, "iz": 235e-6, "it": 514e-5, "ie": 7587e-6, "ir": 823e-6, "il": 3703e-6, "ij": 6363e-6, "ib": 267e-6, "ix": 69e-6, "ii": 331e-6, "iq": 48e-6, "if": 289e-6, "ig": 2949e-6, "im": 582e-6, "in": 0.01371, "i ": 1795e-6, "iy": 27e-6, "io": 1774e-6, "qc": 11e-6, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 11e-6, "qs": 5e-6, "qw": 0, "qu": 23e-5, "qz": 0, "qt": 0, "qe": 11e-6, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 11e-6, "qy": 0, "qo": 11e-6, "fc": 102e-6, "fp": 43e-6, "fv": 43e-6, "fd": 358e-6, "fh": 27e-6, "fk": 69e-6, "fa": 1459e-6, "fs": 208e-6, "fw": 75e-6, "fu": 203e-6, "fz": 5e-6, "ft": 7e-4, "fe": 598e-6, "fr": 86e-5, "fl": 134e-6, "fj": 43e-6, "fb": 53e-6, "fx": 0, "fi": 561e-6, "fq": 0, "ff": 224e-6, "fg": 91e-6, "fm": 16e-6, "fn": 27e-6, "f ": 1159e-6, "fy": 21e-6, "fo": 422e-6, "gc": 91e-6, "gp": 11e-6, "gv": 64e-6, "gd": 411e-6, "gh": 24e-5, "gk": 69e-6, "ga": 972e-6, "gs": 454e-6, "gw": 37e-6, "gu": 369e-6, "gz": 5e-6, "gt": 689e-6, "ge": 0.010141, "gr": 1619e-6, "gl": 267e-6, "gj": 43e-6, "gb": 75e-6, "gx": 5e-6, "gi": 962e-6, "gq": 5e-6, "gf": 5e-6, "gg": 96e-6, "gm": 8e-5, "gn": 15e-5, "g ": 3719e-6, "gy": 75e-6, "go": 545e-6, "mc": 37e-6, "mp": 807e-6, "mv": 8e-5, "md": 315e-6, "mh": 11e-6, "mk": 5e-6, "ma": 3131e-6, "ms": 508e-6, "mw": 16e-6, "mu": 684e-6, "mz": 32e-6, "mt": 342e-6, "me": 5952e-6, "mr": 59e-6, "ml": 5e-6, "mj": 0, "mb": 641e-6, "mx": 0, "mi": 2789e-6, "mq": 0, "mf": 48e-6, "mg": 48e-6, "mm": 406e-6, "mn": 64e-6, "m ": 312e-5, "my": 112e-6, "mo": 1127e-6, "nc": 839e-6, "np": 8e-5, "nv": 337e-6, "nd": 6999e-6, "nh": 246e-6, "nk": 657e-6, "na": 4061e-6, "ns": 4472e-6, "nw": 1085e-6, "nu": 433e-6, "nz": 198e-6, "nt": 4659e-6, "ne": 4472e-6, "nr": 171e-6, "nl": 208e-6, "nj": 85e-6, "nb": 374e-6, "nx": 37e-6, "ni": 2538e-6, "nq": 5e-6, "nf": 16e-5, "ng": 3521e-6, "nm": 118e-6, "nn": 1079e-6, "n ": 0.03746, "ny": 155e-6, "no": 1865e-6, " c": 281e-5, " p": 4253e-6, " v": 0.013117, " d": 0.020528, " h": 0.010403, " k": 3436e-6, " a": 6278e-6, " s": 7929e-6, " w": 639e-5, " u": 2837e-6, " z": 2891e-6, " t": 5338e-6, " e": 0.014303, " r": 2362e-6, " l": 3302e-6, " j": 1448e-6, " b": 6209e-6, " x": 59e-6, " i": 0.014399, " q": 69e-6, " f": 281e-5, " g": 7309e-6, " m": 5546e-6, " n": 4103e-6, "  ": 631e-5, " y": 102e-6, " o": 5749e-6, "yc": 144e-6, "yp": 118e-6, "yv": 11e-6, "yd": 96e-6, "yh": 16e-6, "yk": 53e-6, "ya": 144e-6, "ys": 24e-5, "yw": 0, "yu": 0, "yz": 5e-6, "yt": 75e-6, "ye": 107e-6, "yr": 155e-6, "yl": 246e-6, "yj": 0, "yb": 48e-6, "yx": 0, "yi": 37e-6, "yq": 0, "yf": 5e-6, "yg": 21e-6, "ym": 214e-6, "yn": 155e-6, "y ": 801e-6, "yy": 5e-6, "yo": 91e-6, "oc": 673e-6, "op": 2923e-6, "ov": 1181e-6, "od": 834e-6, "oh": 187e-6, "ok": 876e-6, "oa": 219e-6, "os": 1448e-6, "ow": 251e-6, "ou": 1533e-6, "oz": 128e-6, "ot": 1902e-6, "oe": 2522e-6, "or": 9265e-6, "ol": 2725e-6, "oj": 75e-6, "ob": 379e-6, "ox": 37e-6, "oi": 379e-6, "oq": 11e-6, "of": 109e-5, "og": 1074e-6, "om": 2404e-6, "on": 6941e-6, "o ": 1389e-6, "oy": 118e-6, "oo": 803e-5 };
+const bigram_nl = {
+  total_count: total_count$7,
+  probabilities: probabilities$7
+};
+const total_count$6 = 171425;
+const probabilities$6 = { "cc": 175e-6, "cp": 478e-6, "cv": 29e-6, "cd": 41e-6, "ch": 1715e-6, "ck": 257e-6, "ca": 6586e-6, "cs": 117e-6, "cw": 0, "cu": 933e-6, "cz": 6e-6, "ct": 49e-5, "ce": 3325e-6, "cr": 1149e-6, "cl": 98e-5, "cj": 18e-6, "cb": 0, "cx": 0, "ci": 5314e-6, "cq": 18e-6, "cf": 58e-6, "cg": 23e-6, "cm": 53e-6, "cn": 105e-6, "c ": 531e-6, "cy": 82e-6, "co": 0.010366, "pc": 799e-6, "pp": 111e-6, "pv": 12e-6, "pd": 18e-6, "ph": 414e-6, "pk": 12e-6, "pa": 427e-5, "ps": 274e-6, "pw": 6e-6, "pu": 974e-6, "pz": 0, "pt": 408e-6, "pe": 3821e-6, "pr": 3191e-6, "pl": 642e-6, "pj": 0, "pb": 134e-6, "px": 0, "pi": 1808e-6, "pq": 0, "pf": 23e-6, "pg": 12e-6, "pm": 29e-6, "pn": 0, "p ": 274e-6, "py": 29e-6, "po": 5775e-6, "vc": 18e-6, "vp": 0, "vv": 12e-6, "vd": 53e-6, "vh": 12e-6, "vk": 0, "va": 2129e-6, "vs": 128e-6, "vw": 0, "vu": 47e-6, "vz": 0, "vt": 12e-6, "ve": 2573e-6, "vr": 233e-6, "vl": 23e-6, "vj": 12e-6, "vb": 29e-6, "vx": 0, "vi": 1849e-6, "vq": 35e-6, "vf": 0, "vg": 6e-6, "vm": 0, "vn": 257e-6, "v ": 158e-6, "vy": 12e-6, "vo": 1009e-6, "dc": 158e-6, "dp": 35e-6, "dv": 76e-6, "dd": 58e-6, "dh": 18e-6, "dk": 6e-6, "da": 0.010459, "ds": 187e-6, "dw": 18e-6, "du": 1038e-6, "dz": 0, "dt": 76e-6, "de": 0.020353, "dr": 63e-5, "dl": 41e-6, "dj": 18e-6, "db": 12e-6, "dx": 0, "di": 3255e-6, "dq": 6e-6, "df": 6e-6, "dg": 29e-6, "dm": 665e-6, "dn": 111e-6, "d ": 881e-6, "dy": 88e-6, "do": 0.011655, "hc": 18e-6, "hp": 6e-6, "hv": 12e-6, "hd": 18e-6, "hh": 0, "hk": 0, "ha": 3914e-6, "hs": 41e-6, "hw": 12e-6, "hu": 327e-6, "hz": 0, "ht": 88e-6, "he": 1744e-6, "hr": 14e-5, "hl": 41e-6, "hj": 0, "hb": 12e-6, "hx": 0, "hi": 992e-6, "hq": 6e-6, "hf": 12e-6, "hg": 0, "hm": 41e-6, "hn": 99e-6, "h ": 426e-6, "hy": 193e-6, "ho": 168e-5, "kc": 0, "kp": 0, "kv": 0, "kd": 18e-6, "kh": 35e-6, "kk": 12e-6, "ka": 356e-6, "ks": 82e-6, "kw": 35e-6, "ku": 7e-5, "kz": 0, "kt": 6e-6, "ke": 245e-6, "kr": 88e-6, "kl": 41e-6, "kj": 0, "kb": 0, "kx": 0, "ki": 222e-6, "kq": 0, "kf": 12e-6, "kg": 0, "km": 1219e-6, "kn": 29e-6, "k ": 379e-6, "ky": 76e-6, "ko": 117e-6, "ac": 2298e-6, "ap": 1243e-6, "av": 1149e-6, "ad": 9013e-6, "ah": 193e-6, "ak": 198e-6, "aa": 233e-6, "as": 686e-5, "aw": 58e-6, "au": 846e-6, "az": 49e-5, "at": 4375e-6, "ae": 1272e-6, "ar": 7274e-6, "al": 7467e-6, "aj": 82e-6, "ab": 2106e-6, "ax": 58e-6, "ai": 2246e-6, "aq": 158e-6, "af": 292e-6, "ag": 1149e-6, "am": 5373e-6, "an": 0.010179, "a ": 0.040047, "ay": 292e-6, "ao": 1943e-6, "sc": 1499e-6, "sp": 1803e-6, "sv": 53e-6, "sd": 245e-6, "sh": 321e-6, "sk": 105e-6, "sa": 2888e-6, "ss": 2508e-6, "sw": 35e-6, "su": 2147e-6, "sz": 18e-6, "st": 8488e-6, "se": 6102e-6, "sr": 327e-6, "sl": 175e-6, "sj": 0, "sb": 163e-6, "sx": 0, "si": 3844e-6, "sq": 21e-5, "sf": 7e-5, "sg": 47e-6, "sm": 391e-6, "sn": 163e-6, "s ": 0.017874, "sy": 76e-6, "so": 3109e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 6e-6, "wh": 41e-6, "wk": 6e-6, "wa": 274e-6, "ws": 35e-6, "ww": 18e-6, "wu": 6e-6, "wz": 0, "wt": 0, "we": 128e-6, "wr": 35e-6, "wl": 6e-6, "wj": 0, "wb": 12e-6, "wx": 12e-6, "wi": 181e-6, "wq": 0, "wf": 18e-6, "wg": 0, "wm": 0, "wn": 64e-6, "w ": 88e-6, "wy": 12e-6, "wo": 163e-6, "uc": 42e-5, "up": 519e-6, "uv": 152e-6, "ud": 718e-6, "uh": 29e-6, "uk": 23e-6, "ua": 2438e-6, "us": 2048e-6, "uw": 6e-6, "uu": 0, "uz": 286e-6, "ut": 1575e-6, "ue": 2864e-6, "ur": 2106e-6, "ul": 2293e-6, "uj": 7e-5, "ub": 764e-6, "ux": 7e-5, "ui": 1686e-6, "uq": 35e-6, "uf": 82e-6, "ug": 56e-5, "um": 8039e-6, "un": 3821e-6, "u ": 2193e-6, "uy": 41e-6, "uo": 193e-6, "zc": 0, "zp": 0, "zv": 6e-6, "zd": 0, "zh": 6e-6, "zk": 12e-6, "za": 1196e-6, "zs": 0, "zw": 0, "zu": 111e-6, "zz": 76e-6, "zt": 6e-6, "ze": 362e-6, "zr": 6e-6, "zl": 12e-6, "zj": 0, "zb": 0, "zx": 0, "zi": 263e-6, "zq": 6e-6, "zf": 0, "zg": 6e-6, "zm": 12e-6, "zn": 64e-6, "z ": 718e-6, "zy": 35e-6, "zo": 163e-6, "tc": 88e-6, "tp": 41e-6, "tv": 117e-6, "td": 158e-6, "th": 729e-6, "tk": 18e-6, "ta": 8704e-6, "ts": 268e-6, "tw": 41e-6, "tu": 2491e-6, "tz": 58e-6, "tt": 35e-5, "te": 0.011294, "tr": 5373e-6, "tl": 327e-6, "tj": 6e-6, "tb": 7e-5, "tx": 6e-6, "ti": 5349e-6, "tq": 0, "tf": 41e-6, "tg": 47e-6, "tm": 93e-6, "tn": 449e-6, "t ": 1289e-6, "ty": 111e-6, "to": 6108e-6, "ec": 2083e-6, "ep": 1493e-6, "ev": 858e-6, "ed": 1365e-6, "eh": 41e-6, "ek": 82e-6, "ea": 2363e-6, "es": 0.013434, "ew": 111e-6, "eu": 1248e-6, "ez": 42e-5, "et": 2112e-6, "ee": 28e-5, "er": 8628e-6, "el": 434e-5, "ej": 228e-6, "eb": 706e-6, "ex": 904e-6, "ei": 3063e-6, "eq": 315e-6, "ef": 432e-6, "eg": 2234e-6, "em": 5892e-6, "en": 0.010629, "e ": 0.033117, "ey": 222e-6, "eo": 1062e-6, "rc": 881e-6, "rp": 286e-6, "rv": 315e-6, "rd": 928e-6, "rh": 7e-5, "rk": 111e-6, "ra": 0.011451, "rs": 817e-6, "rw": 23e-6, "ru": 904e-6, "rz": 47e-6, "rt": 3646e-6, "re": 8727e-6, "rr": 1108e-6, "rl": 239e-6, "rj": 12e-6, "rb": 216e-6, "rx": 23e-6, "ri": 7111e-6, "rq": 222e-6, "rf": 88e-6, "rg": 718e-6, "rm": 1342e-6, "rn": 1167e-6, "r ": 5763e-6, "ry": 28e-5, "ro": 6662e-6, "lc": 268e-6, "lp": 193e-6, "lv": 385e-6, "ld": 344e-6, "lh": 922e-6, "lk": 53e-6, "la": 4766e-6, "ls": 257e-6, "lw": 18e-6, "lu": 1283e-6, "lz": 18e-6, "lt": 1108e-6, "le": 4043e-6, "lr": 47e-6, "ll": 1155e-6, "lj": 53e-6, "lb": 397e-6, "lx": 99e-6, "li": 5273e-6, "lq": 29e-6, "lf": 193e-6, "lg": 286e-6, "lm": 1196e-6, "ln": 163e-6, "l ": 4533e-6, "ly": 152e-6, "lo": 3144e-6, "jc": 0, "jp": 18e-6, "jv": 6e-6, "jd": 0, "jh": 0, "jk": 0, "ja": 665e-6, "js": 12e-6, "jw": 0, "ju": 589e-6, "jz": 0, "jt": 0, "je": 268e-6, "jr": 47e-6, "jl": 18e-6, "jj": 0, "jb": 0, "jx": 0, "ji": 53e-6, "jq": 0, "jf": 6e-6, "jg": 0, "jm": 6e-6, "jn": 29e-6, "j ": 14e-5, "jy": 0, "jo": 1003e-6, "bc": 58e-6, "bp": 12e-6, "bv": 0, "bd": 47e-6, "bh": 12e-6, "bk": 28e-5, "ba": 1698e-6, "bs": 181e-6, "bw": 0, "bu": 624e-6, "bz": 6e-6, "bt": 58e-6, "be": 1079e-6, "br": 2153e-6, "bl": 478e-6, "bj": 35e-6, "bb": 93e-6, "bx": 0, "bi": 1943e-6, "bq": 6e-6, "bf": 35e-6, "bg": 64e-6, "bm": 391e-6, "bn": 0, "b ": 233e-6, "by": 41e-6, "bo": 1563e-6, "xc": 82e-6, "xp": 88e-6, "xv": 41e-6, "xd": 6e-6, "xh": 6e-6, "xk": 0, "xa": 193e-6, "xs": 0, "xw": 0, "xu": 23e-6, "xz": 0, "xt": 216e-6, "xe": 134e-6, "xr": 23e-6, "xl": 18e-6, "xj": 12e-6, "xb": 35e-6, "xx": 29e-6, "xi": 49e-5, "xq": 0, "xf": 88e-6, "xg": 12e-6, "xm": 6e-6, "xn": 0, "x ": 251e-6, "xy": 12e-6, "xo": 111e-6, "ic": 5688e-6, "ip": 875e-6, "iv": 1703e-6, "id": 476e-5, "ih": 35e-6, "ik": 111e-6, "ia": 6627e-6, "is": 637e-5, "iw": 18e-6, "iu": 239e-6, "iz": 1208e-6, "it": 4253e-6, "ie": 2024e-6, "ir": 3173e-6, "il": 3098e-6, "ij": 58e-6, "ib": 537e-6, "ix": 268e-6, "ii": 292e-6, "iq": 64e-6, "if": 537e-6, "ig": 1283e-6, "im": 1948e-6, "in": 7683e-6, "i ": 3302e-6, "iy": 41e-6, "io": 5384e-6, "qc": 6e-6, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 0, "qs": 0, "qw": 0, "qu": 3214e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 12e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 0, "qy": 6e-6, "qo": 0, "fc": 76e-6, "fp": 0, "fv": 0, "fd": 0, "fh": 6e-6, "fk": 0, "fa": 1651e-6, "fs": 64e-6, "fw": 0, "fu": 7e-4, "fz": 0, "ft": 82e-6, "fe": 1009e-6, "fr": 1668e-6, "fl": 292e-6, "fj": 6e-6, "fb": 58e-6, "fx": 0, "fi": 1511e-6, "fq": 0, "ff": 7e-5, "fg": 12e-6, "fm": 23e-6, "fn": 18e-6, "f ": 181e-6, "fy": 6e-6, "fo": 273e-5, "gc": 105e-6, "gp": 0, "gv": 6e-6, "gd": 29e-6, "gh": 105e-6, "gk": 0, "ga": 1861e-6, "gs": 53e-6, "gw": 12e-6, "gu": 1727e-6, "gz": 0, "gt": 47e-6, "ge": 1278e-6, "gr": 1663e-6, "gl": 28e-5, "gj": 23e-6, "gb": 6e-6, "gx": 0, "gi": 1966e-6, "gq": 0, "gf": 6e-6, "gg": 41e-6, "gm": 53e-6, "gn": 916e-6, "g ": 537e-6, "gy": 18e-6, "go": 1528e-6, "mc": 47e-6, "mp": 1348e-6, "mv": 23e-6, "md": 14e-5, "mh": 18e-6, "mk": 6e-6, "ma": 9433e-6, "ms": 251e-6, "mw": 0, "mu": 245e-5, "mz": 0, "mt": 82e-6, "me": 5851e-6, "mr": 228e-6, "ml": 986e-6, "mj": 6e-6, "mb": 1272e-6, "mx": 35e-6, "mi": 2829e-6, "mq": 6e-6, "mf": 6e-6, "mg": 0, "mm": 146e-6, "mn": 187e-6, "m ": 0.011054, "my": 123e-6, "mo": 2928e-6, "nc": 3238e-6, "np": 88e-6, "nv": 298e-6, "nd": 4783e-6, "nh": 2036e-6, "nk": 111e-6, "na": 8721e-6, "ns": 2718e-6, "nw": 18e-6, "nu": 478e-6, "nz": 134e-6, "nt": 959e-5, "ne": 2567e-6, "nr": 152e-6, "nl": 82e-6, "nj": 7e-5, "nb": 76e-6, "nx": 0, "ni": 4288e-6, "nq": 93e-6, "nf": 303e-6, "ng": 1318e-6, "nm": 117e-6, "nn": 408e-6, "n ": 1919e-6, "ny": 14e-5, "no": 6347e-6, " c": 0.013073, " p": 0.012688, " v": 2013e-6, " d": 0.02579, " h": 2911e-6, " k": 1523e-6, " a": 0.013359, " s": 8354e-6, " w": 525e-6, " u": 8079e-6, " z": 204e-6, " t": 5594e-6, " e": 0.015814, " r": 4982e-6, " l": 4136e-6, " j": 2024e-6, " b": 3722e-6, " x": 204e-6, " i": 3232e-6, " q": 1978e-6, " f": 728e-5, " g": 3337e-6, " m": 6697e-6, " n": 7239e-6, "  ": 0.014514, " y": 216e-6, " o": 5711e-6, "yc": 93e-6, "yp": 53e-6, "yv": 0, "yd": 53e-6, "yh": 0, "yk": 12e-6, "ya": 128e-6, "ys": 187e-6, "yw": 6e-6, "yu": 99e-6, "yz": 0, "yt": 29e-6, "ye": 134e-6, "yr": 82e-6, "yl": 169e-6, "yj": 0, "yb": 23e-6, "yx": 0, "yi": 35e-6, "yq": 0, "yf": 29e-6, "yg": 64e-6, "ym": 47e-6, "yn": 82e-6, "y ": 91e-5, "yy": 0, "yo": 204e-6, "oc": 168e-5, "op": 1663e-6, "ov": 1342e-6, "od": 1289e-6, "oh": 146e-6, "ok": 105e-6, "oa": 525e-6, "os": 7414e-6, "ow": 146e-6, "ou": 238e-5, "oz": 88e-6, "ot": 933e-6, "oe": 368e-6, "or": 8651e-6, "ol": 3039e-6, "oj": 128e-6, "ob": 648e-6, "ox": 163e-6, "oi": 2473e-6, "oq": 53e-6, "of": 478e-6, "og": 1009e-6, "om": 5676e-6, "on": 6236e-6, "o ": 0.033887, "oy": 14e-5, "oo": 338e-6 };
+const bigram_pt = {
+  total_count: total_count$6,
+  probabilities: probabilities$6
+};
+const total_count$5 = 182040;
+const probabilities$5 = { "cc": 22e-6, "cp": 5e-6, "cv": 0, "cd": 27e-6, "ch": 1159e-6, "ck": 275e-6, "ca": 994e-6, "cs": 38e-6, "cw": 0, "cu": 22e-5, "cz": 5e-6, "ct": 17e-5, "ce": 5e-4, "cr": 154e-6, "cl": 93e-6, "cj": 0, "cb": 5e-6, "cx": 0, "ci": 341e-6, "cq": 16e-6, "cf": 11e-6, "cg": 0, "cm": 38e-6, "cn": 16e-6, "c ": 286e-6, "cy": 71e-6, "co": 1472e-6, "pc": 5e-6, "pp": 1434e-6, "pv": 49e-6, "pd": 115e-6, "ph": 313e-6, "pk": 55e-6, "pa": 1675e-6, "ps": 324e-6, "pw": 0, "pu": 341e-6, "pz": 0, "pt": 341e-6, "pe": 2406e-6, "pr": 1741e-6, "pl": 588e-6, "pj": 0, "pb": 33e-6, "px": 0, "pi": 1945e-6, "pq": 0, "pf": 77e-6, "pg": 44e-6, "pm": 33e-6, "pn": 99e-6, "p ": 2565e-6, "py": 66e-6, "po": 1263e-6, "vc": 0, "vp": 38e-6, "vv": 27e-6, "vd": 148e-6, "vh": 55e-6, "vk": 88e-6, "va": 4274e-6, "vs": 269e-6, "vw": 0, "vu": 49e-6, "vz": 0, "vt": 93e-6, "ve": 6163e-6, "vr": 39e-5, "vl": 137e-6, "vj": 66e-6, "vb": 16e-6, "vx": 0, "vi": 2549e-6, "vq": 0, "vf": 16e-6, "vg": 82e-6, "vm": 6e-5, "vn": 522e-6, "v ": 4461e-6, "vy": 77e-6, "vo": 621e-6, "dc": 33e-6, "dp": 55e-6, "dv": 324e-6, "dd": 835e-6, "dh": 121e-6, "dk": 99e-6, "da": 3043e-6, "ds": 1555e-6, "dw": 5e-6, "du": 352e-6, "dz": 0, "dt": 692e-6, "de": 0.014782, "dr": 1461e-6, "dl": 829e-6, "dj": 44e-6, "db": 291e-6, "dx": 0, "di": 1648e-6, "dq": 0, "df": 17e-5, "dg": 71e-6, "dm": 236e-6, "dn": 137e-6, "d ": 4911e-6, "dy": 253e-6, "do": 901e-6, "hc": 11e-6, "hp": 5e-6, "hv": 28e-5, "hd": 11e-6, "hh": 0, "hk": 88e-6, "ha": 4735e-6, "hs": 11e-5, "hw": 11e-6, "hu": 961e-6, "hz": 0, "ht": 126e-6, "he": 2192e-6, "hr": 632e-6, "hl": 115e-6, "hj": 132e-6, "hb": 22e-6, "hx": 0, "hi": 555e-6, "hq": 0, "hf": 5e-6, "hg": 27e-6, "hm": 49e-6, "hn": 247e-6, "h ": 632e-6, "hy": 379e-6, "ho": 1648e-6, "kc": 11e-6, "kp": 27e-6, "kv": 412e-6, "kd": 11e-6, "kh": 165e-6, "kk": 1456e-6, "ka": 3422e-6, "ks": 1033e-6, "kw": 0, "ku": 791e-6, "kz": 0, "kt": 1857e-6, "ke": 6015e-6, "kr": 1302e-6, "kl": 1093e-6, "kj": 84e-5, "kb": 6e-5, "kx": 0, "ki": 1406e-6, "kq": 0, "kf": 71e-6, "kg": 16e-6, "km": 269e-6, "kn": 374e-6, "k ": 4834e-6, "ky": 247e-6, "ko": 3455e-6, "ac": 385e-6, "ap": 1022e-6, "av": 5208e-6, "ad": 1648e-6, "ah": 264e-6, "ak": 1285e-6, "aa": 214e-6, "as": 3301e-6, "aw": 66e-6, "au": 835e-6, "az": 176e-6, "at": 4142e-6, "ae": 714e-6, "ar": 9212e-6, "al": 5938e-6, "aj": 143e-6, "ab": 692e-6, "ax": 38e-6, "ai": 494e-6, "aq": 16e-6, "af": 566e-6, "ag": 1763e-6, "am": 3466e-6, "an": 0.012234, "a ": 6499e-6, "ay": 286e-6, "ao": 11e-5, "sc": 483e-6, "sp": 2126e-6, "sv": 1225e-6, "sd": 319e-6, "sh": 621e-6, "sk": 8163e-6, "sa": 2335e-6, "ss": 2049e-6, "sw": 33e-6, "su": 566e-6, "sz": 38e-6, "st": 0.011179, "se": 5708e-6, "sr": 1313e-6, "sl": 1752e-6, "sj": 1873e-6, "sb": 412e-6, "sx": 0, "si": 3065e-6, "sq": 16e-6, "sf": 275e-6, "sg": 99e-6, "sm": 742e-6, "sn": 439e-6, "s ": 6905e-6, "sy": 494e-6, "so": 4587e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 0, "wh": 27e-6, "wk": 0, "wa": 264e-6, "ws": 38e-6, "ww": 0, "wu": 0, "wz": 0, "wt": 0, "we": 209e-6, "wr": 16e-6, "wl": 22e-6, "wj": 0, "wb": 11e-6, "wx": 0, "wi": 231e-6, "wq": 0, "wf": 0, "wg": 0, "wm": 5e-6, "wn": 33e-6, "w ": 126e-6, "wy": 5e-6, "wo": 121e-6, "uc": 143e-6, "up": 505e-6, "uv": 115e-6, "ud": 428e-6, "uh": 27e-6, "uk": 593e-6, "ua": 428e-6, "us": 2065e-6, "uw": 0, "uu": 11e-6, "uz": 33e-6, "ut": 1505e-6, "ue": 643e-6, "ur": 1582e-6, "ul": 835e-6, "uj": 33e-6, "ub": 566e-6, "ux": 38e-6, "ui": 225e-6, "uq": 5e-6, "uf": 132e-6, "ug": 725e-6, "um": 549e-6, "un": 4988e-6, "u ": 335e-6, "uy": 33e-6, "uo": 27e-6, "zc": 11e-6, "zp": 5e-6, "zv": 5e-6, "zd": 0, "zh": 16e-6, "zk": 5e-6, "za": 143e-6, "zs": 11e-6, "zw": 0, "zu": 22e-6, "zz": 11e-6, "zt": 0, "ze": 93e-6, "zr": 0, "zl": 16e-6, "zj": 5e-6, "zb": 0, "zx": 0, "zi": 93e-6, "zq": 0, "zf": 0, "zg": 0, "zm": 5e-6, "zn": 5e-6, "z ": 148e-6, "zy": 0, "zo": 104e-6, "tc": 55e-6, "tp": 49e-6, "tv": 45e-5, "td": 11e-5, "th": 742e-6, "tk": 82e-6, "ta": 4224e-6, "ts": 1791e-6, "tw": 16e-6, "tu": 994e-6, "tz": 93e-6, "tt": 3664e-6, "te": 0.012041, "tr": 3741e-6, "tl": 632e-6, "tj": 192e-6, "tb": 604e-6, "tx": 5e-6, "ti": 6488e-6, "tq": 0, "tf": 225e-6, "tg": 126e-6, "tm": 121e-6, "tn": 516e-6, "t ": 0.01704, "ty": 1571e-6, "to": 2582e-6, "ec": 231e-6, "ep": 967e-6, "ev": 106e-5, "ed": 4345e-6, "eh": 291e-6, "ek": 2016e-6, "ea": 637e-6, "es": 6246e-6, "ew": 148e-6, "eu": 385e-6, "ez": 66e-6, "et": 0.011503, "ee": 346e-6, "er": 0.029873, "el": 768e-5, "ej": 44e-6, "eb": 637e-6, "ex": 143e-6, "ei": 2263e-6, "eq": 22e-6, "ef": 676e-6, "eg": 2412e-6, "em": 1818e-6, "en": 0.026714, "e ": 0.021089, "ey": 187e-6, "eo": 291e-6, "rc": 22e-5, "rp": 258e-6, "rv": 692e-6, "rd": 3181e-6, "rh": 313e-6, "rk": 1747e-6, "ra": 6147e-6, "rs": 3082e-6, "rw": 44e-6, "ru": 2098e-6, "rz": 11e-6, "rt": 3823e-6, "re": 0.011069, "rr": 961e-6, "rl": 917e-6, "rj": 77e-6, "rb": 637e-6, "rx": 5e-6, "ri": 5812e-6, "rq": 0, "rf": 758e-6, "rg": 1478e-6, "rm": 95e-5, "rn": 1566e-6, "r ": 0.026796, "ry": 56e-5, "ro": 2977e-6, "lc": 66e-6, "lp": 533e-6, "lv": 851e-6, "ld": 1209e-6, "lh": 428e-6, "lk": 956e-6, "la": 4834e-6, "ls": 256e-5, "lw": 11e-6, "lu": 956e-6, "lz": 0, "lt": 1483e-6, "le": 9773e-6, "lr": 242e-6, "ll": 574e-5, "lj": 148e-6, "lb": 302e-6, "lx": 0, "li": 7141e-6, "lq": 5e-6, "lf": 286e-6, "lg": 742e-6, "lm": 758e-6, "ln": 214e-6, "l ": 5307e-6, "ly": 626e-6, "lo": 2285e-6, "jc": 0, "jp": 33e-6, "jv": 27e-6, "jd": 38e-6, "jh": 27e-6, "jk": 11e-6, "ja": 632e-6, "js": 44e-6, "jw": 0, "ju": 313e-6, "jz": 5e-6, "jt": 27e-6, "je": 2675e-6, "jr": 341e-6, "jl": 33e-6, "jj": 0, "jb": 33e-6, "jx": 0, "ji": 55e-6, "jq": 0, "jf": 22e-6, "jg": 11e-6, "jm": 0, "jn": 11e-6, "j ": 143e-6, "jy": 5e-6, "jo": 2258e-6, "bc": 0, "bp": 5e-6, "bv": 0, "bd": 11e-5, "bh": 38e-6, "bk": 38e-6, "ba": 2011e-6, "bs": 66e-6, "bw": 0, "bu": 813e-6, "bz": 0, "bt": 71e-6, "be": 2857e-6, "br": 1725e-6, "bl": 2203e-6, "bj": 17e-5, "bb": 417e-6, "bx": 0, "bi": 111e-5, "bq": 0, "bf": 11e-6, "bg": 0, "bm": 11e-6, "bn": 38e-6, "b ": 143e-6, "by": 1862e-6, "bo": 917e-6, "xc": 0, "xp": 22e-6, "xv": 0, "xd": 0, "xh": 0, "xk": 0, "xa": 55e-6, "xs": 5e-6, "xw": 0, "xu": 0, "xz": 0, "xt": 5e-6, "xe": 55e-6, "xr": 0, "xl": 11e-6, "xj": 0, "xb": 0, "xx": 16e-6, "xi": 6e-5, "xq": 0, "xf": 5e-6, "xg": 0, "xm": 0, "xn": 0, "x ": 121e-6, "xy": 16e-6, "xo": 11e-6, "ic": 632e-6, "ip": 396e-6, "iv": 917e-6, "id": 2988e-6, "ih": 66e-6, "ik": 3708e-6, "ia": 1763e-6, "is": 5768e-6, "iw": 0, "iu": 143e-6, "iz": 66e-6, "it": 2697e-6, "ie": 2516e-6, "ir": 1302e-6, "il": 7251e-6, "ij": 33e-6, "ib": 225e-6, "ix": 55e-6, "ii": 275e-6, "iq": 49e-6, "if": 428e-6, "ig": 3527e-6, "im": 758e-6, "in": 8185e-6, "i ": 0.012354, "iy": 33e-6, "io": 1209e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 22e-6, "qs": 0, "qw": 5e-6, "qu": 17e-5, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 5e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 11e-6, "qy": 0, "qo": 0, "fc": 6e-5, "fp": 11e-6, "fv": 11e-6, "fd": 11e-5, "fh": 5e-6, "fk": 44e-6, "fa": 1626e-6, "fs": 33e-6, "fw": 5e-6, "fu": 45e-5, "fz": 0, "ft": 588e-6, "fe": 917e-6, "fr": 3373e-6, "fl": 884e-6, "fj": 84e-5, "fb": 5e-6, "fx": 0, "fi": 1505e-6, "fq": 0, "ff": 308e-6, "fg": 5e-6, "fm": 11e-6, "fn": 33e-6, "f ": 439e-6, "fy": 511e-6, "fo": 4049e-6, "gc": 11e-6, "gp": 27e-6, "gv": 115e-6, "gd": 341e-6, "gh": 341e-6, "gk": 71e-6, "ga": 15e-4, "gs": 1357e-6, "gw": 11e-6, "gu": 571e-6, "gz": 5e-6, "gt": 423e-6, "ge": 6911e-6, "gr": 251e-5, "gl": 687e-6, "gj": 604e-6, "gb": 71e-6, "gx": 0, "gi": 1417e-6, "gq": 0, "gf": 104e-6, "gg": 1802e-6, "gm": 38e-6, "gn": 725e-6, "g ": 9278e-6, "gy": 159e-6, "go": 5e-4, "mc": 22e-6, "mp": 483e-6, "mv": 38e-6, "md": 82e-6, "mh": 77e-6, "mk": 121e-6, "ma": 3076e-6, "ms": 709e-6, "mw": 16e-6, "mu": 1758e-6, "mz": 11e-6, "mt": 363e-6, "me": 6268e-6, "mr": 527e-6, "ml": 396e-6, "mj": 16e-6, "mb": 577e-6, "mx": 0, "mi": 2412e-6, "mq": 0, "mf": 286e-6, "mg": 27e-6, "mm": 2384e-6, "mn": 154e-6, "m ": 5889e-6, "my": 231e-6, "mo": 1555e-6, "nc": 357e-6, "np": 66e-6, "nv": 22e-5, "nd": 5988e-6, "nh": 286e-6, "nk": 67e-5, "na": 2878e-6, "ns": 5416e-6, "nw": 38e-6, "nu": 379e-6, "nz": 71e-6, "nt": 4246e-6, "ne": 9223e-6, "nr": 439e-6, "nl": 577e-6, "nj": 104e-6, "nb": 577e-6, "nx": 5e-6, "ni": 2741e-6, "nq": 0, "nf": 341e-6, "ng": 4598e-6, "nm": 187e-6, "nn": 4812e-6, "n ": 0.023786, "ny": 439e-6, "no": 3076e-6, " c": 273e-5, " p": 573e-5, " v": 6273e-6, " d": 9547e-6, " h": 7339e-6, " k": 6416e-6, " a": 9218e-6, " s": 0.016733, " w": 527e-6, " u": 2285e-6, " z": 88e-6, " t": 6955e-6, " e": 0.016853, " r": 3801e-6, " l": 5015e-6, " j": 1357e-6, " b": 7949e-6, " x": 49e-6, " i": 0.013255, " q": 55e-6, " f": 0.010371, " g": 3884e-6, " m": 6773e-6, " n": 4334e-6, "  ": 7114e-6, " y": 45e-5, " o": 9866e-6, "yc": 104e-6, "yp": 214e-6, "yv": 55e-6, "yd": 483e-6, "yh": 27e-6, "yk": 22e-5, "ya": 428e-6, "ys": 813e-6, "yw": 5e-6, "yu": 16e-6, "yz": 0, "yt": 511e-6, "ye": 791e-6, "yr": 687e-6, "yl": 599e-6, "yj": 0, "yb": 55e-6, "yx": 5e-6, "yi": 16e-6, "yq": 5e-6, "yf": 55e-6, "yg": 884e-6, "ym": 231e-6, "yn": 368e-6, "y ": 1928e-6, "yy": 5e-6, "yo": 143e-6, "oc": 33e-5, "op": 1494e-6, "ov": 1846e-6, "od": 775e-6, "oh": 225e-6, "ok": 956e-6, "oa": 137e-6, "os": 1401e-6, "ow": 165e-6, "ou": 1093e-6, "oz": 22e-6, "ot": 1692e-6, "oe": 368e-6, "or": 8861e-6, "ol": 3411e-6, "oj": 22e-6, "ob": 417e-6, "ox": 22e-6, "oi": 236e-6, "oq": 22e-6, "of": 626e-6, "og": 7257e-6, "om": 7982e-6, "on": 4757e-6, "o ": 1829e-6, "oy": 82e-6, "oo": 198e-6 };
+const bigram_no = {
+  total_count: total_count$5,
+  probabilities: probabilities$5
+};
+const total_count$4 = 242727;
+const probabilities$4 = { "cc": 7e-5, "cp": 4e-6, "cv": 0, "cd": 16e-6, "ch": 865e-6, "ck": 42e-5, "ca": 503e-6, "cs": 49e-6, "cw": 0, "cu": 136e-6, "cz": 12e-6, "ct": 103e-6, "ce": 358e-6, "cr": 14e-5, "cl": 91e-6, "cj": 0, "cb": 16e-6, "cx": 0, "ci": 301e-6, "cq": 16e-6, "cf": 8e-6, "cg": 8e-6, "cm": 21e-6, "cn": 29e-6, "c ": 222e-6, "cy": 41e-6, "co": 585e-6, "pc": 33e-6, "pp": 943e-6, "pv": 33e-6, "pd": 12e-6, "ph": 202e-6, "pk": 128e-6, "pa": 3399e-6, "ps": 309e-6, "pw": 0, "pu": 2472e-6, "pz": 0, "pt": 239e-6, "pe": 323e-5, "pr": 626e-6, "pl": 404e-6, "pj": 12e-6, "pb": 0, "px": 0, "pi": 297e-5, "pq": 0, "pf": 4e-6, "pg": 0, "pm": 54e-6, "pn": 58e-6, "p ": 128e-6, "py": 416e-6, "po": 1784e-6, "vc": 4e-6, "vp": 0, "vv": 4e-6, "vd": 4e-6, "vh": 62e-6, "vk": 152e-6, "va": 7267e-6, "vs": 91e-6, "vw": 0, "vu": 304e-5, "vz": 0, "vt": 313e-6, "ve": 2064e-6, "vr": 103e-6, "vl": 387e-6, "vj": 4e-6, "vb": 0, "vx": 0, "vi": 3378e-6, "vq": 0, "vf": 4e-6, "vg": 8e-6, "vm": 0, "vn": 152e-6, "v ": 391e-6, "vy": 251e-6, "vo": 1207e-6, "dc": 21e-6, "dp": 12e-6, "dv": 49e-6, "dd": 66e-6, "dh": 66e-6, "dk": 29e-6, "da": 1121e-6, "ds": 177e-6, "dw": 54e-6, "du": 54e-5, "dz": 4e-6, "dt": 66e-6, "de": 4095e-6, "dr": 251e-6, "dl": 74e-6, "dj": 29e-6, "db": 21e-6, "dx": 4e-6, "di": 1681e-6, "dq": 8e-6, "df": 4e-6, "dg": 54e-6, "dm": 66e-6, "dn": 111e-6, "d ": 807e-6, "dy": 758e-6, "do": 989e-6, "hc": 29e-6, "hp": 12e-6, "hv": 111e-6, "hd": 1644e-6, "hh": 12e-6, "hk": 297e-6, "ha": 2365e-6, "hs": 62e-6, "hw": 41e-6, "hu": 531e-6, "hz": 4e-6, "ht": 2216e-6, "he": 2596e-6, "hr": 152e-6, "hl": 264e-6, "hj": 919e-6, "hb": 21e-6, "hx": 0, "hi": 1409e-6, "hq": 8e-6, "hf": 25e-6, "hg": 21e-6, "hm": 396e-6, "hn": 1788e-6, "h ": 416e-6, "hy": 569e-6, "ho": 1001e-6, "kc": 4e-6, "kp": 62e-6, "kv": 25e-6, "kd": 21e-6, "kh": 111e-6, "kk": 3156e-6, "ka": 0.010415, "ks": 4194e-6, "kw": 4e-6, "ku": 6621e-6, "kz": 0, "kt": 321e-6, "ke": 4346e-6, "kr": 622e-6, "kl": 293e-6, "kj": 87e-6, "kb": 12e-6, "kx": 0, "ki": 5986e-6, "kq": 0, "kf": 37e-6, "kg": 8e-6, "km": 152e-6, "kn": 317e-6, "k ": 1018e-6, "ky": 1561e-6, "ko": 5105e-6, "ac": 511e-6, "ap": 15e-4, "av": 1866e-6, "ad": 861e-6, "ah": 1071e-6, "ak": 3003e-6, "aa": 9158e-6, "as": 6546e-6, "aw": 115e-6, "au": 2991e-6, "az": 66e-6, "at": 4635e-6, "ae": 379e-6, "ar": 5619e-6, "al": 0.012409, "aj": 2674e-6, "ab": 293e-6, "ax": 41e-6, "ai": 9698e-6, "aq": 8e-6, "af": 227e-6, "ag": 396e-6, "am": 3007e-6, "an": 0.014576, "a ": 0.031809, "ay": 268e-6, "ao": 173e-6, "sc": 305e-6, "sp": 63e-5, "sv": 1281e-6, "sd": 111e-6, "sh": 449e-6, "sk": 2954e-6, "sa": 0.011045, "ss": 7894e-6, "sw": 49e-6, "su": 3448e-6, "sz": 8e-6, "st": 0.011882, "se": 9117e-6, "sr": 157e-6, "sl": 667e-6, "sj": 161e-6, "sb": 103e-6, "sx": 0, "si": 0.010584, "sq": 37e-6, "sf": 45e-6, "sg": 16e-6, "sm": 379e-6, "sn": 272e-6, "s ": 5385e-6, "sy": 775e-6, "so": 1767e-6, "wc": 4e-6, "wp": 8e-6, "wv": 0, "wd": 0, "wh": 16e-6, "wk": 21e-6, "wa": 387e-6, "ws": 74e-6, "ww": 8e-6, "wu": 0, "wz": 0, "wt": 16e-6, "we": 268e-6, "wr": 54e-6, "wl": 41e-6, "wj": 0, "wb": 8e-6, "wx": 0, "wi": 293e-6, "wq": 0, "wf": 4e-6, "wg": 0, "wm": 0, "wn": 54e-6, "w ": 161e-6, "wy": 4e-6, "wo": 132e-6, "uc": 128e-6, "up": 1162e-6, "uv": 2002e-6, "ud": 968e-6, "uh": 696e-6, "uk": 2872e-6, "ua": 807e-6, "us": 5129e-6, "uw": 12e-6, "uu": 4697e-6, "uz": 8e-6, "ut": 3885e-6, "ue": 1566e-6, "ur": 274e-5, "ul": 3448e-6, "uj": 28e-5, "ub": 128e-6, "ux": 29e-6, "ui": 164e-5, "uq": 0, "uf": 29e-6, "ug": 95e-6, "um": 943e-6, "un": 5376e-6, "u ": 213e-5, "uy": 29e-6, "uo": 5999e-6, "zc": 0, "zp": 8e-6, "zv": 0, "zd": 0, "zh": 25e-6, "zk": 0, "za": 103e-6, "zs": 0, "zw": 4e-6, "zu": 33e-6, "zz": 99e-6, "zt": 4e-6, "ze": 115e-6, "zr": 0, "zl": 4e-6, "zj": 4e-6, "zb": 25e-6, "zx": 0, "zi": 107e-6, "zq": 0, "zf": 4e-6, "zg": 0, "zm": 0, "zn": 12e-6, "z ": 14e-5, "zy": 8e-6, "zo": 78e-6, "tc": 25e-6, "tp": 87e-6, "tv": 499e-6, "td": 8e-6, "th": 906e-6, "tk": 873e-6, "ta": 0.01477, "ts": 187e-5, "tw": 62e-6, "tu": 5739e-6, "tz": 78e-6, "tt": 7791e-6, "te": 8174e-6, "tr": 1425e-6, "tl": 218e-6, "tj": 305e-6, "tb": 25e-6, "tx": 16e-6, "ti": 8231e-6, "tq": 0, "tf": 41e-6, "tg": 21e-6, "tm": 449e-6, "tn": 787e-6, "t ": 702e-5, "ty": 2604e-6, "to": 4837e-6, "ec": 202e-6, "ep": 428e-6, "ev": 1215e-6, "ed": 1149e-6, "eh": 1075e-6, "ek": 1912e-6, "ea": 1079e-6, "es": 6015e-6, "ew": 14e-5, "eu": 1116e-6, "ez": 128e-6, "et": 5854e-6, "ee": 4458e-6, "er": 6283e-6, "el": 9472e-6, "ej": 255e-6, "eb": 202e-6, "ex": 58e-6, "ei": 4033e-6, "eq": 16e-6, "ef": 45e-6, "eg": 305e-6, "em": 1755e-6, "en": 0.018354, "e ": 5957e-6, "ey": 404e-6, "eo": 482e-6, "rc": 185e-6, "rp": 297e-6, "rv": 84e-5, "rd": 519e-6, "rh": 482e-6, "rk": 1751e-6, "ra": 4573e-6, "rs": 762e-6, "rw": 45e-6, "ru": 1718e-6, "rz": 62e-6, "rt": 1335e-6, "re": 2336e-6, "rr": 581e-6, "rl": 33e-5, "rj": 1496e-6, "rb": 91e-6, "rx": 8e-6, "ri": 6419e-6, "rq": 4e-6, "rf": 95e-6, "rg": 577e-6, "rm": 61e-5, "rn": 556e-6, "r ": 1038e-6, "ry": 412e-6, "ro": 267e-5, "lc": 21e-6, "lp": 486e-6, "lv": 424e-6, "ld": 218e-6, "lh": 47e-5, "lk": 1837e-6, "la": 0.010658, "ls": 523e-6, "lw": 8e-6, "lu": 4845e-6, "lz": 25e-6, "lt": 2748e-6, "le": 4944e-6, "lr": 25e-6, "ll": 8108e-6, "lj": 461e-6, "lb": 325e-6, "lx": 0, "li": 0.011144, "lq": 8e-6, "lf": 7e-5, "lg": 87e-6, "lm": 1994e-6, "ln": 589e-6, "l ": 2027e-6, "ly": 672e-6, "lo": 3671e-6, "jc": 0, "jp": 21e-6, "jv": 8e-6, "jd": 12e-6, "jh": 41e-6, "jk": 132e-6, "ja": 0.010506, "js": 148e-6, "jw": 0, "ju": 1149e-6, "jz": 0, "jt": 54e-6, "je": 1187e-6, "jr": 511e-6, "jl": 264e-6, "jj": 0, "jb": 0, "jx": 0, "ji": 704e-6, "jq": 0, "jf": 8e-6, "jg": 0, "jm": 49e-6, "jn": 202e-6, "j ": 7e-4, "jy": 49e-6, "jo": 4676e-6, "bc": 8e-6, "bp": 0, "bv": 8e-6, "bd": 12e-6, "bh": 29e-6, "bk": 12e-6, "ba": 56e-5, "bs": 7e-5, "bw": 0, "bu": 531e-6, "bz": 0, "bt": 8e-6, "be": 63e-5, "br": 457e-6, "bl": 169e-6, "bj": 12e-6, "bb": 95e-6, "bx": 0, "bi": 342e-6, "bq": 0, "bf": 0, "bg": 8e-6, "bm": 21e-6, "bn": 29e-6, "b ": 128e-6, "by": 91e-6, "bo": 416e-6, "xc": 0, "xp": 16e-6, "xv": 4e-6, "xd": 0, "xh": 0, "xk": 0, "xa": 33e-6, "xs": 8e-6, "xw": 0, "xu": 4e-6, "xz": 0, "xt": 12e-6, "xe": 25e-6, "xr": 8e-6, "xl": 0, "xj": 0, "xb": 29e-6, "xx": 8e-6, "xi": 78e-6, "xq": 0, "xf": 8e-6, "xg": 0, "xm": 4e-6, "xn": 0, "x ": 111e-6, "xy": 4e-6, "xo": 0, "ic": 56e-5, "ip": 828e-6, "iv": 1767e-6, "id": 1767e-6, "ih": 902e-6, "ik": 4738e-6, "ia": 4079e-6, "is": 0.014547, "iw": 12e-6, "iu": 268e-6, "iz": 54e-6, "it": 8211e-6, "ie": 3506e-6, "ir": 2163e-6, "il": 5887e-6, "ij": 2097e-6, "ib": 173e-6, "ix": 41e-6, "ii": 4824e-6, "iq": 16e-6, "if": 136e-6, "ig": 441e-6, "im": 3869e-6, "in": 0.018057, "i ": 0.012512, "iy": 82e-6, "io": 2188e-6, "qc": 0, "qp": 0, "qv": 12e-6, "qd": 0, "qh": 0, "qk": 0, "qa": 0, "qs": 0, "qw": 0, "qu": 169e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 4e-6, "q ": 12e-6, "qy": 4e-6, "qo": 0, "fc": 29e-6, "fp": 0, "fv": 0, "fd": 0, "fh": 12e-6, "fk": 8e-6, "fa": 206e-6, "fs": 33e-6, "fw": 0, "fu": 111e-6, "fz": 4e-6, "ft": 91e-6, "fe": 358e-6, "fr": 313e-6, "fl": 148e-6, "fj": 8e-6, "fb": 0, "fx": 0, "fi": 371e-6, "fq": 0, "ff": 87e-6, "fg": 21e-6, "fm": 0, "fn": 0, "f ": 247e-6, "fy": 25e-6, "fo": 284e-6, "gc": 8e-6, "gp": 21e-6, "gv": 8e-6, "gd": 16e-6, "gh": 95e-6, "gk": 16e-6, "ga": 849e-6, "gs": 87e-6, "gw": 0, "gu": 218e-6, "gz": 4e-6, "gt": 29e-6, "ge": 639e-6, "gr": 363e-6, "gl": 268e-6, "gj": 8e-6, "gb": 8e-6, "gx": 0, "gi": 1063e-6, "gq": 0, "gf": 4e-6, "gg": 95e-6, "gm": 45e-6, "gn": 148e-6, "g ": 474e-6, "gy": 29e-6, "go": 441e-6, "mc": 49e-6, "mp": 964e-6, "mv": 4e-6, "md": 21e-6, "mh": 8e-6, "mk": 103e-6, "ma": 7267e-6, "ms": 206e-6, "mw": 8e-6, "mu": 2427e-6, "mz": 0, "mt": 7e-5, "me": 4487e-6, "mr": 128e-6, "ml": 99e-6, "mj": 16e-6, "mb": 218e-6, "mx": 16e-6, "mi": 5278e-6, "mq": 0, "mf": 25e-6, "mg": 12e-6, "mm": 1487e-6, "mn": 408e-6, "m ": 935e-6, "my": 96e-5, "mo": 1203e-6, "nc": 264e-6, "np": 33e-5, "nv": 342e-6, "nd": 927e-6, "nh": 354e-6, "nk": 2109e-6, "na": 6097e-6, "ns": 3123e-6, "nw": 66e-6, "nu": 1318e-6, "nz": 54e-6, "nt": 5162e-6, "ne": 7832e-6, "nr": 177e-6, "nl": 342e-6, "nj": 391e-6, "nb": 136e-6, "nx": 0, "ni": 487e-5, "nq": 4e-6, "nf": 91e-6, "ng": 15e-4, "nm": 338e-6, "nn": 5187e-6, "n ": 0.040094, "ny": 1042e-6, "no": 2196e-6, " c": 1285e-6, " p": 7955e-6, " v": 7004e-6, " d": 1252e-6, " h": 5018e-6, " k": 0.013113, " a": 5657e-6, " s": 0.011474, " w": 663e-6, " u": 1331e-6, " z": 14e-5, " t": 7568e-6, " e": 4899e-6, " r": 3481e-6, " l": 5685e-6, " j": 0.010543, " b": 1384e-6, " x": 74e-6, " i": 2134e-6, " q": 7e-5, " f": 981e-6, " g": 1013e-6, " m": 735e-5, " n": 3733e-6, "  ": 6081e-6, " y": 2657e-6, " o": 0.011082, "yc": 16e-6, "yp": 243e-6, "yv": 375e-6, "yd": 21e-5, "yh": 2109e-6, "yk": 1046e-6, "ya": 152e-6, "ys": 2249e-6, "yw": 29e-6, "yu": 16e-6, "yz": 0, "yt": 1673e-6, "ye": 404e-6, "yr": 391e-6, "yl": 1425e-6, "yj": 58e-6, "yb": 29e-6, "yx": 0, "yi": 56e-5, "yq": 0, "yf": 4e-6, "yg": 29e-6, "ym": 61e-5, "yn": 1001e-6, "y ": 1182e-6, "yy": 783e-6, "yo": 74e-6, "oc": 251e-6, "op": 1438e-6, "ov": 1005e-6, "od": 1339e-6, "oh": 1829e-6, "ok": 3794e-6, "oa": 849e-6, "os": 3881e-6, "ow": 231e-6, "ou": 1327e-6, "oz": 25e-6, "ot": 2575e-6, "oe": 383e-6, "or": 302e-5, "ol": 5891e-6, "oj": 601e-6, "ob": 297e-6, "ox": 58e-6, "oi": 5628e-6, "oq": 4e-6, "of": 371e-6, "og": 222e-6, "om": 2802e-6, "on": 0.012545, "o ": 2501e-6, "oy": 173e-6, "oo": 1393e-6 };
+const bigram_fi = {
+  total_count: total_count$4,
+  probabilities: probabilities$4
+};
+const total_count$3 = 177067;
+const probabilities$3 = { "cc": 107e-6, "cp": 17e-6, "cv": 23e-6, "cd": 17e-6, "ch": 192e-5, "ck": 277e-6, "ca": 6348e-6, "cs": 102e-6, "cw": 0, "cu": 458e-5, "cz": 34e-6, "ct": 2169e-6, "ce": 4569e-6, "cr": 2332e-6, "cl": 813e-6, "cj": 0, "cb": 11e-6, "cx": 0, "ci": 4196e-6, "cq": 6e-6, "cf": 0, "cg": 0, "cm": 56e-6, "cn": 294e-6, "c ": 2383e-6, "cy": 34e-6, "co": 5727e-6, "pc": 45e-6, "pp": 85e-6, "pv": 6e-6, "pd": 68e-6, "ph": 265e-6, "pk": 34e-6, "pa": 2451e-6, "ps": 175e-6, "pw": 0, "pu": 1802e-6, "pz": 6e-6, "pt": 542e-6, "pe": 5868e-6, "pr": 6145e-6, "pl": 762e-6, "pj": 0, "pb": 0, "px": 0, "pi": 1519e-6, "pq": 0, "pf": 0, "pg": 6e-6, "pm": 4e-5, "pn": 282e-6, "p ": 751e-6, "py": 4e-5, "po": 3501e-6, "vc": 141e-6, "vp": 6e-6, "vv": 0, "vd": 56e-6, "vh": 0, "vk": 649e-6, "va": 1875e-6, "vs": 215e-6, "vw": 0, "vu": 158e-6, "vz": 11e-6, "vt": 4e-5, "ve": 2287e-6, "vr": 215e-6, "vl": 119e-6, "vj": 6e-6, "vb": 0, "vx": 0, "vi": 2152e-6, "vq": 0, "vf": 0, "vg": 11e-6, "vm": 6e-6, "vn": 254e-6, "v ": 1034e-6, "vy": 11e-6, "vo": 954e-6, "dc": 68e-6, "dp": 6e-6, "dv": 62e-6, "dd": 4e-5, "dh": 51e-6, "dk": 23e-6, "da": 2039e-6, "ds": 79e-6, "dw": 4e-5, "du": 153e-5, "dz": 11e-6, "dt": 23e-6, "de": 0.012882, "dr": 921e-6, "dl": 56e-6, "dj": 28e-6, "db": 56e-6, "dx": 6e-6, "di": 9544e-6, "dq": 0, "df": 6e-6, "dg": 34e-6, "dm": 22e-5, "dn": 119e-6, "d ": 2558e-6, "dy": 102e-6, "do": 1446e-6, "hc": 0, "hp": 0, "hv": 17e-6, "hd": 28e-6, "hh": 17e-6, "hk": 11e-6, "ha": 2372e-6, "hs": 28e-6, "hw": 23e-6, "hu": 26e-5, "hz": 0, "ht": 124e-6, "he": 1254e-6, "hr": 367e-6, "hl": 102e-6, "hj": 11e-6, "hb": 6e-6, "hx": 0, "hi": 1434e-6, "hq": 0, "hf": 0, "hg": 11e-6, "hm": 85e-6, "hn": 243e-6, "h ": 474e-6, "hy": 68e-6, "ho": 74e-5, "kc": 6e-6, "kp": 11e-6, "kv": 28e-6, "kd": 11e-6, "kh": 79e-6, "kk": 28e-6, "ka": 1463e-6, "ks": 102e-6, "kw": 6e-6, "ku": 215e-6, "kz": 0, "kt": 23e-6, "ke": 39e-5, "kr": 203e-6, "kl": 102e-6, "kj": 0, "kb": 11e-6, "kx": 0, "ki": 616e-6, "kq": 0, "kf": 17e-6, "kg": 0, "km": 328e-6, "kn": 28e-6, "k ": 904e-6, "ky": 56e-6, "ko": 537e-6, "ac": 2637e-6, "ap": 1141e-6, "av": 1135e-6, "ad": 1327e-6, "ah": 226e-6, "ak": 215e-6, "aa": 215e-6, "as": 2519e-6, "aw": 51e-6, "au": 1937e-6, "az": 825e-6, "at": 0.011493, "ae": 1158e-6, "ar": 0.010092, "al": 9454e-6, "aj": 254e-6, "ab": 745e-6, "ax": 102e-6, "ai": 5405e-6, "aq": 17e-6, "af": 1852e-6, "ag": 796e-6, "am": 2654e-6, "an": 959e-5, "a ": 0.027363, "ay": 265e-6, "ao": 73e-6, "sc": 2999e-6, "sp": 1361e-6, "sv": 113e-6, "sd": 102e-6, "sh": 248e-6, "sk": 649e-6, "sa": 3965e-6, "ss": 446e-6, "sw": 4e-5, "su": 3411e-6, "sz": 4e-5, "st": 0.013916, "se": 3084e-6, "sr": 169e-6, "sl": 395e-6, "sj": 17e-6, "sb": 119e-6, "sx": 0, "si": 2044e-6, "sq": 0, "sf": 198e-6, "sg": 11e-6, "sm": 537e-6, "sn": 192e-6, "s ": 4405e-6, "sy": 56e-6, "so": 1288e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 11e-6, "wh": 28e-6, "wk": 23e-6, "wa": 435e-6, "ws": 34e-6, "ww": 0, "wu": 0, "wz": 0, "wt": 0, "we": 237e-6, "wr": 17e-6, "wl": 23e-6, "wj": 0, "wb": 11e-6, "wx": 0, "wi": 226e-6, "wq": 0, "wf": 11e-6, "wg": 0, "wm": 6e-6, "wn": 4e-5, "w ": 9e-5, "wy": 0, "wo": 85e-6, "uc": 209e-5, "up": 2248e-6, "uv": 13e-5, "ud": 1378e-6, "uh": 113e-6, "uk": 107e-6, "ua": 785e-6, "us": 2316e-6, "uw": 0, "uu": 17e-6, "uz": 429e-6, "ut": 1621e-6, "ue": 633e-6, "ur": 3304e-6, "ul": 0.01051, "uj": 73e-6, "ub": 1135e-6, "ux": 113e-6, "ui": 314e-5, "uq": 28e-6, "uf": 68e-6, "ug": 412e-6, "um": 2197e-6, "un": 0.010482, "u ": 5326e-6, "uy": 23e-6, "uo": 96e-6, "zc": 0, "zp": 11e-6, "zv": 96e-6, "zd": 4e-5, "zh": 17e-6, "zk": 23e-6, "za": 1169e-6, "zs": 0, "zw": 6e-6, "zu": 169e-6, "zz": 51e-6, "zt": 23e-6, "ze": 683e-6, "zr": 45e-6, "zl": 17e-6, "zj": 0, "zb": 136e-6, "zx": 0, "zi": 1344e-6, "zq": 0, "zf": 0, "zg": 23e-6, "zm": 6e-6, "zn": 51e-6, "z ": 915e-6, "zy": 28e-6, "zo": 587e-6, "tc": 45e-6, "tp": 28e-6, "tv": 51e-6, "td": 79e-6, "th": 644e-6, "tk": 28e-6, "ta": 5744e-6, "ts": 164e-6, "tw": 62e-6, "tu": 4032e-6, "tz": 107e-6, "tt": 345e-6, "te": 0.016141, "tr": 5162e-6, "tl": 277e-6, "tj": 28e-6, "tb": 186e-6, "tx": 0, "ti": 5823e-6, "tq": 0, "tf": 62e-6, "tg": 17e-6, "tm": 85e-6, "tn": 26e-5, "t ": 0.013441, "ty": 13e-5, "to": 4371e-6, "ec": 2626e-6, "ep": 131e-5, "ev": 892e-6, "ed": 2078e-6, "eh": 181e-6, "ek": 141e-6, "ea": 6399e-6, "es": 9567e-6, "ew": 68e-6, "eu": 1197e-6, "ez": 1107e-6, "et": 2412e-6, "ee": 1096e-6, "er": 8522e-6, "el": 4863e-6, "ej": 113e-5, "eb": 345e-6, "ex": 587e-6, "ei": 27e-4, "eq": 6e-6, "ef": 373e-6, "eg": 3264e-6, "em": 1649e-6, "en": 6839e-6, "e ": 0.036794, "ey": 136e-6, "eo": 593e-6, "rc": 616e-6, "rp": 248e-6, "rv": 514e-6, "rd": 932e-6, "rh": 243e-6, "rk": 265e-6, "ra": 0.010499, "rs": 926e-6, "rw": 23e-6, "ru": 3372e-6, "rz": 248e-6, "rt": 2378e-6, "re": 0.011566, "rr": 367e-6, "rl": 356e-6, "rj": 68e-6, "rb": 412e-6, "rx": 0, "ri": 0.011312, "rq": 6e-6, "rf": 124e-6, "rg": 841e-6, "rm": 1621e-6, "rn": 1124e-6, "r ": 5173e-6, "ry": 322e-6, "ro": 6692e-6, "lc": 198e-6, "lp": 96e-6, "lv": 367e-6, "ld": 599e-6, "lh": 68e-6, "lk": 22e-5, "la": 5552e-6, "ls": 175e-6, "lw": 23e-6, "lu": 3886e-6, "lz": 34e-6, "lt": 1107e-6, "le": 6009e-6, "lr": 56e-6, "ll": 853e-6, "lj": 4e-5, "lb": 395e-6, "lx": 0, "li": 6133e-6, "lq": 0, "lf": 107e-6, "lg": 158e-6, "lm": 729e-6, "ln": 412e-6, "l ": 0.013023, "ly": 22e-5, "lo": 4111e-6, "jc": 6e-6, "jp": 6e-6, "jv": 0, "jd": 11e-6, "jh": 6e-6, "jk": 11e-6, "ja": 1372e-6, "js": 11e-6, "jw": 0, "ju": 1039e-6, "jz": 0, "jt": 79e-6, "je": 288e-6, "jr": 73e-6, "jl": 62e-6, "jj": 34e-6, "jb": 0, "jx": 0, "ji": 79e-6, "jq": 0, "jf": 6e-6, "jg": 11e-6, "jm": 6e-6, "jn": 45e-6, "j ": 186e-6, "jy": 0, "jo": 599e-6, "bc": 34e-6, "bp": 0, "bv": 0, "bd": 34e-6, "bh": 0, "bk": 0, "ba": 161e-5, "bs": 198e-6, "bw": 0, "bu": 1113e-6, "bz": 11e-6, "bt": 45e-6, "be": 994e-6, "br": 1299e-6, "bl": 774e-6, "bj": 6e-6, "bb": 45e-6, "bx": 0, "bi": 1361e-6, "bq": 0, "bf": 11e-6, "bg": 11e-6, "bm": 0, "bn": 79e-6, "b ": 452e-6, "by": 79e-6, "bo": 1062e-6, "xc": 23e-6, "xp": 96e-6, "xv": 28e-6, "xd": 0, "xh": 0, "xk": 0, "xa": 164e-6, "xs": 17e-6, "xw": 0, "xu": 4e-5, "xz": 0, "xt": 124e-6, "xe": 119e-6, "xr": 0, "xl": 79e-6, "xj": 0, "xb": 11e-6, "xx": 62e-6, "xi": 243e-6, "xq": 0, "xf": 0, "xg": 0, "xm": 0, "xn": 0, "x ": 328e-6, "xy": 17e-6, "xo": 28e-6, "ic": 5738e-6, "ip": 808e-6, "iv": 2304e-6, "id": 1186e-6, "ih": 237e-6, "ik": 215e-6, "ia": 7189e-6, "is": 3857e-6, "iw": 0, "iu": 3202e-6, "iz": 105e-5, "it": 6241e-6, "ie": 5405e-6, "ir": 1265e-6, "il": 4315e-6, "ij": 113e-6, "ib": 429e-6, "ix": 169e-6, "ii": 3507e-6, "iq": 11e-6, "if": 486e-6, "ig": 683e-6, "im": 2174e-6, "in": 0.016672, "i ": 0.016536, "iy": 11e-6, "io": 3259e-6, "qc": 0, "qp": 0, "qv": 6e-6, "qd": 0, "qh": 0, "qk": 0, "qa": 17e-6, "qs": 0, "qw": 0, "qu": 107e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 6e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 17e-6, "qy": 0, "qo": 0, "fc": 107e-6, "fp": 6e-6, "fv": 0, "fd": 0, "fh": 6e-6, "fk": 11e-6, "fa": 2197e-6, "fs": 11e-6, "fw": 0, "fu": 322e-6, "fz": 0, "ft": 96e-6, "fe": 926e-6, "fr": 887e-6, "fl": 457e-6, "fj": 11e-6, "fb": 6e-6, "fx": 0, "fi": 196e-5, "fq": 0, "ff": 56e-6, "fg": 6e-6, "fm": 6e-6, "fn": 45e-6, "f ": 356e-6, "fy": 6e-6, "fo": 3191e-6, "gc": 6e-6, "gp": 0, "gv": 11e-6, "gd": 56e-6, "gh": 395e-6, "gk": 28e-6, "ga": 966e-6, "gs": 169e-6, "gw": 28e-6, "gu": 576e-6, "gz": 6e-6, "gt": 85e-6, "ge": 183e-5, "gr": 1807e-6, "gl": 26e-5, "gj": 11e-6, "gb": 11e-6, "gx": 0, "gi": 2824e-6, "gq": 6e-6, "gf": 0, "gg": 51e-6, "gm": 45e-6, "gn": 198e-6, "g ": 683e-6, "gy": 68e-6, "go": 548e-6, "mc": 56e-6, "mp": 144e-5, "mv": 23e-6, "md": 0, "mh": 34e-6, "mk": 51e-6, "ma": 493e-5, "ms": 79e-6, "mw": 6e-6, "mu": 3598e-6, "mz": 0, "mt": 68e-6, "me": 4128e-6, "mr": 288e-6, "ml": 56e-6, "mj": 11e-6, "mb": 864e-6, "mx": 0, "mi": 3055e-6, "mq": 6e-6, "mf": 4e-5, "mg": 6e-6, "mm": 152e-6, "mn": 1395e-6, "m ": 2107e-6, "my": 136e-6, "mo": 1931e-6, "nc": 2016e-6, "np": 28e-6, "nv": 175e-6, "nd": 3129e-6, "nh": 79e-6, "nk": 345e-6, "na": 6184e-6, "ns": 2829e-6, "nw": 4e-5, "nu": 3908e-6, "nz": 378e-6, "nt": 8522e-6, "ne": 5919e-6, "nr": 277e-6, "nl": 192e-6, "nj": 79e-6, "nb": 107e-6, "nx": 11e-6, "ni": 6822e-6, "nq": 17e-6, "nf": 418e-6, "ng": 1034e-6, "nm": 147e-6, "nn": 452e-6, "n ": 0.020913, "ny": 152e-6, "no": 2276e-6, " c": 0.014119, " p": 0.013165, " v": 2073e-6, " d": 0.019608, " h": 2524e-6, " k": 153e-5, " a": 0.015892, " s": 0.012346, " w": 627e-6, " u": 7432e-6, " z": 745e-6, " t": 3383e-6, " e": 9036e-6, " r": 802e-5, " l": 5659e-6, " j": 196e-5, " b": 3422e-6, " x": 181e-6, " i": 8545e-6, " q": 4e-5, " f": 637e-5, " g": 2581e-6, " m": 6404e-6, " n": 0.010448, "  ": 6263e-6, " y": 158e-6, " o": 6935e-6, "yc": 4e-5, "yp": 6e-6, "yv": 17e-6, "yd": 34e-6, "yh": 17e-6, "yk": 17e-6, "ya": 79e-6, "ys": 9e-5, "yw": 6e-6, "yu": 45e-6, "yz": 28e-6, "yt": 85e-6, "ye": 9e-5, "yr": 85e-6, "yl": 136e-6, "yj": 0, "yb": 45e-6, "yx": 0, "yi": 45e-6, "yq": 6e-6, "yf": 0, "yg": 23e-6, "ym": 147e-6, "yn": 85e-6, "y ": 1e-3, "yy": 6e-6, "yo": 119e-6, "oc": 2293e-6, "op": 227e-5, "ov": 2129e-6, "od": 1124e-6, "oh": 277e-6, "ok": 26e-5, "oa": 1627e-6, "os": 3349e-6, "ow": 232e-6, "ou": 825e-6, "oz": 316e-6, "ot": 2372e-6, "oe": 282e-6, "or": 833e-5, "ol": 388e-5, "oj": 51e-6, "ob": 706e-6, "ox": 147e-6, "oi": 1034e-6, "oq": 6e-6, "of": 463e-6, "og": 678e-6, "om": 5162e-6, "on": 6822e-6, "o ": 5992e-6, "oy": 124e-6, "oo": 322e-6 };
+const bigram_ro = {
+  total_count: total_count$3,
+  probabilities: probabilities$3
+};
+const total_count$2 = 206202;
+const probabilities$2 = { "cc": 204e-6, "cp": 15e-6, "cv": 1e-5, "cd": 29e-6, "ch": 2047e-6, "ck": 349e-6, "ca": 1426e-6, "cs": 2677e-6, "cw": 5e-6, "cu": 276e-6, "cz": 53e-6, "ct": 276e-6, "ce": 1886e-6, "cr": 315e-6, "cl": 252e-6, "cj": 1e-5, "cb": 63e-6, "cx": 0, "ci": 2241e-6, "cq": 131e-6, "cf": 19e-6, "cg": 53e-6, "cm": 252e-6, "cn": 29e-6, "c ": 679e-6, "cy": 97e-6, "co": 1421e-6, "pc": 78e-6, "pp": 213e-6, "pv": 194e-6, "pd": 15e-6, "ph": 335e-6, "pk": 175e-6, "pa": 1765e-6, "ps": 432e-6, "pw": 0, "pu": 306e-6, "pz": 48e-6, "pt": 8e-4, "pe": 1566e-6, "pr": 897e-6, "pl": 2784e-6, "pj": 267e-6, "pb": 58e-6, "px": 5e-6, "pi": 1193e-6, "pq": 0, "pf": 68e-6, "pg": 0, "pm": 19e-6, "pn": 17e-5, "p ": 407e-6, "py": 34e-6, "po": 1756e-6, "vc": 39e-6, "vp": 0, "vv": 63e-6, "vd": 223e-6, "vh": 44e-6, "vk": 199e-6, "va": 2924e-6, "vs": 315e-6, "vw": 0, "vu": 58e-6, "vz": 175e-6, "vt": 281e-6, "ve": 3322e-6, "vr": 1499e-6, "vl": 742e-6, "vj": 116e-6, "vb": 16e-5, "vx": 0, "vi": 3026e-6, "vq": 15e-6, "vf": 44e-6, "vg": 267e-6, "vm": 19e-6, "vn": 616e-6, "v ": 858e-6, "vy": 48e-6, "vo": 1416e-6, "dc": 19e-6, "dp": 48e-6, "dv": 15e-5, "dd": 112e-6, "dh": 48e-6, "dk": 252e-6, "da": 2808e-6, "ds": 718e-6, "dw": 44e-6, "du": 577e-6, "dz": 223e-6, "dt": 475e-6, "de": 3666e-6, "dr": 761e-6, "dl": 407e-6, "dj": 1246e-6, "db": 233e-6, "dx": 0, "di": 1964e-6, "dq": 0, "df": 58e-6, "dg": 44e-6, "dm": 141e-6, "dn": 364e-6, "d ": 2245e-6, "dy": 53e-6, "do": 1465e-6, "hc": 24e-6, "hp": 24e-6, "hv": 58e-6, "hd": 53e-6, "hh": 19e-6, "hk": 15e-6, "ha": 4617e-6, "hs": 58e-6, "hw": 48e-6, "hu": 349e-6, "hz": 344e-6, "ht": 291e-6, "he": 2769e-6, "hr": 529e-6, "hl": 281e-6, "hj": 29e-6, "hb": 116e-6, "hx": 0, "hi": 907e-6, "hq": 5e-6, "hf": 0, "hg": 29e-6, "hm": 68e-6, "hn": 233e-6, "h ": 538e-6, "hy": 131e-6, "ho": 1954e-6, "kc": 82e-6, "kp": 388e-6, "kv": 364e-6, "kd": 15e-5, "kh": 403e-6, "kk": 1853e-6, "ka": 3176e-6, "ks": 839e-6, "kw": 0, "ku": 926e-6, "kz": 3244e-6, "kt": 786e-6, "ke": 4287e-6, "kr": 1048e-6, "kl": 761e-6, "kj": 92e-6, "kb": 708e-6, "kx": 0, "ki": 2177e-6, "kq": 0, "kf": 126e-6, "kg": 39e-6, "km": 301e-6, "kn": 868e-6, "k ": 0.010509, "ky": 78e-6, "ko": 4311e-6, "ac": 1285e-6, "ap": 1629e-6, "av": 902e-6, "ad": 2148e-6, "ah": 349e-6, "ak": 7624e-6, "aa": 145e-6, "as": 3506e-6, "aw": 73e-6, "au": 1591e-6, "az": 4559e-6, "at": 6392e-6, "ae": 79e-5, "ar": 7308e-6, "al": 8249e-6, "aj": 1872e-6, "ab": 1266e-6, "ax": 68e-6, "ai": 5451e-6, "aq": 24e-6, "af": 524e-6, "ag": 2866e-6, "am": 3327e-6, "an": 0.013249, "a ": 0.022269, "ay": 519e-6, "ao": 1091e-6, "sc": 752e-6, "sp": 892e-6, "sv": 412e-6, "sd": 184e-6, "sh": 436e-6, "sk": 732e-6, "sa": 6358e-6, "ss": 2245e-6, "sw": 53e-6, "su": 849e-6, "sz": 0.016595, "st": 34e-4, "se": 3618e-6, "sr": 582e-6, "sl": 664e-6, "sj": 58e-6, "sb": 1009e-6, "sx": 0, "si": 1853e-6, "sq": 48e-6, "sf": 16e-5, "sg": 3269e-6, "sm": 441e-6, "sn": 533e-6, "s ": 0.017095, "sy": 107e-6, "so": 1891e-6, "wc": 0, "wp": 5e-6, "wv": 0, "wd": 0, "wh": 63e-6, "wk": 1e-5, "wa": 407e-6, "ws": 15e-6, "ww": 24e-6, "wu": 1e-5, "wz": 0, "wt": 34e-6, "we": 257e-6, "wr": 58e-6, "wl": 5e-6, "wj": 0, "wb": 0, "wx": 0, "wi": 252e-6, "wq": 0, "wf": 1e-5, "wg": 0, "wm": 0, "wn": 39e-6, "w ": 131e-6, "wy": 1e-5, "wo": 73e-6, "uc": 378e-6, "up": 189e-6, "uv": 213e-6, "ud": 611e-6, "uh": 82e-6, "uk": 349e-6, "ua": 199e-6, "us": 2764e-6, "uw": 29e-6, "uu": 5e-6, "uz": 213e-6, "ut": 1295e-6, "ue": 815e-6, "ur": 3254e-6, "ul": 1479e-6, "uj": 39e-6, "ub": 32e-5, "ux": 344e-6, "ui": 456e-6, "uq": 5e-6, "uf": 48e-6, "ug": 732e-6, "um": 723e-6, "un": 883e-6, "u ": 524e-6, "uy": 58e-6, "uo": 24e-6, "zc": 68e-6, "zp": 378e-6, "zv": 349e-6, "zd": 451e-6, "zh": 87e-6, "zk": 921e-6, "za": 2289e-6, "zs": 3007e-6, "zw": 48e-6, "zu": 31e-5, "zz": 378e-6, "zt": 3123e-6, "ze": 4709e-6, "zr": 572e-6, "zl": 1028e-6, "zj": 194e-6, "zb": 179e-6, "zx": 5e-6, "zi": 2042e-6, "zq": 0, "zf": 92e-6, "zg": 2842e-6, "zm": 2168e-6, "zn": 1149e-6, "z ": 5941e-6, "zy": 73e-6, "zo": 1814e-6, "tc": 175e-6, "tp": 276e-6, "tv": 742e-6, "td": 233e-6, "th": 1086e-6, "tk": 1353e-6, "ta": 5931e-6, "ts": 1862e-6, "tw": 19e-6, "tu": 79e-5, "tz": 233e-6, "tt": 45e-4, "te": 8657e-6, "tr": 4229e-6, "tl": 2095e-6, "tj": 795e-6, "tb": 863e-6, "tx": 0, "ti": 3463e-6, "tq": 1e-5, "tf": 16e-5, "tg": 296e-6, "tm": 315e-6, "tn": 1023e-6, "t ": 0.012468, "ty": 296e-6, "to": 4714e-6, "ec": 114e-5, "ep": 2755e-6, "ev": 1528e-6, "ed": 1741e-6, "eh": 533e-6, "ek": 4112e-6, "ea": 815e-6, "es": 6387e-6, "ew": 116e-6, "eu": 931e-6, "ez": 2633e-6, "et": 7483e-6, "ee": 301e-6, "er": 9864e-6, "el": 0.012856, "ej": 495e-6, "eb": 747e-6, "ex": 126e-6, "ei": 1295e-6, "eq": 19e-6, "ef": 359e-6, "eg": 7216e-6, "em": 3007e-6, "en": 0.010684, "e ": 0.01015, "ey": 335e-6, "eo": 325e-6, "rc": 96e-5, "rp": 339e-6, "rv": 873e-6, "rd": 1237e-6, "rh": 306e-6, "rk": 839e-6, "ra": 5524e-6, "rs": 5718e-6, "rw": 15e-6, "ru": 674e-6, "rz": 582e-6, "rt": 404e-5, "re": 6057e-6, "rr": 781e-6, "rl": 1969e-6, "rj": 296e-6, "rb": 824e-6, "rx": 5e-6, "ri": 4234e-6, "rq": 29e-6, "rf": 276e-6, "rg": 1886e-6, "rm": 194e-5, "rn": 1499e-6, "r ": 5097e-6, "ry": 407e-6, "ro": 5989e-6, "lc": 31e-5, "lp": 242e-6, "lv": 684e-6, "ld": 1465e-6, "lh": 723e-6, "lk": 1571e-6, "la": 8758e-6, "ls": 3545e-6, "lw": 1e-5, "lu": 781e-6, "lz": 242e-6, "lt": 3705e-6, "le": 9607e-6, "lr": 213e-6, "ll": 5485e-6, "lj": 364e-6, "lb": 757e-6, "lx": 1e-5, "li": 3463e-6, "lq": 5e-6, "lf": 242e-6, "lg": 912e-6, "lm": 1009e-6, "ln": 892e-6, "l ": 7541e-6, "ly": 3613e-6, "lo": 3089e-6, "jc": 68e-6, "jp": 15e-6, "jv": 73e-6, "jd": 335e-6, "jh": 87e-6, "jk": 233e-6, "ja": 3249e-6, "js": 136e-6, "jw": 0, "ju": 296e-6, "jz": 141e-6, "jt": 902e-6, "je": 1678e-6, "jr": 771e-6, "jl": 223e-6, "jj": 39e-6, "jb": 989e-6, "jx": 0, "ji": 107e-6, "jq": 0, "jf": 24e-6, "jg": 34e-6, "jm": 19e-6, "jn": 1014e-6, "j ": 64e-5, "jy": 0, "jo": 582e-6, "bc": 82e-6, "bp": 5e-6, "bv": 34e-6, "bd": 412e-6, "bh": 68e-6, "bk": 175e-6, "ba": 8336e-6, "bs": 155e-6, "bw": 19e-6, "bu": 732e-6, "bz": 92e-6, "bt": 102e-6, "be": 6241e-6, "br": 1217e-6, "bl": 66e-5, "bj": 53e-6, "bb": 1528e-6, "bx": 0, "bi": 1111e-6, "bq": 0, "bf": 15e-6, "bg": 5e-6, "bm": 15e-6, "bn": 242e-6, "b ": 1164e-6, "by": 44e-6, "bo": 1149e-6, "xc": 0, "xp": 0, "xv": 19e-6, "xd": 24e-6, "xh": 5e-6, "xk": 5e-6, "xa": 39e-6, "xs": 44e-6, "xw": 0, "xu": 29e-6, "xz": 0, "xt": 24e-6, "xe": 15e-6, "xr": 1e-5, "xl": 5e-6, "xj": 5e-6, "xb": 19e-6, "xx": 0, "xi": 131e-6, "xq": 5e-6, "xf": 1e-5, "xg": 1e-5, "xm": 0, "xn": 5e-6, "x ": 383e-6, "xy": 0, "xo": 19e-6, "ic": 1528e-6, "ip": 417e-6, "iv": 718e-6, "id": 1552e-6, "ih": 175e-6, "ik": 3938e-6, "ia": 3632e-6, "is": 4088e-6, "iw": 0, "iu": 48e-5, "iz": 64e-5, "it": 1591e-6, "ie": 1324e-6, "ir": 1688e-6, "il": 3409e-6, "ij": 349e-6, "ib": 1086e-6, "ix": 73e-6, "ii": 339e-6, "iq": 53e-6, "if": 572e-6, "ig": 129e-5, "im": 1014e-6, "in": 6862e-6, "i ": 903e-5, "iy": 5e-6, "io": 863e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 0, "qs": 0, "qw": 0, "qu": 354e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 78e-6, "qy": 0, "qo": 0, "fc": 58e-6, "fp": 5e-6, "fv": 87e-6, "fd": 1e-5, "fh": 15e-6, "fk": 53e-6, "fa": 1145e-6, "fs": 53e-6, "fw": 5e-6, "fu": 276e-6, "fz": 29e-6, "ft": 102e-6, "fe": 1726e-6, "fr": 1605e-6, "fl": 892e-6, "fj": 87e-6, "fb": 39e-6, "fx": 0, "fi": 834e-6, "fq": 0, "ff": 112e-6, "fg": 58e-6, "fm": 15e-6, "fn": 102e-6, "f ": 1969e-6, "fy": 0, "fo": 1867e-6, "gc": 63e-6, "gp": 68e-6, "gv": 15e-5, "gd": 92e-6, "gh": 349e-6, "gk": 238e-6, "ga": 2328e-6, "gs": 398e-6, "gw": 19e-6, "gu": 592e-6, "gz": 116e-6, "gt": 349e-6, "ge": 2852e-6, "gr": 1009e-6, "gl": 606e-6, "gj": 47e-5, "gb": 2517e-6, "gx": 0, "gi": 1523e-6, "gq": 0, "gf": 97e-6, "gg": 349e-6, "gm": 136e-6, "gn": 1188e-6, "g ": 3414e-6, "gy": 741e-5, "go": 1338e-6, "mc": 107e-6, "mp": 621e-6, "mv": 349e-6, "md": 102e-6, "mh": 53e-6, "mk": 175e-6, "ma": 5955e-6, "ms": 849e-6, "mw": 1e-5, "mu": 766e-6, "mz": 592e-6, "mt": 427e-6, "me": 7822e-6, "mr": 558e-6, "ml": 485e-6, "mj": 126e-6, "mb": 1431e-6, "mx": 0, "mi": 2013e-6, "mq": 0, "mf": 73e-6, "mg": 155e-6, "mm": 31e-5, "mn": 1324e-6, "m ": 1945e-6, "my": 87e-6, "mo": 2202e-6, "nc": 2192e-6, "np": 306e-6, "nv": 422e-6, "nd": 2667e-6, "nh": 286e-6, "nk": 674e-6, "na": 5756e-6, "ns": 1198e-6, "nw": 68e-6, "nu": 1518e-6, "nz": 315e-6, "nt": 4947e-6, "ne": 4966e-6, "nr": 165e-6, "nl": 79e-5, "nj": 184e-6, "nb": 485e-6, "nx": 1e-5, "ni": 2216e-6, "nq": 15e-6, "nf": 257e-6, "ng": 1751e-6, "nm": 572e-6, "nn": 113e-5, "n ": 0.016557, "ny": 3967e-6, "no": 2134e-6, " c": 4685e-6, " p": 3943e-6, " v": 662e-5, " d": 3201e-6, " h": 5543e-6, " k": 9161e-6, " a": 0.019903, " s": 0.015034, " w": 655e-6, " u": 892e-6, " z": 946e-6, " t": 853e-5, " e": 6072e-6, " r": 4816e-6, " l": 7362e-6, " j": 4093e-6, " b": 5596e-6, " x": 92e-6, " i": 2619e-6, " q": 63e-6, " f": 7464e-6, " g": 2444e-6, " m": 9903e-6, " n": 4976e-6, "  ": 7861e-6, " y": 126e-6, " o": 29e-4, "yc": 82e-6, "yp": 92e-6, "yv": 291e-6, "yd": 131e-6, "yh": 16e-5, "yk": 335e-6, "ya": 144e-5, "ys": 669e-6, "yw": 15e-6, "yu": 403e-6, "yz": 238e-6, "yt": 456e-6, "ye": 2852e-6, "yr": 529e-6, "yl": 373e-6, "yj": 276e-6, "yb": 1945e-6, "yx": 15e-6, "yi": 1271e-6, "yq": 0, "yf": 87e-6, "yg": 136e-6, "ym": 87e-6, "yn": 723e-6, "y ": 3982e-6, "yy": 5e-6, "yo": 1023e-6, "oc": 436e-6, "op": 718e-6, "ov": 1164e-6, "od": 946e-6, "oh": 189e-6, "ok": 2177e-6, "oa": 145e-6, "os": 7527e-6, "ow": 126e-6, "ou": 1261e-6, "oz": 1586e-6, "ot": 2279e-6, "oe": 97e-6, "or": 8118e-6, "ol": 5373e-6, "oj": 97e-6, "ob": 718e-6, "ox": 53e-6, "oi": 538e-6, "oq": 5e-6, "of": 247e-6, "og": 989e-6, "om": 2735e-6, "on": 5752e-6, "o ": 2022e-6, "oy": 112e-6, "oo": 175e-6 };
+const bigram_hu = {
+  total_count: total_count$2,
+  probabilities: probabilities$2
+};
+const total_count$1 = 202685;
+const probabilities$1 = { "cc": 99e-6, "cp": 0, "cv": 0, "cd": 69e-6, "ch": 1085e-6, "ck": 41e-5, "ca": 2087e-6, "cs": 178e-6, "cw": 0, "cu": 1475e-6, "cz": 2e-5, "ct": 168e-6, "ce": 15e-4, "cr": 212e-6, "cl": 474e-6, "cj": 0, "cb": 39e-6, "cx": 0, "ci": 1796e-6, "cq": 25e-6, "cf": 0, "cg": 1e-5, "cm": 187e-6, "cn": 89e-6, "c ": 112e-5, "cy": 84e-6, "co": 77e-5, "pc": 44e-6, "pp": 192e-6, "pv": 15e-6, "pd": 39e-6, "ph": 192e-6, "pk": 1e-5, "pa": 2191e-6, "ps": 192e-6, "pw": 0, "pu": 207e-6, "pz": 1e-5, "pt": 424e-6, "pe": 775e-6, "pr": 73e-5, "pl": 1367e-6, "pj": 0, "pb": 0, "px": 0, "pi": 883e-6, "pq": 0, "pf": 0, "pg": 2e-5, "pm": 503e-6, "pn": 128e-6, "p ": 1076e-6, "py": 3e-5, "po": 1377e-6, "vc": 104e-6, "vp": 0, "vv": 84e-6, "vd": 59e-6, "vh": 3e-5, "vk": 44e-6, "va": 1771e-6, "vs": 25e-6, "vw": 0, "vu": 276e-6, "vz": 15e-6, "vt": 15e-6, "ve": 6843e-6, "vr": 464e-6, "vl": 488e-6, "vj": 0, "vb": 25e-6, "vx": 0, "vi": 1115e-6, "vq": 0, "vf": 15e-6, "vg": 2e-5, "vm": 0, "vn": 25e-6, "v ": 518e-6, "vy": 104e-6, "vo": 217e-6, "dc": 15e-6, "dp": 1e-5, "dv": 3e-5, "dd": 306e-6, "dh": 1e-5, "dk": 104e-6, "da": 9981e-6, "ds": 187e-6, "dw": 25e-6, "du": 1944e-6, "dz": 498e-6, "dt": 3e-5, "de": 9621e-6, "dr": 3271e-6, "dl": 444e-6, "dj": 1e-5, "db": 15e-6, "dx": 5e-6, "di": 748e-5, "dq": 0, "df": 25e-6, "dg": 44e-6, "dm": 183e-6, "dn": 1179e-6, "d ": 2625e-6, "dy": 454e-6, "do": 1451e-6, "hc": 54e-6, "hp": 2e-5, "hv": 1e-5, "hd": 49e-6, "hh": 0, "hk": 128e-6, "ha": 3424e-6, "hs": 84e-6, "hw": 2e-5, "hu": 469e-6, "hz": 44e-6, "ht": 197e-6, "he": 1638e-6, "hr": 562e-6, "hl": 222e-6, "hj": 0, "hb": 2e-5, "hx": 0, "hi": 2274e-6, "hq": 0, "hf": 0, "hg": 0, "hm": 207e-6, "hn": 252e-6, "h ": 607e-6, "hy": 54e-6, "ho": 592e-6, "kc": 163e-6, "kp": 54e-6, "kv": 15e-6, "kd": 104e-6, "kh": 35e-6, "kk": 286e-6, "ka": 6429e-6, "ks": 1322e-6, "kw": 1e-5, "ku": 2329e-6, "kz": 104e-6, "kt": 2531e-6, "ke": 3098e-6, "kr": 706e-6, "kl": 2378e-6, "kj": 0, "kb": 104e-6, "kx": 5e-6, "ki": 4426e-6, "kq": 0, "kf": 39e-6, "kg": 15e-6, "km": 1155e-6, "kn": 449e-6, "k ": 7751e-6, "ky": 706e-6, "ko": 222e-5, "ac": 1278e-6, "ap": 2112e-6, "av": 1406e-6, "ad": 4514e-6, "ah": 1895e-6, "ak": 7307e-6, "aa": 913e-6, "as": 5624e-6, "aw": 153e-6, "au": 508e-6, "az": 2018e-6, "at": 3814e-6, "ae": 572e-6, "ar": 0.015601, "al": 0.011654, "aj": 138e-6, "ab": 151e-5, "ax": 44e-6, "ai": 789e-6, "aq": 25e-6, "af": 149e-5, "ag": 479e-6, "am": 4702e-6, "an": 0.019301, "a ": 0.017387, "ay": 45e-4, "ao": 84e-6, "sc": 479e-6, "sp": 429e-6, "sv": 143e-6, "sd": 212e-6, "sh": 459e-6, "sk": 1105e-6, "sa": 4159e-6, "ss": 538e-6, "sw": 3e-5, "su": 1944e-6, "sz": 434e-6, "st": 3858e-6, "se": 2926e-6, "sr": 804e-6, "sl": 893e-6, "sj": 5e-6, "sb": 94e-6, "sx": 0, "si": 6902e-6, "sq": 5e-6, "sf": 84e-6, "sg": 25e-6, "sm": 543e-6, "sn": 1855e-6, "s ": 4421e-6, "sy": 109e-5, "so": 1742e-6, "wc": 0, "wp": 0, "wv": 0, "wd": 3e-5, "wh": 54e-6, "wk": 0, "wa": 4e-4, "ws": 44e-6, "ww": 84e-6, "wu": 0, "wz": 0, "wt": 0, "we": 237e-6, "wr": 3e-5, "wl": 2e-5, "wj": 0, "wb": 0, "wx": 0, "wi": 291e-6, "wq": 0, "wf": 0, "wg": 5e-6, "wm": 0, "wn": 44e-6, "w ": 183e-6, "wy": 1e-5, "wo": 104e-6, "uc": 429e-6, "up": 484e-6, "uv": 207e-6, "ud": 928e-6, "uh": 143e-6, "uk": 755e-6, "ua": 405e-6, "us": 2378e-6, "uw": 0, "uu": 622e-6, "uz": 1031e-6, "ut": 1495e-6, "ue": 222e-6, "ur": 3878e-6, "ul": 3838e-6, "uj": 2e-5, "ub": 429e-6, "ux": 39e-6, "ui": 133e-6, "uq": 5e-6, "uf": 54e-6, "ug": 227e-6, "um": 1046e-6, "un": 518e-5, "u ": 4569e-6, "uy": 385e-6, "uo": 25e-6, "zc": 99e-6, "zp": 5e-6, "zv": 5e-6, "zd": 301e-6, "zh": 44e-6, "zk": 39e-6, "za": 1406e-6, "zs": 2e-5, "zw": 0, "zu": 266e-6, "zz": 59e-6, "zt": 25e-6, "ze": 1835e-6, "zr": 64e-6, "zl": 982e-6, "zj": 0, "zb": 1e-5, "zx": 0, "zi": 1599e-6, "zq": 0, "zf": 0, "zg": 113e-6, "zm": 35e-5, "zn": 237e-6, "z ": 1954e-6, "zy": 335e-6, "zo": 247e-6, "tc": 104e-6, "tp": 84e-6, "tv": 64e-6, "td": 133e-6, "th": 775e-6, "tk": 513e-6, "ta": 8328e-6, "ts": 429e-6, "tw": 54e-6, "tu": 1115e-6, "tz": 79e-6, "tt": 794e-6, "te": 5245e-6, "tr": 3681e-6, "tl": 1638e-6, "tj": 0, "tb": 691e-6, "tx": 5e-6, "ti": 6266e-6, "tq": 0, "tf": 133e-6, "tg": 44e-6, "tm": 804e-6, "tn": 414e-6, "t ": 3513e-6, "ty": 291e-6, "to": 2038e-6, "ec": 696e-6, "ep": 479e-6, "ev": 1761e-6, "ed": 3745e-6, "eh": 789e-6, "ek": 3977e-6, "ea": 73e-5, "es": 5042e-6, "ew": 153e-6, "eu": 168e-6, "ez": 992e-6, "et": 5195e-6, "ee": 4e-4, "er": 0.013079, "el": 557e-5, "ej": 59e-6, "eb": 474e-6, "ex": 89e-6, "ei": 1564e-6, "eq": 0, "ef": 75e-5, "eg": 306e-6, "em": 2674e-6, "en": 9586e-6, "e ": 0.019039, "ey": 2768e-6, "eo": 488e-6, "rc": 553e-6, "rp": 178e-6, "rv": 252e-6, "rd": 2482e-6, "rh": 118e-6, "rk": 2141e-6, "ra": 8881e-6, "rs": 11e-4, "rw": 2e-5, "ru": 186e-5, "rz": 187e-6, "rt": 1727e-6, "re": 4776e-6, "rr": 335e-6, "rl": 2827e-6, "rj": 133e-6, "rb": 493e-6, "rx": 0, "ri": 931e-5, "rq": 2e-5, "rf": 133e-6, "rg": 567e-6, "rm": 1845e-6, "rn": 2408e-6, "r ": 0.021186, "ry": 755e-6, "ro": 2353e-6, "lc": 543e-6, "lp": 143e-6, "lv": 128e-6, "ld": 2225e-6, "lh": 173e-6, "lk": 1618e-6, "la": 0.013785, "ls": 242e-6, "lw": 1e-5, "lu": 3399e-6, "lz": 44e-6, "lt": 947e-6, "le": 0.012221, "lr": 281e-6, "ll": 3217e-6, "lj": 5e-6, "lb": 528e-6, "lx": 5e-6, "li": 7894e-6, "lq": 5e-6, "lf": 79e-6, "lg": 962e-6, "lm": 3671e-6, "ln": 1377e-6, "l ": 8017e-6, "ly": 1332e-6, "lo": 1589e-6, "jc": 0, "jp": 5e-6, "jv": 5e-6, "jd": 5e-6, "jh": 0, "jk": 2e-5, "ja": 498e-6, "js": 5e-6, "jw": 0, "ju": 74e-6, "jz": 0, "jt": 5e-6, "je": 316e-6, "jr": 3e-5, "jl": 3e-5, "jj": 0, "jb": 5e-6, "jx": 0, "ji": 572e-6, "jq": 0, "jf": 1e-5, "jg": 0, "jm": 5e-6, "jn": 2e-5, "j ": 69e-6, "jy": 5e-6, "jo": 286e-6, "bc": 69e-6, "bp": 0, "bv": 0, "bd": 212e-6, "bh": 44e-6, "bk": 15e-6, "ba": 523e-5, "bs": 79e-6, "bw": 0, "bu": 3143e-6, "bz": 15e-6, "bt": 39e-6, "be": 2087e-6, "br": 686e-6, "bl": 937e-6, "bj": 5e-6, "bb": 133e-6, "bx": 0, "bi": 7702e-6, "bq": 0, "bf": 0, "bg": 15e-6, "bm": 311e-6, "bn": 143e-6, "b ": 281e-6, "by": 562e-6, "bo": 1411e-6, "xc": 1e-5, "xp": 1e-5, "xv": 5e-6, "xd": 5e-6, "xh": 0, "xk": 0, "xa": 25e-6, "xs": 25e-6, "xw": 0, "xu": 0, "xz": 0, "xt": 59e-6, "xe": 3e-5, "xr": 5e-6, "xl": 5e-6, "xj": 0, "xb": 59e-6, "xx": 1e-5, "xi": 39e-6, "xq": 0, "xf": 0, "xg": 0, "xm": 15e-6, "xn": 0, "x ": 207e-6, "xy": 5e-6, "xo": 1e-5, "ic": 987e-6, "ip": 1046e-6, "iv": 582e-6, "id": 2556e-6, "ih": 952e-6, "ik": 4544e-6, "ia": 1071e-6, "is": 4653e-6, "iw": 15e-6, "iu": 99e-6, "iz": 1515e-6, "it": 3582e-6, "ie": 112e-5, "ir": 0.01268, "il": 0.01078, "ij": 212e-6, "ib": 893e-6, "ix": 44e-6, "ii": 2176e-6, "iq": 15e-6, "if": 326e-6, "ig": 375e-6, "im": 2452e-6, "in": 0.015906, "i ": 0.014515, "iy": 3118e-6, "io": 523e-6, "qc": 5e-6, "qp": 0, "qv": 0, "qd": 0, "qh": 0, "qk": 0, "qa": 5e-6, "qs": 0, "qw": 0, "qu": 148e-6, "qz": 0, "qt": 5e-6, "qe": 0, "qr": 0, "ql": 0, "qj": 0, "qb": 0, "qx": 0, "qi": 0, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 0, "qy": 0, "qo": 0, "fc": 3e-5, "fp": 0, "fv": 0, "fd": 5e-6, "fh": 0, "fk": 54e-6, "fa": 1253e-6, "fs": 3e-5, "fw": 0, "fu": 1327e-6, "fz": 15e-6, "ft": 173e-6, "fe": 1021e-6, "fr": 74e-5, "fl": 291e-6, "fj": 0, "fb": 1e-5, "fx": 0, "fi": 1209e-6, "fq": 0, "ff": 79e-6, "fg": 2e-5, "fm": 0, "fn": 888e-6, "f ": 464e-6, "fy": 15e-6, "fo": 701e-6, "gc": 217e-6, "gp": 0, "gv": 54e-6, "gd": 192e-6, "gh": 138e-6, "gk": 237e-6, "ga": 1312e-6, "gs": 242e-6, "gw": 1e-5, "gu": 493e-6, "gz": 148e-6, "gt": 74e-6, "ge": 2827e-6, "gr": 1628e-6, "gl": 365e-6, "gj": 0, "gb": 15e-6, "gx": 0, "gi": 1668e-6, "gq": 0, "gf": 1e-5, "gg": 39e-6, "gm": 69e-6, "gn": 849e-6, "g ": 464e-6, "gy": 3e-5, "go": 474e-6, "mc": 464e-6, "mp": 548e-6, "mv": 1e-5, "md": 538e-6, "mh": 296e-6, "mk": 69e-6, "ma": 7139e-6, "ms": 449e-6, "mw": 5e-6, "mu": 1248e-6, "mz": 405e-6, "mt": 814e-6, "me": 5565e-6, "mr": 133e-6, "ml": 1312e-6, "mj": 5e-6, "mb": 266e-6, "mx": 0, "mi": 4357e-6, "mq": 0, "mf": 0, "mg": 3e-5, "mm": 232e-6, "mn": 1209e-6, "m ": 4445e-6, "my": 419e-6, "mo": 947e-6, "nc": 1954e-6, "np": 35e-6, "nv": 59e-6, "nd": 0.011624, "nh": 35e-6, "nk": 395e-6, "na": 5768e-6, "ns": 1919e-6, "nw": 15e-6, "nu": 2003e-6, "nz": 217e-6, "nt": 1959e-6, "ne": 5674e-6, "nr": 76e-5, "nl": 2733e-6, "nj": 59e-6, "nb": 192e-6, "nx": 3e-5, "ni": 5876e-6, "nq": 0, "nf": 849e-6, "ng": 1327e-6, "nm": 1416e-6, "nn": 3172e-6, "n ": 0.024274, "ny": 1199e-6, "no": 1021e-6, " c": 2817e-6, " p": 3478e-6, " v": 6715e-6, " d": 8126e-6, " h": 3419e-6, " k": 0.010746, " a": 0.01306, " s": 8649e-6, " w": 73e-5, " u": 1549e-6, " z": 1243e-6, " t": 8461e-6, " e": 6123e-6, " r": 2418e-6, " l": 221e-5, " j": 967e-6, " b": 0.016592, " x": 158e-6, " i": 966e-5, " q": 54e-6, " f": 3829e-6, " g": 63e-4, " m": 6197e-6, " n": 3256e-6, "  ": 593e-5, " y": 8654e-6, " o": 6695e-6, "yc": 163e-6, "yp": 84e-6, "yv": 183e-6, "yd": 794e-6, "yh": 3e-5, "yk": 809e-6, "ya": 9123e-6, "ys": 326e-6, "yw": 39e-6, "yu": 1278e-6, "yz": 553e-6, "yt": 84e-6, "ye": 3838e-6, "yr": 493e-6, "yl": 3513e-6, "yj": 0, "yb": 163e-6, "yx": 0, "yi": 587e-6, "yq": 0, "yf": 35e-6, "yg": 158e-6, "ym": 518e-6, "yn": 1584e-6, "y ": 1934e-6, "yy": 44e-6, "yo": 1954e-6, "oc": 523e-6, "op": 1011e-6, "ov": 523e-6, "od": 691e-6, "oh": 212e-6, "ok": 1105e-6, "oa": 439e-6, "os": 1396e-6, "ow": 163e-6, "ou": 982e-6, "oz": 35e-5, "ot": 76e-5, "oe": 64e-6, "or": 3375e-6, "ol": 6251e-6, "oj": 345e-6, "ob": 36e-5, "ox": 89e-6, "oi": 168e-6, "oq": 1e-5, "of": 385e-6, "og": 454e-6, "om": 1821e-6, "on": 5013e-6, "o ": 149e-5, "oy": 1337e-6, "oo": 311e-6 };
+const bigram_tr = {
+  total_count: total_count$1,
+  probabilities: probabilities$1
+};
+const total_count = 204401;
+const probabilities = { "cc": 49e-6, "cp": 5e-6, "cv": 5e-6, "cd": 44e-6, "ch": 1057e-6, "ck": 22e-5, "ca": 2074e-6, "cs": 15e-6, "cw": 0, "cu": 269e-6, "cz": 5e-6, "ct": 294e-6, "ce": 685e-6, "cr": 117e-6, "cl": 132e-6, "cj": 5e-6, "cb": 1e-5, "cx": 0, "ci": 851e-6, "cq": 0, "cf": 5e-6, "cg": 0, "cm": 29e-6, "cn": 24e-6, "c ": 323e-6, "cy": 24e-6, "co": 739e-6, "pc": 29e-6, "pp": 68e-6, "pv": 5e-6, "pd": 24e-6, "ph": 191e-6, "pk": 54e-6, "pa": 8821e-6, "ps": 78e-6, "pw": 5e-6, "pu": 2143e-6, "pz": 0, "pt": 357e-6, "pe": 6864e-6, "pr": 1619e-6, "pl": 225e-6, "pj": 0, "pb": 0, "px": 0, "pi": 1629e-6, "pq": 0, "pf": 1e-5, "pg": 1e-5, "pm": 1e-5, "pn": 68e-6, "p ": 93e-5, "py": 39e-6, "po": 1228e-6, "vc": 29e-6, "vp": 5e-6, "vv": 0, "vd": 5e-6, "vh": 1e-5, "vk": 1e-5, "va": 568e-6, "vs": 1e-5, "vw": 0, "vu": 2e-5, "vz": 0, "vt": 0, "ve": 67e-5, "vr": 83e-6, "vl": 1e-5, "vj": 0, "vb": 0, "vx": 0, "vi": 1076e-6, "vq": 0, "vf": 0, "vg": 0, "vm": 0, "vn": 24e-6, "v ": 122e-6, "vy": 1e-5, "vo": 196e-6, "dc": 5e-6, "dp": 83e-6, "dv": 1e-5, "dd": 117e-6, "dh": 88e-6, "dk": 34e-6, "da": 0.01819, "ds": 113e-6, "dw": 59e-6, "du": 2197e-6, "dz": 15e-6, "dt": 29e-6, "de": 3723e-6, "dr": 739e-6, "dl": 5e-6, "dj": 39e-6, "db": 15e-6, "dx": 0, "di": 0.012564, "dq": 0, "df": 0, "dg": 24e-6, "dm": 127e-6, "dn": 44e-6, "d ": 1204e-6, "dy": 98e-6, "do": 1541e-6, "hc": 24e-6, "hp": 24e-6, "hv": 0, "hd": 15e-6, "hh": 15e-6, "hk": 157e-6, "ha": 3699e-6, "hs": 73e-6, "hw": 113e-6, "hu": 183e-5, "hz": 0, "ht": 161e-6, "he": 92e-5, "hr": 201e-6, "hl": 93e-6, "hj": 2e-5, "hb": 39e-6, "hx": 0, "hi": 1835e-6, "hq": 5e-6, "hf": 0, "hg": 24e-6, "hm": 64e-6, "hn": 21e-5, "h ": 0.010597, "hy": 113e-6, "ho": 577e-6, "kc": 24e-6, "kp": 29e-6, "kv": 0, "kd": 5e-6, "kh": 504e-6, "kk": 113e-6, "ka": 0.010934, "ks": 925e-6, "kw": 5e-6, "ku": 1962e-6, "kz": 0, "kt": 861e-6, "ke": 567e-5, "kr": 328e-6, "kl": 382e-6, "kj": 5e-6, "kb": 49e-6, "kx": 0, "ki": 2329e-6, "kq": 0, "kf": 0, "kg": 1e-5, "km": 259e-6, "kn": 25e-5, "k ": 6252e-6, "ky": 201e-6, "ko": 2916e-6, "ac": 704e-6, "ap": 2427e-6, "av": 25e-5, "ad": 8591e-6, "ah": 0.010827, "ak": 638e-5, "aa": 1228e-6, "as": 7265e-6, "aw": 1208e-6, "au": 2221e-6, "az": 205e-6, "at": 9902e-6, "ae": 685e-6, "ar": 0.012701, "al": 0.012696, "aj": 519e-6, "ab": 1659e-6, "ax": 88e-6, "ai": 4658e-6, "aq": 2e-5, "af": 357e-6, "ag": 3332e-6, "am": 6742e-6, "an": 0.038048, "a ": 0.025621, "ay": 158e-5, "ao": 93e-6, "sc": 294e-6, "sp": 568e-6, "sv": 49e-6, "sd": 39e-6, "sh": 66e-5, "sk": 783e-6, "sa": 7065e-6, "ss": 416e-6, "sw": 235e-6, "su": 2431e-6, "sz": 34e-6, "st": 2886e-6, "se": 9584e-6, "sr": 166e-6, "sl": 289e-6, "sj": 2e-5, "sb": 93e-6, "sx": 0, "si": 8253e-6, "sq": 44e-6, "sf": 44e-6, "sg": 1e-5, "sm": 313e-6, "sn": 127e-6, "s ": 6365e-6, "sy": 196e-6, "so": 621e-6, "wc": 5e-6, "wp": 5e-6, "wv": 0, "wd": 1e-5, "wh": 34e-6, "wk": 1e-5, "wa": 2613e-6, "ws": 2e-5, "ww": 1e-5, "wu": 34e-6, "wz": 0, "wt": 5e-6, "we": 328e-6, "wr": 15e-6, "wl": 2e-5, "wj": 0, "wb": 1e-5, "wx": 0, "wi": 793e-6, "wq": 0, "wf": 5e-6, "wg": 5e-6, "wm": 5e-6, "wn": 98e-6, "w ": 157e-6, "wy": 2e-5, "wo": 161e-6, "uc": 181e-6, "up": 2162e-6, "uv": 39e-6, "ud": 1228e-6, "uh": 621e-6, "uk": 3312e-6, "ua": 3522e-6, "us": 3459e-6, "uw": 49e-6, "uu": 5e-6, "uz": 68e-6, "ut": 3053e-6, "ue": 181e-6, "ur": 2828e-6, "ul": 2505e-6, "uj": 318e-6, "ub": 1008e-6, "ux": 1e-5, "ui": 298e-6, "uq": 0, "uf": 108e-6, "ug": 714e-6, "um": 2118e-6, "un": 7402e-6, "u ": 4012e-6, "uy": 15e-6, "uo": 24e-6, "zc": 1e-5, "zp": 0, "zv": 0, "zd": 0, "zh": 78e-6, "zk": 5e-6, "za": 274e-6, "zs": 15e-6, "zw": 0, "zu": 54e-6, "zz": 15e-6, "zt": 0, "ze": 73e-6, "zr": 0, "zl": 15e-6, "zj": 0, "zb": 5e-6, "zx": 0, "zi": 137e-6, "zq": 0, "zf": 0, "zg": 5e-6, "zm": 5e-6, "zn": 5e-6, "z ": 147e-6, "zy": 0, "zo": 44e-6, "tc": 49e-6, "tp": 5e-6, "tv": 103e-6, "td": 5e-6, "th": 704e-6, "tk": 215e-6, "ta": 0.013953, "ts": 274e-6, "tw": 2e-5, "tu": 4066e-6, "tz": 44e-6, "tt": 264e-6, "te": 7549e-6, "tr": 1766e-6, "tl": 88e-6, "tj": 15e-6, "tb": 49e-6, "tx": 0, "ti": 4775e-6, "tq": 2e-5, "tf": 5e-6, "tg": 0, "tm": 54e-6, "tn": 23e-5, "t ": 6101e-6, "ty": 254e-6, "to": 2148e-6, "ec": 112e-5, "ep": 1977e-6, "ev": 352e-6, "ed": 1424e-6, "eh": 1463e-6, "ek": 2143e-6, "ea": 685e-6, "es": 4237e-6, "ew": 431e-6, "eu": 445e-6, "ez": 103e-6, "et": 3102e-6, "ee": 289e-6, "er": 0.017495, "el": 4814e-6, "ej": 886e-6, "eb": 4506e-6, "ex": 64e-6, "ei": 386e-6, "eq": 5e-6, "ef": 205e-6, "eg": 1194e-6, "em": 4804e-6, "en": 0.011399, "e ": 3102e-6, "ey": 152e-6, "eo": 89e-5, "rc": 264e-6, "rp": 406e-6, "rv": 73e-6, "rd": 1071e-6, "rh": 21e-5, "rk": 1321e-6, "ra": 0.011761, "rs": 1614e-6, "rw": 215e-6, "ru": 3107e-6, "rz": 24e-6, "rt": 2138e-6, "re": 3288e-6, "rr": 157e-6, "rl": 1003e-6, "rj": 45e-5, "rb": 1003e-6, "rx": 5e-6, "ri": 84e-4, "rq": 5e-6, "rf": 49e-6, "rg": 636e-6, "rm": 1067e-6, "rn": 1115e-6, "r ": 5832e-6, "ry": 235e-6, "ro": 2627e-6, "lc": 68e-6, "lp": 39e-6, "lv": 54e-6, "ld": 201e-6, "lh": 44e-6, "lk": 289e-6, "la": 0.013576, "ls": 166e-6, "lw": 68e-6, "lu": 2128e-6, "lz": 2e-5, "lt": 323e-6, "le": 4222e-6, "lr": 1e-5, "ll": 66e-5, "lj": 2e-5, "lb": 289e-6, "lx": 0, "li": 5245e-6, "lq": 0, "lf": 64e-6, "lg": 88e-6, "lm": 778e-6, "ln": 201e-6, "l ": 5303e-6, "ly": 161e-6, "lo": 1526e-6, "jc": 0, "jp": 0, "jv": 5e-6, "jd": 0, "jh": 1e-5, "jk": 34e-6, "ja": 387e-5, "js": 5e-6, "jw": 0, "ju": 1634e-6, "jz": 0, "jt": 0, "je": 983e-6, "jr": 78e-6, "jl": 1e-5, "jj": 0, "jb": 0, "jx": 0, "ji": 523e-6, "jq": 0, "jf": 5e-6, "jg": 0, "jm": 5e-6, "jn": 0, "j ": 49e-6, "jy": 0, "jo": 254e-6, "bc": 64e-6, "bp": 1e-5, "bv": 5e-6, "bd": 49e-6, "bh": 24e-6, "bk": 73e-6, "ba": 7324e-6, "bs": 59e-6, "bw": 5e-6, "bu": 4418e-6, "bz": 5e-6, "bt": 39e-6, "be": 593e-5, "br": 46e-5, "bl": 406e-6, "bj": 59e-6, "bb": 64e-6, "bx": 0, "bi": 1727e-6, "bq": 0, "bf": 5e-6, "bg": 0, "bm": 1e-5, "bn": 15e-6, "b ": 563e-6, "by": 122e-6, "bo": 817e-6, "xc": 1e-5, "xp": 5e-6, "xv": 0, "xd": 0, "xh": 1e-5, "xk": 0, "xa": 2e-5, "xs": 0, "xw": 0, "xu": 5e-6, "xz": 0, "xt": 5e-6, "xe": 15e-6, "xr": 0, "xl": 0, "xj": 0, "xb": 5e-6, "xx": 0, "xi": 54e-6, "xq": 0, "xf": 0, "xg": 0, "xm": 0, "xn": 0, "x ": 152e-6, "xy": 34e-6, "xo": 1e-5, "ic": 665e-6, "ip": 1062e-6, "iv": 411e-6, "id": 1668e-6, "ih": 978e-6, "ik": 5201e-6, "ia": 6424e-6, "is": 4907e-6, "iw": 25e-5, "iu": 793e-6, "iz": 83e-6, "it": 3249e-6, "ie": 851e-6, "ir": 2539e-6, "il": 4579e-6, "ij": 215e-6, "ib": 1076e-6, "ix": 68e-6, "ii": 352e-6, "iq": 39e-6, "if": 675e-6, "ig": 802e-6, "im": 2069e-6, "in": 0.010793, "i ": 0.021903, "iy": 113e-6, "io": 1404e-6, "qc": 0, "qp": 0, "qv": 0, "qd": 5e-6, "qh": 0, "qk": 0, "qa": 5e-6, "qs": 0, "qw": 0, "qu": 132e-6, "qz": 0, "qt": 0, "qe": 0, "qr": 5e-6, "ql": 0, "qj": 0, "qb": 5e-6, "qx": 0, "qi": 15e-6, "qq": 0, "qf": 0, "qg": 0, "qm": 0, "qn": 0, "q ": 59e-6, "qy": 0, "qo": 0, "fc": 44e-6, "fp": 0, "fv": 0, "fd": 0, "fh": 0, "fk": 15e-6, "fa": 631e-6, "fs": 5e-6, "fw": 0, "fu": 127e-6, "fz": 0, "ft": 147e-6, "fe": 558e-6, "fr": 235e-6, "fl": 113e-6, "fj": 0, "fb": 5e-6, "fx": 0, "fi": 1321e-6, "fq": 0, "ff": 68e-6, "fg": 5e-6, "fm": 1e-5, "fn": 1e-5, "f ": 563e-6, "fy": 2e-5, "fo": 338e-6, "gc": 44e-6, "gp": 39e-6, "gv": 0, "gd": 127e-6, "gh": 465e-6, "gk": 1174e-6, "ga": 8503e-6, "gs": 264e-6, "gw": 15e-6, "gu": 2138e-6, "gz": 0, "gt": 29e-6, "ge": 1502e-6, "gr": 656e-6, "gl": 166e-6, "gj": 1e-5, "gb": 68e-6, "gx": 0, "gi": 2236e-6, "gq": 0, "gf": 1e-5, "gg": 2241e-6, "gm": 39e-6, "gn": 142e-6, "g ": 8958e-6, "gy": 29e-6, "go": 1037e-6, "mc": 44e-6, "mp": 1903e-6, "mv": 1e-5, "md": 49e-6, "mh": 1e-5, "mk": 83e-6, "ma": 7402e-6, "ms": 98e-6, "mw": 5e-6, "mu": 2329e-6, "mz": 0, "mt": 39e-6, "me": 8674e-6, "mr": 29e-6, "ml": 108e-6, "mj": 5e-6, "mb": 2079e-6, "mx": 0, "mi": 2427e-6, "mq": 0, "mf": 59e-6, "mg": 2e-5, "mm": 132e-6, "mn": 225e-6, "m ": 4452e-6, "my": 113e-6, "mo": 1008e-6, "nc": 749e-6, "np": 88e-6, "nv": 68e-6, "nd": 3821e-6, "nh": 113e-6, "nk": 45e-5, "na": 6502e-6, "ns": 1458e-6, "nw": 1e-5, "nu": 136e-5, "nz": 49e-6, "nt": 4428e-6, "ne": 252e-5, "nr": 29e-6, "nl": 73e-6, "nj": 1433e-6, "nb": 147e-6, "nx": 0, "ni": 5103e-6, "nq": 0, "nf": 132e-6, "ng": 0.017837, "nm": 117e-6, "nn": 68e-5, "n ": 0.025763, "ny": 3596e-6, "no": 998e-6, " c": 228e-5, " p": 0.012529, " v": 768e-6, " d": 0.02159, " h": 2402e-6, " k": 0.010793, " a": 0.011199, " s": 0.015083, " w": 135e-5, " u": 2657e-6, " z": 171e-6, " t": 956e-5, " e": 1389e-6, " r": 2417e-6, " l": 3591e-6, " j": 3386e-6, " b": 9437e-6, " x": 39e-6, " i": 5788e-6, " q": 88e-6, " f": 2016e-6, " g": 2417e-6, " m": 0.010969, " n": 2275e-6, "  ": 5396e-6, " y": 4721e-6, " o": 2554e-6, "yc": 78e-6, "yp": 2e-5, "yv": 5e-6, "yd": 24e-6, "yh": 1e-5, "yk": 5e-6, "ya": 8933e-6, "ys": 122e-6, "yw": 24e-6, "yu": 352e-6, "yz": 15e-6, "yt": 15e-6, "ye": 396e-6, "yr": 44e-6, "yl": 54e-6, "yj": 0, "yb": 2e-5, "yx": 0, "yi": 279e-6, "yq": 0, "yf": 2e-5, "yg": 15e-6, "ym": 24e-6, "yn": 68e-6, "y ": 1076e-6, "yy": 1e-5, "yo": 455e-6, "oc": 147e-6, "op": 949e-6, "ov": 636e-6, "od": 949e-6, "oh": 279e-6, "ok": 114e-5, "oa": 23e-5, "os": 905e-6, "ow": 284e-6, "ou": 391e-6, "oz": 29e-6, "ot": 1869e-6, "oe": 122e-6, "or": 3361e-6, "ol": 3508e-6, "oj": 64e-6, "ob": 612e-6, "ox": 49e-6, "oi": 117e-6, "oq": 0, "of": 372e-6, "og": 499e-6, "om": 1551e-6, "on": 407e-5, "o ": 1864e-6, "oy": 21e-5, "oo": 264e-6 };
+const bigram_id = {
+  total_count,
+  probabilities
+};
 const _export_sfc = (sfc, props) => {
   const target = sfc.__vccOpts || sfc;
   for (const [key, val] of props) {
@@ -13119,68 +6233,72 @@ const _sfc_main$1 = {
   data() {
     return {
       sentence: "",
-      p_da: 0,
-      p_en: 0,
-      p_fr: 0,
-      p_ge: 0,
-      p_sw: 0
+      probabilities: {},
+      languages: ["en", "es", "de", "fr", "it", "nl", "pt", "da", "sv", "no", "fi", "ro", "hu", "tr", "id"],
+      bigramData: {
+        da: bigram_da,
+        en: bigram_en,
+        fr: bigram_fr,
+        de: bigram_de,
+        sv: bigram_sv,
+        es: bigram_es,
+        it: bigram_it,
+        nl: bigram_nl,
+        pt: bigram_pt,
+        no: bigram_no,
+        fi: bigram_fi,
+        ro: bigram_ro,
+        hu: bigram_hu,
+        tr: bigram_tr,
+        id: bigram_id
+      },
+      languageNames: {
+        en: "English 🇬🇧",
+        es: "Spanish 🇪🇸",
+        de: "German 🇩🇪",
+        fr: "French 🇫🇷",
+        it: "Italian 🇮🇹",
+        nl: "Dutch 🇳🇱",
+        pt: "Portuguese 🇵🇹",
+        da: "Danish 🇩🇰",
+        sv: "Swedish 🇸🇪",
+        no: "Norwegian 🇳🇴",
+        fi: "Finnish 🇫🇮",
+        ro: "Romanian 🇷🇴",
+        hu: "Hungarian 🇭🇺",
+        tr: "Turkish 🇹🇷",
+        id: "Indonesian 🇮🇩"
+      }
     };
   },
   methods: {
     clear() {
       this.sentence = "";
-      this.p_da = 0;
-      this.p_en = 0;
-      this.p_fr = 0;
-      this.p_ge = 0;
-      this.p_sw = 0;
+      this.probabilities = {};
     },
     predict() {
-      this.p_da = nlp.probability(this.sentence, 3199010, bigram_danish);
-      this.p_en = nlp.probability(this.sentence, 3380488, bigram_english);
-      this.p_fr = nlp.probability(this.sentence, 3404521, bigram_french);
-      this.p_ge = nlp.probability(this.sentence, 3214994, bigram_german);
-      this.p_sw = nlp.probability(this.sentence, 2506282, bigram_swedish);
-    },
-    isDanish() {
-      return this.p_da > this.p_en && this.p_da > this.p_fr && this.p_da > this.p_ge && this.p_da > this.p_sw;
-    },
-    isEnglish() {
-      return this.p_en > this.p_da && this.p_en > this.p_fr && this.p_en > this.p_ge && this.p_en > this.p_sw;
-    },
-    isFrench() {
-      return this.p_fr > this.p_da && this.p_fr > this.p_en && this.p_fr > this.p_ge && this.p_fr > this.p_sw;
-    },
-    isGerman() {
-      return this.p_ge > this.p_da && this.p_ge > this.p_en && this.p_ge > this.p_fr && this.p_ge > this.p_sw;
-    },
-    isSwedish() {
-      return this.p_sw > this.p_da && this.p_sw > this.p_en && this.p_sw > this.p_fr && this.p_sw > this.p_ge;
+      this.probabilities = {};
+      this.languages.forEach((lang) => {
+        const bigram = this.bigramData[lang].probabilities;
+        const total_bigrams = this.bigramData[lang].total_count;
+        this.probabilities[lang] = nlp.probability(this.sentence, total_bigrams, bigram);
+      });
     },
     getLanguage() {
-      if (this.isDanish()) return "Danish 🇩🇰";
-      if (this.isEnglish()) return "English 🇬🇧";
-      if (this.isFrench()) return "French 🇫🇷";
-      if (this.isGerman()) return "German 🇩🇪";
-      if (this.isSwedish()) return "Swedish 🇸🇪";
-      return "🤔";
+      const bestLang = Object.entries(this.probabilities).reduce((max, entry) => entry[1] > max[1] ? entry : max, ["", -Infinity])[0];
+      return bestLang ? this.languageNames[bestLang] : "🤔";
     }
   }
 };
 const _hoisted_1$1 = { class: "card mb-3" };
 const _hoisted_2$1 = { class: "card-body" };
 const _hoisted_3 = { class: "list-group list-group-flush" };
-const _hoisted_4 = { class: "list-group-item" };
-const _hoisted_5 = { class: "list-group-item" };
-const _hoisted_6 = { class: "list-group-item" };
-const _hoisted_7 = { class: "list-group-item" };
-const _hoisted_8 = { class: "list-group-item" };
-const _hoisted_9 = { class: "card-footer text-white bg-primary" };
-const _hoisted_10 = { class: "lead" };
+const _hoisted_4 = { class: "card-footer text-white bg-primary" };
+const _hoisted_5 = { class: "lead" };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return openBlock(), createElementBlock("div", _hoisted_1$1, [
     createBaseVNode("div", _hoisted_2$1, [
-      _cache[2] || (_cache[2] = createBaseVNode("h5", { class: "card-title" }, " Detect Language ", -1)),
+      _cache[2] || (_cache[2] = createBaseVNode("h5", { class: "card-title" }, "Detect Language", -1)),
       withDirectives(createBaseVNode("input", {
         type: "text",
         class: "form-control",
@@ -13192,14 +6310,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       ])
     ]),
     createBaseVNode("ul", _hoisted_3, [
-      createBaseVNode("li", _hoisted_4, " Log Probability Danish: " + toDisplayString($data.p_da.toFixed(4)), 1),
-      createBaseVNode("li", _hoisted_5, " Log Probability English: " + toDisplayString($data.p_en.toFixed(4)), 1),
-      createBaseVNode("li", _hoisted_6, " Log Probability French: " + toDisplayString($data.p_fr.toFixed(4)), 1),
-      createBaseVNode("li", _hoisted_7, " Log Probability German: " + toDisplayString($data.p_ge.toFixed(4)), 1),
-      createBaseVNode("li", _hoisted_8, " Log Probability Swedish: " + toDisplayString($data.p_sw.toFixed(4)), 1)
+      (openBlock(true), createElementBlock(Fragment, null, renderList($data.probabilities, (prob, lang) => {
+        return openBlock(), createElementBlock("li", {
+          key: lang,
+          class: "list-group-item"
+        }, " Log Probability " + toDisplayString($data.languageNames[lang]) + ": " + toDisplayString(prob.toFixed(4)), 1);
+      }), 128))
     ]),
-    createBaseVNode("div", _hoisted_9, [
-      createBaseVNode("p", _hoisted_10, [
+    createBaseVNode("div", _hoisted_4, [
+      createBaseVNode("p", _hoisted_5, [
         _cache[3] || (_cache[3] = createTextVNode("This sentence is ")),
         createBaseVNode("b", null, toDisplayString($options.getLanguage()), 1)
       ])
