@@ -1,9 +1,7 @@
 <template>
   <div class="card mb-3">
     <div class="card-body">
-      <h5 class="card-title">
-        Detect Language
-      </h5>
+      <h5 class="card-title">Detect Language</h5>
       <input
         type="text"
         class="form-control"
@@ -13,20 +11,12 @@
       />
     </div>
     <ul class="list-group list-group-flush">
-      <li class="list-group-item">
-        Log Probability Danish: {{ p_da.toFixed(4) }}
-      </li>
-      <li class="list-group-item">
-        Log Probability English: {{ p_en.toFixed(4) }}
-      </li>
-      <li class="list-group-item">
-        Log Probability French: {{ p_fr.toFixed(4) }}
-      </li>
-      <li class="list-group-item">
-        Log Probability German: {{ p_ge.toFixed(4) }}
-      </li>
-      <li class="list-group-item">
-        Log Probability Swedish: {{ p_sw.toFixed(4) }}
+      <li
+        v-for="(prob, lang) in probabilities"
+        :key="lang"
+        class="list-group-item"
+      >
+        Log Probability {{ languageNames[lang] }}: {{ prob.toFixed(4) }}
       </li>
     </ul>
     <div class="card-footer text-white bg-primary">
@@ -36,70 +26,66 @@
 </template>
 
 <script>
-import bigram_danish from '../data/bigram_danish.json'
-import unigram_danish from '../data/unigram_danish.json'
-import bigram_english from '../data/bigram_english.json'
-import unigram_english from '../data/unigram_english.json'
-import bigram_french from '../data/bigram_french.json'
-import unigram_french from '../data/unigram_french.json'
-import bigram_german from '../data/bigram_german.json'
-import unigram_german from '../data/unigram_german.json'
-import bigram_swedish from '../data/bigram_swedish.json'
-import unigram_swedish from '../data/unigram_swedish.json'
+
+import nlp  from "../nlp.js";
+
+// import bigram data
+import bigram_da from "../data/bigram_da.json";
+import bigram_en from "../data/bigram_en.json";
+import bigram_fr from "../data/bigram_fr.json";
+import bigram_de from "../data/bigram_de.json";
+import bigram_sv from "../data/bigram_sv.json";
+import bigram_es from "../data/bigram_es.json";
+import bigram_it from "../data/bigram_it.json";
+import bigram_nl from "../data/bigram_nl.json";
+import bigram_pt from "../data/bigram_pt.json";
+import bigram_no from "../data/bigram_no.json";
+import bigram_fi from "../data/bigram_fi.json";
+import bigram_ro from "../data/bigram_ro.json";
+import bigram_hu from "../data/bigram_hu.json";
+import bigram_tr from "../data/bigram_tr.json";
+import bigram_id from "../data/bigram_id.json";
 
 import nlp from '../nlp.js'
 
 export default {
-  name: 'InputSentence',
+  name: "InputSentence",
   data() {
     return {
       sentence: "",
-      p_da: 0.0,
-      p_en: 0.0,
-      p_fr: 0.0,
-      p_ge: 0.0,
-      p_sw: 0.0
-    }
+      probabilities: {},
+      languages: ["en", "es", "de", "fr", "it", "nl", "pt", "da", "sv", "no", "fi", "ro", "hu", "tr", "id"],
+      bigramData: {
+        da: bigram_da, en: bigram_en, fr: bigram_fr, de: bigram_de, sv: bigram_sv,
+        es: bigram_es, it: bigram_it, nl: bigram_nl, pt: bigram_pt, no: bigram_no,
+        fi: bigram_fi, ro: bigram_ro, hu: bigram_hu, tr: bigram_tr, id: bigram_id
+      },
+      languageNames: {
+        en: "English 🇬🇧", es: "Spanish 🇪🇸", de: "German 🇩🇪", fr: "French 🇫🇷",
+        it: "Italian 🇮🇹", nl: "Dutch 🇳🇱", pt: "Portuguese 🇵🇹", da: "Danish 🇩🇰",
+        sv: "Swedish 🇸🇪", no: "Norwegian 🇳🇴", fi: "Finnish 🇫🇮", ro: "Romanian 🇷🇴",
+        hu: "Hungarian 🇭🇺", tr: "Turkish 🇹🇷", id: "Indonesian 🇮🇩"
+      }
+    };
   },
   methods: {
     clear() {
-      this.sentence = ""
-      this.p_da = 0.0
-      this.p_en = 0.0
-      this.p_fr = 0.0
-      this.p_ge = 0.0
-      this.p_sw = 0.0
+      this.sentence = "";
+      this.probabilities = {};
     },
     predict() {
-      this.p_da = nlp.probability(this.sentence, 3199010.0, bigram_danish)
-      this.p_en = nlp.probability(this.sentence, 3380488.0, bigram_english)
-      this.p_fr = nlp.probability(this.sentence, 3404521.0, bigram_french)
-      this.p_ge = nlp.probability(this.sentence, 3214994.0, bigram_german)
-      this.p_sw = nlp.probability(this.sentence, 2506282.0, bigram_swedish)
-    },
-    isDanish() {
-      return this.p_da > this.p_en && this.p_da > this.p_fr && this.p_da > this.p_ge && this.p_da > this.p_sw
-    },
-    isEnglish() {
-      return this.p_en > this.p_da && this.p_en > this.p_fr && this.p_en > this.p_ge && this.p_en > this.p_sw
-    },
-    isFrench() {
-      return this.p_fr > this.p_da && this.p_fr > this.p_en && this.p_fr > this.p_ge && this.p_fr > this.p_sw
-    },
-    isGerman() {
-      return this.p_ge > this.p_da && this.p_ge > this.p_en && this.p_ge > this.p_fr && this.p_ge > this.p_sw
-    },
-    isSwedish() {
-      return this.p_sw > this.p_da && this.p_sw > this.p_en && this.p_sw > this.p_fr && this.p_sw > this.p_ge
+      this.probabilities = {};
+      this.languages.forEach(lang => {
+        const bigram = this.bigramData[lang].probabilities;
+        const total_bigrams = this.bigramData[lang].total_count;
+        this.probabilities[lang] = nlp.probability(this.sentence, total_bigrams, bigram);
+      });
     },
     getLanguage() {
-      if (this.isDanish()) return "Danish 🇩🇰"
-      if (this.isEnglish()) return "English 🇬🇧"
-      if (this.isFrench()) return "French 🇫🇷"
-      if (this.isGerman()) return "German 🇩🇪"
-      if (this.isSwedish()) return "Swedish 🇸🇪"
-      return "🤔"
+      const bestLang = Object.entries(this.probabilities)
+        .reduce((max, entry) => (entry[1] > max[1] ? entry : max), ["", -Infinity])[0];
+      return bestLang ? this.languageNames[bestLang] : "🤔";
     }
   }
-}
+};
 </script>

@@ -13,9 +13,26 @@ Automatic language identification using n-gram based models.
 
 ## Training Corpus
 
-In its current version the n-gram models are based directly on ASCII characters; all invalid characters will be ignored.
+In its current version, the n-gram models are based directly on ASCII characters; all other characters will be ignored.
 
-The training corpus used is 30k sentences, or about 4 megabytes of text, for each language (Danish, English, French, German, Swedish) which may not yield accurate results.
+The training corpus used consists of 30k sentences for each language. The dataset size and quality may not yield highly accurate results.
+The supported languages are:
+
+*   Danish (da) 🇩🇰
+*   English (en) 🇬🇧
+*   French (fr) 🇫🇷
+*   German (de) 🇩🇪
+*   Swedish (sv) 🇸🇪
+*   Spanish (es) 🇪🇸
+*   Italian (it) 🇮🇹
+*   Dutch (nl) 🇳🇱
+*   Portuguese (pt) 🇵🇹
+*   Norwegian (no) 🇳🇴
+*   Finnish (fi) 🇫🇮
+*   Romanian (ro) 🇷🇴
+*   Hungarian (hu) 🇭🇺
+*   Turkish (tr) 🇹🇷
+*   Indonesian (id) 🇮🇩
 
 
 ## License
